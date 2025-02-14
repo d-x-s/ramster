@@ -6,6 +6,11 @@ COMMIT_MSG_REGEX="^(feat|fix|chore|docs|style|refactor|perf|test|revert): .{10,}
 # Read the commit message
 COMMIT_MSG=$(cat "$1")
 
+# Allow automatic merge commits
+if echo "$COMMIT_MSG" | grep -q "^Merge branch\|^Merge pull request"; then
+    exit 0  # Allow commit
+fi
+
 # Check if the commit message matches the required format
 if ! echo "$COMMIT_MSG" | grep -Eq "$COMMIT_MSG_REGEX"; then
     echo "❌ ERROR: Invalid commit message format."

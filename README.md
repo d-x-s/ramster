@@ -1,6 +1,9 @@
 # M1 Submission Notes
 This write-up will be moved elsewhere upon the actual M1 submission.
 
+## Commits
+- don't forget that you are marked on the quality and quantity of your commits
+
 ## Box2D Prerequisites
 - To get started with Box2D, read the [documentation](https://box2d.org/documentation/).
 - Understand how the world and bodies interact [HelloBox2D](https://box2d.org/documentation/hello.html).

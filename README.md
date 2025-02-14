@@ -18,7 +18,7 @@ This write-up will be moved elsewhere upon the actual M1 submission.
 ## Building
 - Check that you are on VS2022
 - FetchContent is used to get the Box2D library so make sure you have an internet connection
-- in root, do <mkdir build>, <cd build>, <Cmake ..>
-- <cd build> and open ramster.sln
+- in root, do `<mkdir build>`, `<cd build>`, `<Cmake ..>`
+- `<cd build>` and open `ramster.sln`
 - build the Ramster project
-- exe is in build/Debug
+- exe is in `build/Debug`

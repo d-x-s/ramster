@@ -3,6 +3,8 @@ This write-up will be moved elsewhere upon the actual M1 submission.
 
 ## Commits
 - don't forget that you are marked on the quality and quantity of your commits
+- proper commit format is being enforced!
+  - **to set this up run ./setup.sh in the root**
 
 ## Box2D Prerequisites
 - To get started with Box2D, read the [documentation](https://box2d.org/documentation/).

@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Define the regex for valid commit messages (e.g., Conventional Commits)
+COMMIT_MSG_REGEX="^(feat|fix|chore|docs|style|refactor|perf|test|revert): .{10,}$"
+
+# Read the commit message
+COMMIT_MSG=$(cat "$1")
+
+# Check if the commit message matches the required format
+if ! echo "$COMMIT_MSG" | grep -Eq "$COMMIT_MSG_REGEX"; then
+    echo "❌ ERROR: Invalid commit message format."
+    echo ""
+    echo "Commit messages must follow this pattern:"
+    echo "  feat: add new feature"
+    echo "  fix: resolve bug"
+    echo "  chore: update dependencies"
+    echo ""
+    echo "The following change types are available: feat|fix|chore|docs|style|refactor|perf|test|revert"
+    echo ""
+    echo "Message should also be at least 10 characters long."
+    exit 1  # Reject commit
+fi
+
+exit 0  # Allow commit

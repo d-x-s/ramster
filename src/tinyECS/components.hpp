@@ -204,5 +204,5 @@ struct RenderRequest {
 struct Explosion { };
 
 struct PhysicsBody {
-	b2Body* body = nullptr; // Pointer to the corresponding Box2D physics body
+	b2BodyId bodyId;
 };

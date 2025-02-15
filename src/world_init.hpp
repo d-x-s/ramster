@@ -28,4 +28,4 @@ Entity createLine(vec2 position, vec2 size);
 // legacy
 // the player
 Entity createChicken(RenderSystem* renderer, vec2 position);
-Entity createBall(b2World& world);
+Entity createBall(b2WorldId worldId);

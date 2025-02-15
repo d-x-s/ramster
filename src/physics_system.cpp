@@ -3,24 +3,35 @@
 #include "world_init.hpp"
 #include <iostream>
 
-PhysicsSystem::PhysicsSystem(b2World& world_ref) : world(world_ref) { }
-PhysicsSystem::~PhysicsSystem() { }
+// Constructor
+PhysicsSystem::PhysicsSystem(b2WorldId worldId) : worldId(worldId) {}
 
+// Destructor
+PhysicsSystem::~PhysicsSystem() {}
+
+// Advances physics simulation
 void PhysicsSystem::step(float elapsed_ms)
 {
-	world.Step(1.0f / 60.0f, 6, 2); // Box2D: step the world
+    // Box2D v3 Upgrade: Use `b2World_Step()` instead of `world.Step()`
+    float timeStep = elapsed_ms / 1000.0f;
+    b2World_Step(worldId, timeStep, 4);  // 4 is the recommended substep count
 
-	auto& player_registry = registry.players;
-	Player& player = player_registry.components[0];
+    // Access player registry
+    auto& player_registry = registry.players;
+    Player& player = player_registry.components[0];
 
-	auto& physicsBody_registry = registry.physicsBodies;
-	Entity entity_physicsBody = player_registry.entities[0];
+    // Access physics body registry
+    auto& physicsBody_registry = registry.physicsBodies;
+    Entity entity_physicsBody = player_registry.entities[0];
 
-	PhysicsBody& component_physicsBody = registry.physicsBodies.get(entity_physicsBody);
-	b2Body* body = component_physicsBody.body;
-	b2Vec2 position = body->GetPosition();
-	Motion& component_motion = registry.motions.get(entity_physicsBody);
-	component_motion.position = vec2(position.x, position.y);
+    PhysicsBody& component_physicsBody = registry.physicsBodies.get(entity_physicsBody);
+    b2BodyId bodyId = component_physicsBody.bodyId;
+    b2Vec2 position = b2Body_GetPosition(bodyId);
 
-	std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";
+    // Update motion component
+    Motion& component_motion = registry.motions.get(entity_physicsBody);
+    component_motion.position = vec2(position.x, position.y);
+
+    // Debugging output
+    std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";
 }

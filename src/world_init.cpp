@@ -2,7 +2,7 @@
 #include "tinyECS/registry.hpp"
 #include <iostream>
 
-Entity createBall(b2World& world)
+Entity createBall(b2WorldId worldId)
 {
 	Entity entity = Entity();
 
@@ -12,40 +12,38 @@ Entity createBall(b2World& world)
 	Player& player = registry.players.emplace(entity);
 
 	// Define a dynamic body
-	b2BodyDef bodyDef;
+	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
-	bodyDef.position.Set(100.0f, 100.0f);
+	bodyDef.position = b2Vec2{ 100.0f, 100.0f };
 	bodyDef.fixedRotation = false; // Allow rolling
 
-	b2Body* body = world.CreateBody(&bodyDef);
+	// Use `b2CreateBody()` instead of `world.CreateBody()`
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 	std::cout << "Dynamic body created at position ("
-		<< bodyDef.position.x << ", "
-		<< bodyDef.position.y << ")\n";
+		<< bodyDef.position.x << ", " << bodyDef.position.y << ")\n";
 
-	// Define a circular shape for the ball
-	b2CircleShape circle;
-	circle.m_radius = 0.533f; // Radius of 0.5 units
+	// Define shape properties using Box2D v3 functions
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	shapeDef.density = 1.0f;
+	shapeDef.friction = 0.3f;
+	shapeDef.restitution = 0.8f; // Higher restitution makes it bouncy
 
-	// Define fixture properties (adjust restitution for bounce)
-	b2FixtureDef fixtureDef;
-	fixtureDef.shape = &circle;
-	fixtureDef.density = 1.0f;
-	fixtureDef.friction = 0.3f;
-	fixtureDef.restitution = 0.8f; // Higher restitution makes it bouncy
-
-	body->CreateFixture(&fixtureDef);
+	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
+	b2Circle circle;
+	circle.center = b2Vec2{ 0.0f, 0.0f };
+	circle.radius = 0.1f;
+	b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.3, restitution=0.8 (bouncy).\n";
 
-	ball.body = body;
+	ball.bodyId = bodyId;
 
 	// Add motion & render request for ECS synchronization
-	// 
 	auto& motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
-	motion.position = vec2(32.0f, 32.0f);	
-	motion.scale = vec2(32, 32);
-	std::cout << "world_init.cpp: createball: Added motion component to ball.\n";
-	 
+	motion.position = vec2(100.0f, 100.0f);
+	motion.scale = vec2(32.0, 32.0);
+	std::cout << "world_init.cpp: createBall: Added motion component to ball.\n";
+
 	registry.renderRequests.insert(
 		entity,
 		{
@@ -54,10 +52,11 @@ Entity createBall(b2World& world)
 			GEOMETRY_BUFFER_ID::SPRITE
 		}
 	);
-	std::cout << "inserted render request.\n";
+	std::cout << "Inserted render request.\n";
 
 	return entity;
 }
+
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! {{{ OK }}} TODO A1: implement grid lines as gridLines with renderRequests and colors

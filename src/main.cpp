@@ -18,50 +18,41 @@ using Clock = std::chrono::high_resolution_clock;
 // Entry point
 int main()
 {
-    // Setup Box2D world
-    b2Vec2 gravity(0.0f, -98.0f);
-    b2World world(gravity);
+	// Setup Box2D v3 world
+	float lengthUnitsPerMeter = 100.0f;
+	b2SetLengthUnitsPerMeter(lengthUnitsPerMeter);
+
+	b2WorldDef worldDef = b2DefaultWorldDef();
+	worldDef.gravity.y = -9.8f;
+	b2WorldId worldId = b2CreateWorld(&worldDef);
 
 	// Room dimensions
 	const float roomWidth = 840.0f;
 	const float roomHeight = 600.0f;
 	const float wallThickness = 20.0f; // half-width for SetAsBox
 
-	// Floor
-	b2BodyDef floorDef;
-	floorDef.position.Set(roomWidth / 2, 0.0f);
-	b2Body* floorBody = world.CreateBody(&floorDef);
-	b2PolygonShape floorShape;
-	floorShape.SetAsBox(roomWidth / 2, wallThickness);
-	floorBody->CreateFixture(&floorShape, 0.0f);
+	auto create_wall = [&](float x, float y, float halfWidth, float halfHeight) {
+		b2BodyDef bodyDef = b2DefaultBodyDef();
+		bodyDef.position = b2Vec2{ x, y };
 
-	// Ceiling
-	b2BodyDef ceilingDef;
-	ceilingDef.position.Set(roomWidth / 2, roomHeight);
-	b2Body* ceilingBody = world.CreateBody(&ceilingDef);
-	b2PolygonShape ceilingShape;
-	ceilingShape.SetAsBox(roomWidth / 2, wallThickness);
-	ceilingBody->CreateFixture(&ceilingShape, 0.0f);
+		b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
-	// Left wall
-	b2BodyDef leftWallDef;
-	leftWallDef.position.Set(0.0f, roomHeight / 2);
-	b2Body* leftWallBody = world.CreateBody(&leftWallDef);
-	b2PolygonShape leftWallShape;
-	leftWallShape.SetAsBox(wallThickness, roomHeight / 2);
-	leftWallBody->CreateFixture(&leftWallShape, 0.0f);
+		b2Polygon polygon = b2MakeBox(halfWidth, halfHeight);
+		b2ShapeDef shapeDef = b2DefaultShapeDef();
+		b2CreatePolygonShape(bodyId, &shapeDef, &polygon);
 
-	// Right wall
-	b2BodyDef rightWallDef;
-	rightWallDef.position.Set(roomWidth, roomHeight / 2);
-	b2Body* rightWallBody = world.CreateBody(&rightWallDef);
-	b2PolygonShape rightWallShape;
-	rightWallShape.SetAsBox(wallThickness, roomHeight / 2);
-	rightWallBody->CreateFixture(&rightWallShape, 0.0f);
+		return bodyId;
+	};
+
+	// Create room boundaries
+	create_wall(roomWidth / 2, 0.0f, roomWidth / 2, wallThickness);			// Floor
+	create_wall(roomWidth / 2, roomHeight, roomWidth / 2, wallThickness);	// Ceiling
+	create_wall(0.0f, roomHeight / 2, wallThickness, roomHeight / 2);		// Left Wall
+	create_wall(roomWidth, roomHeight / 2, wallThickness, roomHeight / 2);	// Right Wall
 
 	// global systems
-	WorldSystem   world_system(world);
-    PhysicsSystem physics_system(world);
+	WorldSystem   world_system(worldId);
+    PhysicsSystem physics_system(worldId);
     AISystem	  ai_system;
 	RenderSystem  renderer_system;
 

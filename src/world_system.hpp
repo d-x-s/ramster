@@ -19,7 +19,7 @@
 class WorldSystem
 {
 public:
-	WorldSystem(b2World& world);
+	explicit WorldSystem(b2WorldId world);
 
 	// creates main window
 	GLFWwindow* create_window();
@@ -50,7 +50,7 @@ public:
 
 private:
 	// box2d world instance (shared between systems)
-	b2World& world;
+	b2WorldId worldId;
 
 	float mouse_pos_x = 0.0f;
 	float mouse_pos_y = 0.0f;

@@ -10,12 +10,12 @@
 #include "physics_system.hpp"
 
 // create the world
-WorldSystem::WorldSystem(b2World& world_ref) :
+WorldSystem::WorldSystem(b2WorldId worldId) :
 	points(0),
 	max_towers(MAX_TOWERS_START),
 	next_invader_spawn(0),
 	invader_spawn_rate_ms(INVADER_SPAWN_RATE_MS),
-	world(world_ref)
+	worldId(worldId)
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
@@ -139,7 +139,7 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 
 	// Set all states to default
     restart_game();
-	createBall(world);
+	createBall(worldId);
 }
 
 // Update our game world
@@ -147,7 +147,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Updating window title with points (and remaining towers)
 	std::stringstream title_ss;
-	title_ss << "Ramster | Points: " << points << " | Maximum Towers: " << max_towers;
+	title_ss << "Ramster | Points: " << points;
 	glfwSetWindowTitle(window, title_ss.str().c_str());
 
 	// Remove debug info from the last step
@@ -434,51 +434,46 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 		debugging.in_debug_mode = !debugging.in_debug_mode;
 	}
 
-	// --- Apply player-controlled impulse ---
-	// We only act on key press events.
 	if (action == GLFW_PRESS) {
-		b2Vec2 impulse(0, 0);
-		const float impulseMagnitude = 50.0f;      // Default impulse magnitude for horizontal movement
-		const float jumpImpulseMagnitude = 80.0f;  // A stronger impulse for jumping
+		b2Vec2 impulse = { 0, 0 };
+		const float impulseMagnitude = 5.0f;      // Default impulse magnitude for horizontal movement
+		const float jumpImpulseMagnitude = 8.0f;  // A stronger impulse for jumping
 
 		// Determine impulse direction based on key pressed
 		if (key == GLFW_KEY_W) {
-			impulse.Set(0, impulseMagnitude);
+			impulse = { 0, impulseMagnitude };
 		}
 		else if (key == GLFW_KEY_A) {
-			impulse.Set(-impulseMagnitude, 0);
+			impulse = { -impulseMagnitude, 0 };
 		}
 		else if (key == GLFW_KEY_S) {
-			impulse.Set(0, -impulseMagnitude);
+			impulse = { 0, -impulseMagnitude };
 		}
 		else if (key == GLFW_KEY_D) {
-			impulse.Set(impulseMagnitude, 0);
+			impulse = { impulseMagnitude, 0 };
 		}
 		else if (key == GLFW_KEY_SPACE) {
 			// Jump: apply a strong upward impulse
-			impulse.Set(0, jumpImpulseMagnitude);
+			impulse = { 0, jumpImpulseMagnitude };
 		}
 
 		// Apply impulse if non-zero.
-		if (impulse.LengthSquared() > 0) {
+		if (impulse.x != 0 || impulse.y != 0) {
 			// Assuming registry.players.entities[0] holds the player entity.
 			if (!registry.players.entities.empty()) {
 				Entity playerEntity = registry.players.entities[0];
 				if (registry.physicsBodies.has(playerEntity)) {
 					PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
-					if (phys.body != nullptr) {
-						// Apply the impulse at the center of the body.
-						phys.body->ApplyLinearImpulse(impulse, phys.body->GetWorldCenter(), true);
-						std::cout << "Applied impulse ("
-							<< impulse.x << ", " << impulse.y
-							<< ") to player ball." << std::endl;
-					}
+					b2BodyId bodyId = phys.bodyId;
+					//b2Vec2 bodyPosition = b2Body_GetPosition(bodyId);
+					b2Body_ApplyLinearImpulseToCenter(bodyId, impulse, true);
+					std::cout << "Applied impulse (" << impulse.x << ", " << impulse.y
+						<< ") to player ball." << std::endl;
 				}
 			}
 		}
 	}
 }
-
 
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
 

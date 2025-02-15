@@ -12,10 +12,9 @@ class PhysicsSystem
 {
 public:
 	void step(float elapsed_ms);
-	PhysicsSystem(b2World& world);
+	explicit PhysicsSystem(b2WorldId worldId);
 	~PhysicsSystem();
 
 private:
-	// box2d world instance (shared between systems)
-	b2World& world;
+	b2WorldId worldId;
 };

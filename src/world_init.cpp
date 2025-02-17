@@ -24,9 +24,9 @@ Entity createBall(b2WorldId worldId)
 
 	// Define shape properties using Box2D v3 functions
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
-	shapeDef.density = 1.0f;
-	shapeDef.friction = 0.3f;
-	shapeDef.restitution = 0.8f; // Higher restitution makes it bouncy
+	shapeDef.density = BALL_DENSTIY;
+	shapeDef.friction = BALL_FRICTION;
+	shapeDef.restitution = BALL_RESTITUTION; // Higher restitution makes it bouncy
 
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
 	b2Circle circle;

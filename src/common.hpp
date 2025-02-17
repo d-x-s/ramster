@@ -61,6 +61,19 @@ const int INVADER_HEALTH_BLUE = 120;
 const int PROJECTILE_VELOCITY = -100;
 const int PROJECTILE_DAMAGE = 10;
 
+// PLAYER PHYSICS
+const float GRAVITY = 980; // should be implemented as a force, not an impulse.
+
+const float GROUNDED_IMPULSE_SPEED = 5.5f;
+const float AIR_IMPULSE_SPEED = 4.5f;
+const float JUMP_IMPULSE_SPEED = 8.0f;
+
+const float BALL_DENSTIY = 2.0f;
+const float BALL_FRICTION = 0.4f;
+const float BALL_RESTITUTION = 0.3f;
+
+extern bool isGrounded;
+
 // These are hard coded to the dimensions of the entity's texture
 
 // invaders are 64x64 px, but cells are 60x60

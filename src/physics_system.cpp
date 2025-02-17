@@ -33,8 +33,27 @@ void PhysicsSystem::step(float elapsed_ms)
     component_motion.position = vec2(position.x, position.y);
 
     // Update camera position
+    // @Zach
     Camera& camera = registry.cameras.get(entity_physicsBody);
-    camera.position = vec2(position.x, position.y);
+
+	float CAM_X = position.x;
+	float CAM_Y = position.y;
+
+    // Unlock the camera from the player if they approach the edge of world
+    // Hard coded for now, will change to be dynamic later
+	if (position.x < WINDOW_WIDTH_PX / 2.f) { // LEFT
+		CAM_X = WINDOW_WIDTH_PX / 2.f;
+	}
+	if (position.x > WINDOW_WIDTH_PX * 2.5f) { // RIGHT
+		CAM_X = WINDOW_WIDTH_PX * 2.5f;
+	} 
+    if (position.y > WINDOW_HEIGHT_PX / 2.f) { // TOP
+		CAM_Y = WINDOW_HEIGHT_PX / 2.f;
+    } 
+
+    camera.position = vec2(CAM_X, CAM_Y);
+
+
 
     // Debugging output
     // std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";

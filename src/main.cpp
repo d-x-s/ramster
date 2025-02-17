@@ -27,8 +27,8 @@ int main()
 	b2WorldId worldId = b2CreateWorld(&worldDef);
 
 	// Room dimensions
-	const float roomWidth = 840.0f;
-	const float roomHeight = 600.0f;
+	const float roomWidth = WINDOW_WIDTH_PX * 3.0;
+	const float roomHeight = WINDOW_HEIGHT_PX;
 	const float wallThickness = 20.0f; // half-width for SetAsBox
 
 	auto create_wall = [&](float x, float y, float halfWidth, float halfHeight) {

@@ -32,6 +32,10 @@ void PhysicsSystem::step(float elapsed_ms)
     Motion& component_motion = registry.motions.get(entity_physicsBody);
     component_motion.position = vec2(position.x, position.y);
 
+    // Update camera position
+    Camera& camera = registry.cameras.get(entity_physicsBody);
+    camera.position = vec2(position.x, position.y);
+
     // Debugging output
-    std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";
+    // std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";
 }

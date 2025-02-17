@@ -30,6 +30,7 @@ public:
 	ComponentContainer<Projectile> projectiles;
 	ComponentContainer<Explosion> explosions;
 	ComponentContainer<PhysicsBody> physicsBodies;
+	ComponentContainer<Camera> cameras;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()

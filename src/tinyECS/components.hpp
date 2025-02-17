@@ -206,3 +206,8 @@ struct Explosion { };
 struct PhysicsBody {
 	b2BodyId bodyId;
 };
+
+struct Camera {
+	vec2 position;  // Camera's world position
+	float zoom = 1.0f;  // Optional zoom factor
+};

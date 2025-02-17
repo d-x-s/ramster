@@ -44,6 +44,10 @@ Entity createBall(b2WorldId worldId)
 	motion.scale = vec2(32.0, 32.0);
 	std::cout << "world_init.cpp: createBall: Added motion component to ball.\n";
 
+	// Associate player with camera
+	auto& camera = registry.cameras.emplace(entity);
+	camera.position = vec2(100.0f, 100.0f);
+
 	registry.renderRequests.insert(
 		entity,
 		{
@@ -68,7 +72,7 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos)
 	// {{{ OK }}} TODO A1: create a gridLine component
 	GridLine& gridLine = registry.gridLines.emplace(entity);
 	gridLine.start_pos = start_pos;
-	gridLine.end_pos = end_pos;
+	gridLine.end_pos = start_pos + end_pos;
 
 	// re-use the "DEBUG_LINE" renderRequest
 	registry.renderRequests.insert(

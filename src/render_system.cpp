@@ -7,17 +7,34 @@
 #include "render_system.hpp"
 #include "tinyECS/registry.hpp"
 
-void RenderSystem::drawGridLine(Entity entity,
-								const mat3& projection) {
-
+void RenderSystem::drawGridLine(Entity entity, const mat3& projection) {
 	GridLine& gridLine = registry.gridLines.get(entity);
-
-	// Transformation code, see Rendering and Transformation in the template
-	// specification for more info Incrementally updates transformation matrix,
-	// thus ORDER IS IMPORTANT
 	Transform transform;
-	transform.translate(gridLine.start_pos);
-	transform.scale(gridLine.end_pos);
+
+	/* Note(@Davis):
+	* The provided code was treating end_pos as a scale factor rather than the
+	* actual endpoint. 
+	* If you recall from 314, "scaling" an object stretches it relative to the
+	* center of the object, in both directions. So vertically scaling a circle for example,
+	* makes it into an oval relative to its local origin.
+	*  
+	* After adding a camera that moved with the player, it was quite obvious that
+	* the provided code simply drew a line of 2x the window width/height, because
+	* I could see half of the grid line stretching past the world boundaries.
+	* That is, half of each line contributed to forming the grid.
+	* Then, the other half stretched out into empty space.
+	* Of course we wouldn't notice because the initial code had a static camera.
+	* This means that end_pos was misrepresented (kind of a bug...?)!
+	*  
+	* My changes move the line to its "midpoint", then scale the line to the intended
+	* size. In other words, start_pos and end_pos represent the actual start and ending
+	* positions of the line. Now, grid lines stay within the world boundary.
+	*  
+	* transform.translate(gridLine.start_pos);
+	* transform.scale(gridLine.end_pos);
+	*/
+	transform.translate((gridLine.start_pos + gridLine.end_pos) * 0.5f);  // Move to the midpoint
+	transform.scale(abs(gridLine.end_pos - gridLine.start_pos));		  // Scale based on the actual size
 
 	assert(registry.renderRequests.has(entity));
 	const RenderRequest& render_request = registry.renderRequests.get(entity);
@@ -116,6 +133,9 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 		b2Rot rotation = b2Body_GetRotation(phys.bodyId);
 		float angleRadians = b2Rot_GetAngle(rotation);
 		motion.angle = glm::degrees(angleRadians); // Convert radians to degrees
+
+		// Report data
+		std::cout << "Box2D Ball Body position = (" << b2Body_GetPosition(phys.bodyId).x << ", " << b2Body_GetPosition(phys.bodyId).y << ")\n";
 	}
 
 	// TRANSLATE: Move to the correct position
@@ -390,18 +410,25 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 	gl_has_errors();
 }
 
-mat3 RenderSystem::createProjectionMatrix()
-{
-	// Set the origin at the bottom left.
-	float left = 0.f;
-	float bottom = 0.f;
-	float right = (float)WINDOW_WIDTH_PX;
-	float top = (float)WINDOW_HEIGHT_PX;
+/* Note(@Davis):
+* Although we store the position of the camera, a moving camera doesn't actually "move".
+* The display technically remains static, but view of the world is being shifted.
+* In other words, world coordinates are being offset such that the player is always center.
+*/
+mat3 RenderSystem::createProjectionMatrix() {
+	Camera camera = registry.cameras.components[0];
 
-	// Compute scaling factors (assumes no additional world-to-pixel scaling, 
-	// but you might multiply by a pixels-per-meter (PPM) factor here)
+	// Compute relative viewport bounds
+	float left = camera.position.x - WINDOW_WIDTH_PX / 2.0f;
+	float bottom = camera.position.y - WINDOW_HEIGHT_PX / 2.0f;
+	float right = left + WINDOW_WIDTH_PX;
+	float top = bottom + WINDOW_HEIGHT_PX;
+
+	// Scale factors, to scale to [-1, 1] OpenGl coordinate space
 	float sx = 2.f / (right - left);
 	float sy = 2.f / (top - bottom);
+
+	// Translation factors, shifts coordinates relative to the camera and by extension the player
 	float tx = -(right + left) / (right - left);
 	float ty = -(top + bottom) / (top - bottom);
 
@@ -411,24 +438,3 @@ mat3 RenderSystem::createProjectionMatrix()
 		{ tx, ty, 1.f }
 	};
 }
-
-
-//mat3 RenderSystem::createProjectionMatrix()
-//{
-//	// fake projection matrix, scaled to window coordinates
-//	float left   = 0.f;
-//	float top    = 0.f;
-//	float right  = (float) WINDOW_WIDTH_PX;
-//	float bottom = (float) WINDOW_HEIGHT_PX;
-//
-//	float sx = 2.f / (right - left);
-//	float sy = 2.f / (top - bottom);
-//	float tx = -(right + left) / (right - left);
-//	float ty = -(top + bottom) / (top - bottom);
-//
-//	return {
-//		{ sx, 0.f, 0.f},
-//		{0.f,  sy, 0.f},
-//		{ tx,  ty, 1.f}
-//	};
-//}

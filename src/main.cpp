@@ -26,6 +26,12 @@ int main()
 	worldDef.gravity.y = -9.8f;
 	b2WorldId worldId = b2CreateWorld(&worldDef);
 
+	b2Vec2 gravity_vector;
+	gravity_vector.x = 0.f;
+	gravity_vector.y = GRAVITY;
+
+	b2World_SetGravity(worldId, gravity_vector);
+
 	// Room dimensions
 	const float roomWidth = 840.0f;
 	const float roomHeight = 600.0f;

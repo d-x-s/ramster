@@ -206,3 +206,7 @@ struct Explosion { };
 struct PhysicsBody {
 	b2BodyId bodyId;
 };
+
+struct PlayerPhysics {
+	bool isGrounded;
+};

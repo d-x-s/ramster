@@ -8,6 +8,9 @@ Entity createBall(b2WorldId worldId)
 
 	// Add physics and player components
 	PhysicsBody& ball = registry.physicsBodies.emplace(entity);
+	PlayerPhysics& ball_physics = registry.playerPhysics.emplace(entity);
+	ball_physics.isGrounded = false;
+
 	auto& player_registry = registry.players;
 	Player& player = registry.players.emplace(entity);
 

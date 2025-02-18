@@ -48,7 +48,7 @@ int main()
 	create_wall(roomWidth / 2, 0.0f, roomWidth / 2, wallThickness);			// Floor
 	create_wall(roomWidth / 2, roomHeight, roomWidth / 2, wallThickness);	// Ceiling
 	create_wall(0.0f, roomHeight / 2, wallThickness, roomHeight / 2);		// Left Wall
-	// create_wall(roomWidth, roomHeight / 2, wallThickness, roomHeight / 2);	// Right Wall
+	create_wall(roomWidth, roomHeight / 2, wallThickness, roomHeight / 2);	// Right Wall
 
 	// global systems
 	WorldSystem   world_system(worldId);

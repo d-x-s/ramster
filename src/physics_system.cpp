@@ -82,6 +82,22 @@ void PhysicsSystem::step(float elapsed_ms)
 	}
 
     // TODO Slowly reset camera if no longer above movement threshold
+	if (!speedy && position.x != camera_objective_loc) {
+		if (position.x < camera_objective_loc) {
+            camera_objective_loc = position.x + HORIZONTAL_FOCAL_SHIFT;
+			camX += HORIZONTAL_FOCAL_SHIFT / 40.f * shift_index;
+		}
+		else if (position.x > camera_objective_loc) {
+            camera_objective_loc = position.x - HORIZONTAL_FOCAL_SHIFT;
+			camX -= HORIZONTAL_FOCAL_SHIFT / 40.f * shift_index;
+		}
+        if (shift_index > 1) {
+			shift_index--;
+        }
+        else {
+			camera_objective_loc = -1.f; // Reset objective location
+        }
+	}
 
     // Hard coded for now, will change to be dynamic later
     float LEFT_BOUNDARY = WINDOW_WIDTH_PX / 2.f;
@@ -93,7 +109,7 @@ void PhysicsSystem::step(float elapsed_ms)
 		camX = WINDOW_WIDTH_PX / 2.f;
 	}
 	if (camX > RIGHT_BOUNDARY) {
-		// camX = WINDOW_WIDTH_PX * 2.5f;
+		camX = WINDOW_WIDTH_PX * 2.5f;
 	} 
     if (camY > TOP_BOUNDARY) { 
 		camY = WINDOW_HEIGHT_PX / 2.f;

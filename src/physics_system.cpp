@@ -20,6 +20,11 @@ float QUICK_MOVEMENT_THRESHOLD = 1000.f;
 float HORIZONTAL_FOCAL_SHIFT = 200.f;
 float CAMERA_SPEED = 40.f;
 
+// M1 Linear Interpolation for Camera Movement
+float lerp(float start, float end, float t) {
+	return start * (1 - t) + end * t;
+}
+
 // Advances physics simulation
 void PhysicsSystem::step(float elapsed_ms)
 {
@@ -60,7 +65,7 @@ void PhysicsSystem::step(float elapsed_ms)
     if (b2Body_GetLinearVelocity(bodyId).x > QUICK_MOVEMENT_THRESHOLD) {
         speedy = true;
         // Initialize camera movement
-        camera_next_step = position.x + (HORIZONTAL_FOCAL_SHIFT / CAMERA_SPEED * shift_index);
+        camera_next_step = lerp(position.x, position.x + HORIZONTAL_FOCAL_SHIFT / CAMERA_SPEED, shift_index);
         camera_objective_loc = position.x + HORIZONTAL_FOCAL_SHIFT;
 		if (camera_next_step < camera_objective_loc) {
 			camX = camera_next_step;
@@ -73,7 +78,7 @@ void PhysicsSystem::step(float elapsed_ms)
 	else if (b2Body_GetLinearVelocity(bodyId).x < -QUICK_MOVEMENT_THRESHOLD) {
         speedy = true;
         // Initialize camera movement
-        camera_next_step = position.x - (HORIZONTAL_FOCAL_SHIFT / CAMERA_SPEED * shift_index);
+		camera_next_step = lerp(position.x, position.x - HORIZONTAL_FOCAL_SHIFT / CAMERA_SPEED, shift_index);
         camera_objective_loc = position.x - HORIZONTAL_FOCAL_SHIFT;
         if (camera_next_step > camera_objective_loc) {
             camX = camera_next_step;
@@ -91,11 +96,11 @@ void PhysicsSystem::step(float elapsed_ms)
 	if (!speedy && position.x != camera_objective_loc) {
 		if (position.x < camera_objective_loc) {
             camera_objective_loc = position.x + HORIZONTAL_FOCAL_SHIFT;
-			camX += HORIZONTAL_FOCAL_SHIFT / CAMERA_SPEED * shift_index;
+			camX = lerp(camX, camX + HORIZONTAL_FOCAL_SHIFT / CAMERA_SPEED, shift_index);
 		}
 		else if (position.x > camera_objective_loc) {
             camera_objective_loc = position.x - HORIZONTAL_FOCAL_SHIFT;
-			camX -= HORIZONTAL_FOCAL_SHIFT / CAMERA_SPEED * shift_index;
+			camX = lerp(camX, camX - HORIZONTAL_FOCAL_SHIFT / CAMERA_SPEED, shift_index);
 		}
         if (shift_index > 1) {
 			shift_index--;

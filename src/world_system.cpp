@@ -296,6 +296,9 @@ void WorldSystem::restart_game() {
 		}
 	}
 
+	//create grapple point
+	createGrapplePoint(worldId);
+
 	// turn off trigger for fadeout shader
 	registry.screenStates.components[0].fadeout = 0.0f;
 

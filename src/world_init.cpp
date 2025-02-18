@@ -61,6 +61,40 @@ Entity createBall(b2WorldId worldId)
 	return entity;
 }
 
+Entity createGrapplePoint(b2WorldId worldId){
+	Entity entity = Entity();
+
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_staticBody;
+	bodyDef.position = b2Vec2{ 300.0f, 300.0f };
+
+    b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+
+	b2Circle circle;
+	circle.center = b2Vec2{ 0.0f, 0.0f };
+    circle.radius = 0.2f;
+
+	b2CreateCircleShape(bodyId, &shapeDef, &circle);
+
+	PhysicsBody& grappleBody = registry.physicsBodies.emplace(entity);
+    grappleBody.bodyId = bodyId;
+
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(300.0f, 300.0f);
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::PROJECTILE,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return entity;
+}
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! {{{ OK }}} TODO A1: implement grid lines as gridLines with renderRequests and colors

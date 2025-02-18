@@ -9,6 +9,16 @@ PhysicsSystem::PhysicsSystem(b2WorldId worldId) : worldId(worldId) {}
 // Destructor
 PhysicsSystem::~PhysicsSystem() {}
 
+// Camera Variables
+float camera_next_step = 0.f; // The next step in the camera's movement
+float camera_objective_loc = -1.f; // Where the camera wants to end up
+int shift_index = 1; // What stage of the camera's movement it is in
+bool speedy = false; // Whether the player is moving faster than QUICK_MOVEMENT_THRESHOLD
+
+// Camera Constants
+float QUICK_MOVEMENT_THRESHOLD = 1000.f;
+float HORIZONTAL_FOCAL_SHIFT = 200.f;
+
 // Advances physics simulation
 void PhysicsSystem::step(float elapsed_ms)
 {
@@ -32,26 +42,64 @@ void PhysicsSystem::step(float elapsed_ms)
     Motion& component_motion = registry.motions.get(entity_physicsBody);
     component_motion.position = vec2(position.x, position.y);
 
-    // Update camera position
+    // === UPDATE CAMERA POSITION ===
     // @Zach
     Camera& camera = registry.cameras.get(entity_physicsBody);
 
-	float CAM_X = position.x;
-	float CAM_Y = position.y;
+	float camX = position.x;
+	float camY = position.y;
+
+    // Pull camera back when moving fast horizontally
+	std::cout << "Player velocity = (" << b2Body_GetLinearVelocity(bodyId).x << ", " << b2Body_GetLinearVelocity(bodyId).y << ")\n";
+    if (b2Body_GetLinearVelocity(bodyId).x > QUICK_MOVEMENT_THRESHOLD) {
+        speedy = true;
+        // Initialize camera movement
+        camera_next_step = position.x + (HORIZONTAL_FOCAL_SHIFT / 40.f * shift_index);
+        camera_objective_loc = position.x + HORIZONTAL_FOCAL_SHIFT;
+		if (camera_next_step < camera_objective_loc) {
+			camX = camera_next_step;
+			shift_index++;
+        }
+        else {
+			camX = camera_objective_loc;
+        }
+	}
+	else if (b2Body_GetLinearVelocity(bodyId).x < -QUICK_MOVEMENT_THRESHOLD) {
+        speedy = true;
+        // Initialize camera movement
+        camera_next_step = position.x - (HORIZONTAL_FOCAL_SHIFT / 40.f * shift_index);
+        camera_objective_loc = position.x - HORIZONTAL_FOCAL_SHIFT;
+        if (camera_next_step > camera_objective_loc) {
+            camX = camera_next_step;
+            shift_index++;
+        }
+        else {
+            camX = camera_objective_loc;
+        }
+	}
+	else {
+		speedy = false; // No longer going ham
+	}
+
+    // TODO Slowly reset camera if no longer above movement threshold
+
+    // Hard coded for now, will change to be dynamic later
+    float LEFT_BOUNDARY = WINDOW_WIDTH_PX / 2.f;
+	float RIGHT_BOUNDARY = WINDOW_WIDTH_PX * 2.5f;
+	float TOP_BOUNDARY = WINDOW_HEIGHT_PX / 2.f;
 
     // Unlock the camera from the player if they approach the edge of world
-    // Hard coded for now, will change to be dynamic later
-	if (position.x < WINDOW_WIDTH_PX / 2.f) { // LEFT
-		CAM_X = WINDOW_WIDTH_PX / 2.f;
+	if (camX < LEFT_BOUNDARY) {
+		camX = WINDOW_WIDTH_PX / 2.f;
 	}
-	if (position.x > WINDOW_WIDTH_PX * 2.5f) { // RIGHT
-		CAM_X = WINDOW_WIDTH_PX * 2.5f;
+	if (camX > RIGHT_BOUNDARY) {
+		// camX = WINDOW_WIDTH_PX * 2.5f;
 	} 
-    if (position.y > WINDOW_HEIGHT_PX / 2.f) { // TOP
-		CAM_Y = WINDOW_HEIGHT_PX / 2.f;
+    if (camY > TOP_BOUNDARY) { 
+		camY = WINDOW_HEIGHT_PX / 2.f;
     } 
 
-    camera.position = vec2(CAM_X, CAM_Y);
+    camera.position = vec2(camX, camY);
 
 
 

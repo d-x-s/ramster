@@ -135,7 +135,7 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 		motion.angle = glm::degrees(angleRadians); // Convert radians to degrees
 
 		// Report data
-		std::cout << "Box2D Ball Body position = (" << b2Body_GetPosition(phys.bodyId).x << ", " << b2Body_GetPosition(phys.bodyId).y << ")\n";
+		// std::cout << "Box2D Ball Body position = (" << b2Body_GetPosition(phys.bodyId).x << ", " << b2Body_GetPosition(phys.bodyId).y << ")\n";
 	}
 
 	// TRANSLATE: Move to the correct position

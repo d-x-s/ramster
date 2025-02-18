@@ -23,7 +23,7 @@ float center_y = -1.f; // The center y position of the camera
 float QUICK_MOVEMENT_THRESHOLD = 700.f;
 float HORIZONTAL_FOCAL_SHIFT = 200.f;
 float CAMERA_DELAY = 100.f; // Higher = Slower camera movement
-float VERTICAL_THRESHOLD = 50.f; // Higher = Camera will follow more aggressively
+float VERTICAL_THRESHOLD = 50.f; // Lower = Camera will follow more aggressively
 
 // M1 Linear Interpolation for Camera Movement
 float lerp(float start, float end, float t) {
@@ -54,7 +54,7 @@ void PhysicsSystem::step(float elapsed_ms)
     component_motion.position = vec2(position.x, position.y);
 
     // === UPDATE CAMERA POSITION ===
-    // The Camera has the following unique features:
+    // The camera has the following unique features:
     //  - Default follows the player in the center
 	//  - When moving fast horizontally, the camera pushes ahead to show more of the level
 	//  - When no longer moving fast, the camera gradually resets to the center
@@ -66,7 +66,7 @@ void PhysicsSystem::step(float elapsed_ms)
 	float camX = position.x;
 	float camY = position.y;
 
-    // Push camera ahead when moving fast horizontally
+    // Push camera ahead when moving fast horizontally (Right)
 	std::cout << "Player velocity = (" << b2Body_GetLinearVelocity(bodyId).x << ", " << b2Body_GetLinearVelocity(bodyId).y << ")\n";
     if (b2Body_GetLinearVelocity(bodyId).x > QUICK_MOVEMENT_THRESHOLD) {
         speedy = true;
@@ -81,6 +81,7 @@ void PhysicsSystem::step(float elapsed_ms)
 			camX = camera_objective_loc;
         }
 	}
+	// Push camera ahead when moving fast horizontally (Left)
 	else if (b2Body_GetLinearVelocity(bodyId).x < -QUICK_MOVEMENT_THRESHOLD) {
         speedy = true;
         // Initialize camera movement

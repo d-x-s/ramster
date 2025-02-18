@@ -34,17 +34,21 @@ Entity createBall(b2WorldId worldId)
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = 0.1f;
+	circle.radius = 0.35f;
 	b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.3, restitution=0.8 (bouncy).\n";
 
 	ball.bodyId = bodyId;
 
+	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
+
 	// Add motion & render request for ECS synchronization
 	auto& motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
 	motion.position = vec2(100.0f, 100.0f);
-	motion.scale = vec2(32.0, 32.0);
+
+	float scale = circle.radius * 100.f;
+	motion.scale = vec2(scale, scale);
 	std::cout << "world_init.cpp: createBall: Added motion component to ball.\n";
 
 	registry.renderRequests.insert(

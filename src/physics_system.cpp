@@ -4,7 +4,9 @@
 #include <iostream>
 
 // Constructor
-PhysicsSystem::PhysicsSystem(b2WorldId worldId) : worldId(worldId) {}
+PhysicsSystem::PhysicsSystem(b2WorldId worldId) : worldId(worldId) {
+
+}
 
 // Destructor
 PhysicsSystem::~PhysicsSystem() {}
@@ -33,5 +35,5 @@ void PhysicsSystem::step(float elapsed_ms)
     component_motion.position = vec2(position.x, position.y);
 
     // Debugging output
-    std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";
+    // std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";
 }

@@ -5,6 +5,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <array>
 
 // glfw (OpenGL)
 #define NOMINMAX
@@ -61,16 +62,31 @@ const int INVADER_HEALTH_BLUE = 120;
 const int PROJECTILE_VELOCITY = -100;
 const int PROJECTILE_DAMAGE = 10;
 
+// KEY STATES
+const std::vector<int> PLAYER_CONTROL_KEYS = {
+    GLFW_KEY_W,
+    GLFW_KEY_A,
+    GLFW_KEY_S,
+    GLFW_KEY_D,
+    GLFW_KEY_SPACE
+};
+
+
+// PLAYER 2DBODY
+
+
 // PLAYER PHYSICS
 const float GRAVITY = -980; // should be implemented as a force, not an impulse.
 
-const float GROUNDED_IMPULSE_SPEED = 5.5f;
+const float GROUNDED_MOVEMENT_FORCE_SPEED = 450.f;
 const float AIR_STRAFE_FORCE_SPEED = 3.5f;
-const float JUMP_IMPULSE_SPEED = 8.0f;
+const float JUMP_IMPULSE_SPEED = 40.f;
 
-const float BALL_DENSTIY = 2.0f;
-const float BALL_FRICTION = 0.4f;
+// WARNING: don't mess with the density, if you do all the forces have to be re-tuned.
+const float BALL_DENSTIY = 1.0f;
+const float BALL_FRICTION = 0.3f;
 const float BALL_RESTITUTION = 0.3f;
+const float BALL_ANGULAR_DAMPING = 100.0f;
 
 // These are hard coded to the dimensions of the entity's texture
 

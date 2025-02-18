@@ -47,6 +47,8 @@ int main()
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 		b2CreatePolygonShape(bodyId, &shapeDef, &polygon);
 
+		shapeDef.friction = 0.1f;
+
 		return bodyId;
 	};
 

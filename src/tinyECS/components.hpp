@@ -207,6 +207,10 @@ struct PhysicsBody {
 	b2BodyId bodyId;
 };
 
+struct Grapple {
+	b2JointId jointId;
+};
+
 struct Camera {
 	vec2 position;  // Camera's world position
 	float zoom = 1.0f;  // Optional zoom factor

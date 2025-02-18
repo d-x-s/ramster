@@ -15,7 +15,8 @@ WorldSystem::WorldSystem(b2WorldId worldId) :
 	max_towers(MAX_TOWERS_START),
 	next_invader_spawn(0),
 	invader_spawn_rate_ms(INVADER_SPAWN_RATE_MS),
-	worldId(worldId)
+	worldId(worldId),
+	grappleCounter(0)
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
@@ -458,6 +459,31 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 		else if (key == GLFW_KEY_SPACE) {
 			// Jump: apply a strong upward impulse
 			impulse = { 0, jumpImpulseMagnitude };
+		} else if (key == GLFW_KEY_E) {
+			Entity ballEntity = registry.physicsBodies.entities[0];  
+    		Entity grapplePointEntity = registry.physicsBodies.entities[1];  
+
+    		PhysicsBody& ballBody = registry.physicsBodies.get(ballEntity);
+    		PhysicsBody& grappleBody = registry.physicsBodies.get(grapplePointEntity);
+
+    		b2BodyId ballBodyId = ballBody.bodyId;
+    		b2BodyId grappleBodyId = grappleBody.bodyId;
+
+			b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+    		b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
+
+    		// Compute the distance between the two points
+    		float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
+                           			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
+
+			if (distance <= 300.0f) {
+				createGrapple(worldId, ballBodyId, grappleBodyId, distance);
+			}
+		} else if (key == GLFW_KEY_Q) {
+			Entity grappleEntity = registry.grapples.entities[grappleCounter];
+			Grapple& grapple = registry.grapples.get(grappleEntity);
+			b2DestroyJoint(grapple.jointId);
+			grappleCounter++;
 		}
 
 		// Apply impulse if non-zero.
@@ -569,3 +595,4 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 		}
 	}
 }
+

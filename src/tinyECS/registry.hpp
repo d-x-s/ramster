@@ -31,6 +31,7 @@ public:
 	ComponentContainer<Explosion> explosions;
 	ComponentContainer<PhysicsBody> physicsBodies;
 	ComponentContainer<Camera> cameras;
+	ComponentContainer<Grapple> grapples;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -51,6 +52,7 @@ public:
 		registry_list.push_back(&gridLines);
 		registry_list.push_back(&invaders);
 		registry_list.push_back(&projectiles);
+		registry_list.push_back(&grapples);
 	}
 
 	void clear_all_components() {

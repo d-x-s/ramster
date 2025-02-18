@@ -28,6 +28,9 @@ Entity createLine(vec2 position, vec2 size);
 // grapple point
 Entity createGrapplePoint(b2WorldId worldId);
 
+// grapple hook
+Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBodyId, float distance);
+
 // legacy
 // the player
 Entity createChicken(RenderSystem* renderer, vec2 position);

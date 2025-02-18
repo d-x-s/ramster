@@ -80,6 +80,9 @@ private:
 	// Number of invaders stopped by the towers, displayed in the window title
 	unsigned int points;
 
+	// Counter for grapple
+	int grappleCounter;
+
 	// Game state
 	RenderSystem* renderer;
 	float current_speed;

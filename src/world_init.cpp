@@ -96,6 +96,26 @@ Entity createGrapplePoint(b2WorldId worldId){
 	return entity;
 }
 
+Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBodyId, float distance) {
+	Entity entity = Entity();
+
+	b2DistanceJointDef djd = b2DefaultDistanceJointDef();
+
+	djd.bodyIdA = ballBodyId;
+	djd.bodyIdB = grappleBodyId;
+
+	djd.length = distance;
+    djd.collideConnected = false;
+	djd.maxLength = 300.0f;
+
+	b2JointId jointId = b2CreateDistanceJoint(worldId, &djd);
+
+	Grapple& grapple = registry.grapples.emplace(entity);
+    grapple.jointId = jointId;
+
+	return entity;
+}
+
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! {{{ OK }}} TODO A1: implement grid lines as gridLines with renderRequests and colors
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

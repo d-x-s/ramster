@@ -76,6 +76,7 @@ private:
 
 	// player movement
 	void handle_movement();
+	void update_isGrounded();
 
 	// C++ random number generator
 	std::default_random_engine rng;

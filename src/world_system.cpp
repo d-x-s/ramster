@@ -160,6 +160,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		registry.remove_all_components_of(registry.debugComponents.entities.back());
 
 	if (game_active) {
+		update_isGrounded();
 		handle_movement();
 
 		// Removing out of screen entities
@@ -373,6 +374,44 @@ bool WorldSystem::is_over() const {
 	return bool(glfwWindowShouldClose(window));
 }
 
+void WorldSystem::update_isGrounded() {
+	Entity playerEntity = registry.players.entities[0];
+	PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
+	b2BodyId bodyId = phys.bodyId;
+
+	// calculate if ball is grounded or not.
+	int num_contacts = b2Body_GetContactCapacity(bodyId);
+	bool& isGroundedRef = registry.playerPhysics.get(playerEntity).isGrounded;
+
+	if (num_contacts == 0) {
+		isGroundedRef = false;
+		return;
+	}
+
+
+	b2ContactData * contactData = new b2ContactData[num_contacts];
+	b2Body_GetContactData(bodyId, contactData, num_contacts);
+
+	for (int i = 0; i < num_contacts; i++) {
+		b2ContactData contact = contactData[i];
+		
+		// if the collision involves the player.
+		if ((contact.shapeIdA.index1 == bodyId.index1 || contact.shapeIdB.index1 == bodyId.index1)) {
+			b2Manifold manifold = contact.manifold;
+			b2Vec2 normal = manifold.normal;
+
+			if (normal.y >= 0.15f) {
+				isGroundedRef = true;
+				delete[] contactData;
+				return;
+			}
+		}
+	}
+
+	isGroundedRef = false;
+	delete[] contactData;
+}
+
 // call inside step() function for the most precise and responsive movement handling.
 void WorldSystem::handle_movement() {
 
@@ -395,18 +434,18 @@ void WorldSystem::handle_movement() {
 
 	b2Vec2 nonjump_movement_force = { 0, 0 };
 	b2Vec2 jump_impulse   = { 0, 0 };
-	const float forceMagnitude = GROUNDED_MOVEMENT_FORCE_SPEED;
-	const float jumpImpulseMagnitude = JUMP_IMPULSE_SPEED;
+	const float forceMagnitude = GROUNDED_MOVEMENT_FORCE;
+	const float jumpImpulseMagnitude = JUMP_IMPULSE;
 
 	// Determine impulse direction based on key pressed
 	if (keyStates[GLFW_KEY_W]) {
-		nonjump_movement_force = { 0, forceMagnitude };
+		// nonjump_movement_force = { 0, forceMagnitude };
 	}
 	else if (keyStates[GLFW_KEY_A]) {
 		nonjump_movement_force = { -forceMagnitude, 0 };
 	}
 	else if (keyStates[GLFW_KEY_S]) {
-		nonjump_movement_force = { 0, -forceMagnitude };
+		// nonjump_movement_force = { 0, -forceMagnitude };
 	}
 	else if (keyStates[GLFW_KEY_D]) {
 		nonjump_movement_force = { forceMagnitude, 0 };
@@ -423,22 +462,30 @@ void WorldSystem::handle_movement() {
 		// Assuming registry.players.entities[0] holds the player entity.
 		if (!registry.players.entities.empty()) {
 			Entity playerEntity = registry.players.entities[0];
+
 			if (registry.physicsBodies.has(playerEntity)) {
 				PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
 				b2BodyId bodyId = phys.bodyId;
 
+				// make sure player is grounded.
+				bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
 
 				// if jump is registered, it should override any other force being applied.
-				if (jump_impulse != b2Vec2_zero) {
+				if (jump_impulse != b2Vec2_zero && isGrounded) {
 					b2Body_ApplyLinearImpulseToCenter(bodyId, jump_impulse, true);
 				}
 				else if (nonjump_movement_force != b2Vec2_zero) {
+					float multiplier = 1.0f;
+
+					if (!isGrounded) {
+						multiplier = AIR_STRAFE_FORCE_MULTIPLIER;
+					}
+
 					// apply force slightly above center of mass to make ball spin.
 					// don't get the reference of the position, we don't want to alter the value.
-					std::cout << "Applying movement force on ball. ================================================" << std::endl;
 					b2Vec2 bodyPosition = b2Body_GetPosition(bodyId);
-					bodyPosition.y += 3.f;
-					b2Body_ApplyForce(bodyId, nonjump_movement_force, bodyPosition, true);
+					bodyPosition.y += 2.f;
+					b2Body_ApplyForce(bodyId, nonjump_movement_force * multiplier, bodyPosition, true);
 				}
 			}
 		}

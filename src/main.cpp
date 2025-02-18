@@ -26,6 +26,12 @@ int main()
 	worldDef.gravity.y = -9.8f;
 	b2WorldId worldId = b2CreateWorld(&worldDef);
 
+	b2Vec2 gravity_vector;
+	gravity_vector.x = 0.f;
+	gravity_vector.y = GRAVITY;
+
+	b2World_SetGravity(worldId, gravity_vector);
+
 	// Room dimensions
 	const float roomWidth = WINDOW_WIDTH_PX * 3.0;
 	const float roomHeight = WINDOW_HEIGHT_PX;
@@ -40,6 +46,8 @@ int main()
 		b2Polygon polygon = b2MakeBox(halfWidth, halfHeight);
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 		b2CreatePolygonShape(bodyId, &shapeDef, &polygon);
+
+		shapeDef.friction = 0.1f;
 
 		return bodyId;
 	};

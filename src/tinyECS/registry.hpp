@@ -30,6 +30,7 @@ public:
 	ComponentContainer<Projectile> projectiles;
 	ComponentContainer<Explosion> explosions;
 	ComponentContainer<PhysicsBody> physicsBodies;
+	ComponentContainer<PlayerPhysics> playerPhysics;
 	ComponentContainer<Camera> cameras;
 
 	// constructor that adds all containers for looping over them
@@ -51,6 +52,9 @@ public:
 		registry_list.push_back(&gridLines);
 		registry_list.push_back(&invaders);
 		registry_list.push_back(&projectiles);
+
+		registry_list.push_back(&physicsBodies);
+		registry_list.push_back(&playerPhysics);
 	}
 
 	void clear_all_components() {

@@ -4,7 +4,9 @@
 #include <iostream>
 
 // Constructor
-PhysicsSystem::PhysicsSystem(b2WorldId worldId) : worldId(worldId) {}
+PhysicsSystem::PhysicsSystem(b2WorldId worldId) : worldId(worldId) {
+
+}
 
 // Destructor
 PhysicsSystem::~PhysicsSystem() {}

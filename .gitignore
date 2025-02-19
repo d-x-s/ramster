@@ -36,3 +36,4 @@
 out/*
 .vs/*
 build/*
+/ext

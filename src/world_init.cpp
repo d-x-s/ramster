@@ -81,7 +81,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 	Entity entity = Entity();
 
 	// Add physics and enemy components
-	PhysicsBody& enemy = registry.physicsBodies.emplace(entity);
+	PhysicsBody& enemyBody = registry.physicsBodies.emplace(entity);
 	EnemyPhysics& enemy_physics = registry.enemyPhysics.emplace(entity);
 	enemy_physics.isGrounded = false;
 
@@ -112,7 +112,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 	b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.1, restitution=0.1 (bouncy).\n";
 
-	enemy.bodyId = bodyId;
+	enemyBody.bodyId = bodyId;
 
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 

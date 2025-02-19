@@ -76,7 +76,7 @@ const std::vector<int> PLAYER_CONTROL_KEYS = {
 
 
 // PLAYER PHYSICS
-const float GRAVITY = -980; // should be implemented as a force, not an impulse.
+const float GRAVITY = -98.0; // should be implemented as a force, not an impulse.
 
 const float GROUNDED_MOVEMENT_FORCE = 300.0f;
 const float AIR_STRAFE_FORCE_MULTIPLIER = 0.5f;

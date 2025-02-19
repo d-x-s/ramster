@@ -8,6 +8,9 @@ Entity createBall(b2WorldId worldId)
 
 	// Add physics and player components
 	PhysicsBody& ball = registry.physicsBodies.emplace(entity);
+	PlayerPhysics& ball_physics = registry.playerPhysics.emplace(entity);
+	ball_physics.isGrounded = false;
+
 	auto& player_registry = registry.players;
 	Player& player = registry.players.emplace(entity);
 
@@ -24,24 +27,28 @@ Entity createBall(b2WorldId worldId)
 
 	// Define shape properties using Box2D v3 functions
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
-	shapeDef.density = 1.0f;
-	shapeDef.friction = 0.3f;
-	shapeDef.restitution = 0.8f; // Higher restitution makes it bouncy
+	shapeDef.density = BALL_DENSTIY;
+	shapeDef.friction = BALL_FRICTION;
+	shapeDef.restitution = BALL_RESTITUTION; // Higher restitution makes it bouncy
 
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = 0.1f;
+	circle.radius = 0.35f;
 	b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.3, restitution=0.8 (bouncy).\n";
 
 	ball.bodyId = bodyId;
 
+	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
+
 	// Add motion & render request for ECS synchronization
 	auto& motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
 	motion.position = vec2(100.0f, 100.0f);
-	motion.scale = vec2(32.0, 32.0);
+
+	float scale = circle.radius * 100.f;
+	motion.scale = vec2(scale, scale);
 	std::cout << "world_init.cpp: createBall: Added motion component to ball.\n";
 
 	// Associate player with camera

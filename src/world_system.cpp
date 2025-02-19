@@ -19,6 +19,11 @@ WorldSystem::WorldSystem(b2WorldId worldId) :
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
+
+	// initialize key states with needed keys.
+	for (int i = 0; i < PLAYER_CONTROL_KEYS.size(); i++) {
+		keyStates[PLAYER_CONTROL_KEYS[i]] = false;
+	}
 }
 
 WorldSystem::~WorldSystem() {
@@ -40,7 +45,7 @@ WorldSystem::~WorldSystem() {
 
 // Debugging
 namespace {
-	void glfw_err_cb(int error, const char *desc) {
+	void glfw_err_cb(int error, const char* desc) {
 		std::cerr << error << ": " << desc << std::endl;
 	}
 }
@@ -92,7 +97,7 @@ GLFWwindow* WorldSystem::create_window() {
 	auto key_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2, int _3) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_key(_0, _1, _2, _3); };
 	auto cursor_pos_redirect = [](GLFWwindow* wnd, double _0, double _1) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_move({ _0, _1 }); };
 	auto mouse_button_pressed_redirect = [](GLFWwindow* wnd, int _button, int _action, int _mods) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_button_pressed(_button, _action, _mods); };
-	
+
 	glfwSetKeyCallback(window, key_redirect);
 	glfwSetCursorPosCallback(window, cursor_pos_redirect);
 	glfwSetMouseButtonCallback(window, mouse_button_pressed_redirect);
@@ -101,7 +106,7 @@ GLFWwindow* WorldSystem::create_window() {
 }
 
 bool WorldSystem::start_and_load_sounds() {
-	
+
 	//////////////////////////////////////
 	// Loading music and sounds with SDL
 	if (SDL_Init(SDL_INIT_AUDIO) < 0) {
@@ -138,7 +143,7 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	Mix_PlayMusic(background_music, -1);
 
 	// Set all states to default
-    restart_game();
+	restart_game();
 	createBall(worldId);
 }
 
@@ -152,9 +157,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Remove debug info from the last step
 	while (registry.debugComponents.entities.size() > 0)
-	    registry.remove_all_components_of(registry.debugComponents.entities.back());
+		registry.remove_all_components_of(registry.debugComponents.entities.back());
 
 	if (game_active) {
+		update_isGrounded();
+		handle_movement();
+
 		// Removing out of screen entities
 		auto& motions_registry = registry.motions;
 
@@ -177,47 +185,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			}
 		}
 
-		// spawn new invaders
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		// {{{ OK }}} TODO A1: limit them to cells on the far-left, except (0, 0)
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		//next_invader_spawn -= elapsed_ms_since_last_update * current_speed;
-		//if (next_invader_spawn < 0.f) {
-		//	// reset timer
-		//	next_invader_spawn = (INVADER_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (INVADER_SPAWN_RATE_MS / 2);
-
-		//	// grid dimensions
-		//	int first_col = 0;      // always spawn in the first column
-		//	int total_rows = 10;    // 10 rows indexed 0-9
-
-		//	// select a random row to spawn invader (spawn in row 1-9)
-		//	int row = 1 + (uniform_dist(rng) * 9);
-
-		//	// convert to world coordinates
-		//	float x_pos = (first_col + 0.5f) * GRID_CELL_WIDTH_PX;
-		//	float y_pos = (row + 0.5f) * GRID_CELL_HEIGHT_PX;
-
-		//	// create invader with random initial position in first column
-		//	createInvader(renderer, vec2(x_pos, y_pos));
-		//}
-	}
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// {{{ OK }}} TODO A1: game over fade out
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	assert(registry.screenStates.components.size() <= 1);
-    ScreenState &screen = registry.screenStates.components[0];
-    float min_counter_ms = 3000.f;
-
-	// reduce vignette strength starting from 1.0 to 0
-	if (vignette_timer_ms > 0.0f) {
-		vignette_timer_ms -= elapsed_ms_since_last_update;
-		registry.screenStates.components[0].darken_screen_factor =
-			std::max(vignette_timer_ms / 2000.0f, 0.0f); // clamp to non-negative
-	}
-	else {
-		// reset the boolean flag that triggers the vignette shader
-		registry.screenStates.components[0].vignette = 0.0f;
 	}
 
 	return game_active;
@@ -262,7 +229,7 @@ void WorldSystem::restart_game() {
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
 	while (registry.motions.entities.size() > 0)
-	    registry.remove_all_components_of(registry.motions.entities.back());
+		registry.remove_all_components_of(registry.motions.entities.back());
 
 	// debugging for memory/component leaks
 	registry.list_all_components();
@@ -273,7 +240,7 @@ void WorldSystem::restart_game() {
 	int grid_line_width = GRID_LINE_WIDTH_PX;
 
 	// render room lines
-	
+
 	// Room dimensions in Box2D world coordinates
 	const float roomWidth = 20.0f;
 	const float roomHeight = 15.0f;
@@ -391,7 +358,7 @@ void WorldSystem::handle_collisions() {
 			registry.screenStates.components[0].darken_screen_factor = 1.0f;
 			registry.screenStates.components[0].vignette = 1.0f;
 			trigger_vignette(2000.0f);
-			
+
 			Mix_PlayChannel(-1, chicken_eat_sound, 0);
 			max_towers -= 1;
 			continue;
@@ -405,6 +372,127 @@ void WorldSystem::handle_collisions() {
 // Should the game be over ?
 bool WorldSystem::is_over() const {
 	return bool(glfwWindowShouldClose(window));
+}
+
+void WorldSystem::update_isGrounded() {
+	Entity playerEntity = registry.players.entities[0];
+	PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
+	b2BodyId bodyId = phys.bodyId;
+
+	// calculate if ball is grounded or not.
+	int num_contacts = b2Body_GetContactCapacity(bodyId);
+	bool& isGroundedRef = registry.playerPhysics.get(playerEntity).isGrounded;
+
+	if (num_contacts == 0) {
+		isGroundedRef = false;
+		return;
+	}
+
+
+	b2ContactData * contactData = new b2ContactData[num_contacts];
+	b2Body_GetContactData(bodyId, contactData, num_contacts);
+
+	for (int i = 0; i < num_contacts; i++) {
+		b2ContactData contact = contactData[i];
+		
+		// if the collision involves the player.
+		if ((contact.shapeIdA.index1 == bodyId.index1 || contact.shapeIdB.index1 == bodyId.index1)) {
+			b2Manifold manifold = contact.manifold;
+			b2Vec2 normal = manifold.normal;
+
+			if (normal.y >= 0.15f) {
+				isGroundedRef = true;
+				delete[] contactData;
+				return;
+			}
+		}
+	}
+
+	isGroundedRef = false;
+	delete[] contactData;
+}
+
+// call inside step() function for the most precise and responsive movement handling.
+void WorldSystem::handle_movement() {
+
+	// first, update states.
+	int state = glfwGetKey(window, GLFW_KEY_E);
+
+	for (int i = 0; i < PLAYER_CONTROL_KEYS.size(); i++) {
+		int key = PLAYER_CONTROL_KEYS[i];
+		int action = glfwGetKey(window, key);
+
+		// set the keyState
+		if (action == GLFW_PRESS) {
+			keyStates[key] = true;
+		}
+		else if (action == GLFW_RELEASE) {
+			keyStates[key] = false;
+		}
+
+	}
+
+	b2Vec2 nonjump_movement_force = { 0, 0 };
+	b2Vec2 jump_impulse   = { 0, 0 };
+	const float forceMagnitude = GROUNDED_MOVEMENT_FORCE;
+	const float jumpImpulseMagnitude = JUMP_IMPULSE;
+
+	// Determine impulse direction based on key pressed
+	if (keyStates[GLFW_KEY_W]) {
+		// nonjump_movement_force = { 0, forceMagnitude };
+	}
+	else if (keyStates[GLFW_KEY_A]) {
+		nonjump_movement_force = { -forceMagnitude, 0 };
+	}
+	else if (keyStates[GLFW_KEY_S]) {
+		// nonjump_movement_force = { 0, -forceMagnitude };
+	}
+	else if (keyStates[GLFW_KEY_D]) {
+		nonjump_movement_force = { forceMagnitude, 0 };
+	}
+
+	// jump is set seperately, since it can be used in conjunction with the movement keys.
+	if (keyStates[GLFW_KEY_SPACE]) {
+		// Jump: apply a strong upward impulse
+		jump_impulse = { 0, jumpImpulseMagnitude };
+	}
+
+	// Apply impulse if non-zero.
+	if (nonjump_movement_force != b2Vec2_zero || jump_impulse != b2Vec2_zero) {
+		// Assuming registry.players.entities[0] holds the player entity.
+		if (!registry.players.entities.empty()) {
+			Entity playerEntity = registry.players.entities[0];
+
+			if (registry.physicsBodies.has(playerEntity)) {
+				PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
+				b2BodyId bodyId = phys.bodyId;
+
+				// make sure player is grounded.
+				bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
+
+				// if jump is registered, it should override any other force being applied.
+				if (jump_impulse != b2Vec2_zero && isGrounded) {
+					b2Body_ApplyLinearImpulseToCenter(bodyId, jump_impulse, true);
+				}
+				else if (nonjump_movement_force != b2Vec2_zero) {
+					float multiplier = 1.0f;
+
+					if (!isGrounded) {
+						multiplier = AIR_STRAFE_FORCE_MULTIPLIER;
+					}
+
+					// apply force slightly above center of mass to make ball spin.
+					// don't get the reference of the position, we don't want to alter the value.
+					b2Vec2 bodyPosition = b2Body_GetPosition(bodyId);
+					bodyPosition.y += 2.f;
+					b2Body_ApplyForce(bodyId, nonjump_movement_force * multiplier, bodyPosition, true);
+				}
+			}
+		}
+	}
+
+
+
 }
 
 // on key callback
@@ -430,48 +518,8 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 	}
 
 	// Debug toggle with D
-	if (key == GLFW_KEY_D && action == GLFW_RELEASE) {
+	if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
 		debugging.in_debug_mode = !debugging.in_debug_mode;
-	}
-
-	if (action == GLFW_PRESS) {
-		b2Vec2 impulse = { 0, 0 };
-		const float impulseMagnitude = 5.0f;      // Default impulse magnitude for horizontal movement
-		const float jumpImpulseMagnitude = 8.0f;  // A stronger impulse for jumping
-
-		// Determine impulse direction based on key pressed
-		if (key == GLFW_KEY_W) {
-			impulse = { 0, impulseMagnitude };
-		}
-		else if (key == GLFW_KEY_A) {
-			impulse = { -impulseMagnitude, 0 };
-		}
-		else if (key == GLFW_KEY_S) {
-			impulse = { 0, -impulseMagnitude };
-		}
-		else if (key == GLFW_KEY_D) {
-			impulse = { impulseMagnitude, 0 };
-		}
-		else if (key == GLFW_KEY_SPACE) {
-			// Jump: apply a strong upward impulse
-			impulse = { 0, jumpImpulseMagnitude };
-		}
-
-		// Apply impulse if non-zero.
-		if (impulse.x != 0 || impulse.y != 0) {
-			// Assuming registry.players.entities[0] holds the player entity.
-			if (!registry.players.entities.empty()) {
-				Entity playerEntity = registry.players.entities[0];
-				if (registry.physicsBodies.has(playerEntity)) {
-					PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
-					b2BodyId bodyId = phys.bodyId;
-					//b2Vec2 bodyPosition = b2Body_GetPosition(bodyId);
-					b2Body_ApplyLinearImpulseToCenter(bodyId, impulse, true);
-					std::cout << "Applied impulse (" << impulse.x << ", " << impulse.y
-						<< ") to player ball." << std::endl;
-				}
-			}
-		}
 	}
 }
 
@@ -526,8 +574,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 		//   if it exists there
 		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		if (tile_x == 13 && tile_y != 0) {
-			vec2 tower_pos = vec2((tile_x + 0.5f) * GRID_CELL_WIDTH_PX, 
-								  (tile_y + 0.5f) * GRID_CELL_HEIGHT_PX);
+			vec2 tower_pos = vec2((tile_x + 0.5f) * GRID_CELL_WIDTH_PX,
+				(tile_y + 0.5f) * GRID_CELL_HEIGHT_PX);
 			if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 				// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				// {{{ OK }}} TODO A1: right-click removes towers
@@ -558,8 +606,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 					return;
 				}
 				else {
-					std::cout << "cannot place any more towers, max towers is: " << max_towers << 
-						         " and there are currently this number of towers: " << numTowers << std::endl;
+					std::cout << "cannot place any more towers, max towers is: " << max_towers <<
+						" and there are currently this number of towers: " << numTowers << std::endl;
 					return;
 				}
 			}

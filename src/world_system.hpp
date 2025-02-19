@@ -48,12 +48,39 @@ public:
 	// vignete fade out control
 	float vignette_timer_ms = 0.0f;
 
+	GLFWwindow* getWindow() {
+		return window;
+	}
+
 private:
 	// box2d world instance (shared between systems)
 	b2WorldId worldId;
 
+	// used for tracking key states for smoother movement
+	std::unordered_map<int, bool> keyStates;
+
 	float mouse_pos_x = 0.0f;
 	float mouse_pos_y = 0.0f;
+
+	// Game state
+	RenderSystem* renderer;
+	float current_speed;
+
+	// grid
+	std::vector<Entity> grid_lines;
+
+	// music references
+	Mix_Music* background_music;
+	Mix_Chunk* chicken_dead_sound;
+	Mix_Chunk* chicken_eat_sound;
+
+	// player movement
+	void handle_movement();
+	void update_isGrounded();
+
+	// C++ random number generator
+	std::default_random_engine rng;
+	std::uniform_real_distribution<float> uniform_dist; // number between 0..1
 
 	// input callback functions
 	void on_key(int key, int, int action, int mod);
@@ -79,22 +106,6 @@ private:
 
 	// Number of invaders stopped by the towers, displayed in the window title
 	unsigned int points;
-
-	// Game state
-	RenderSystem* renderer;
-	float current_speed;
-
-	// grid
-	std::vector<Entity> grid_lines;
-
-	// music references
-	Mix_Music* background_music;
-	Mix_Chunk* chicken_dead_sound;
-	Mix_Chunk* chicken_eat_sound;
-
-	// C++ random number generator
-	std::default_random_engine rng;
-	std::uniform_real_distribution<float> uniform_dist; // number between 0..1
 
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }

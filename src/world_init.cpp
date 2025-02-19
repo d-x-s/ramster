@@ -68,6 +68,75 @@ Entity createBall(b2WorldId worldId)
 	return entity;
 }
 
+// This will create an enemy entity and place it on a random position in the map.
+Entity createEnemy(b2WorldId worldID, vec2 pos) {
+
+	//figure out x and y coordinates
+	float min_x = 0;
+	float max_x = WINDOW_WIDTH_PX * 3.0; //this is also the room width
+	float min_y = 0;
+	float max_y = WINDOW_HEIGHT_PX; // this is also room height
+
+
+	Entity entity = Entity();
+
+	// Add physics and enemy components
+	PhysicsBody& enemy = registry.physicsBodies.emplace(entity);
+	EnemyPhysics& enemy_physics = registry.enemyPhysics.emplace(entity);
+	enemy_physics.isGrounded = false;
+
+	auto& enemy_registry = registry.enemies;
+	Enemy& enemy = registry.enemies.emplace(entity);
+
+	// Define a dynamic body
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = b2Vec2{ pos[0], pos[1]};
+	// commenting this out should disable rolling...?  bodyDef.fixedRotation = false; // Allow rolling
+
+	// Use `b2CreateBody()` instead of `world.CreateBody()`
+	b2BodyId bodyId = b2CreateBody(worldID, &bodyDef);
+	std::cout << "Dynamic body ENEMY created at position ("
+		<< bodyDef.position.x << ", " << bodyDef.position.y << ")\n";
+
+	// Define shape properties using Box2D v3 functions
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	shapeDef.density = ENEMY_DENSITY;
+	shapeDef.friction = ENEMY_FRICTION;
+	shapeDef.restitution = ENEMY_RESTITUTION; 
+
+	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
+	b2Circle circle;
+	circle.center = b2Vec2{ 0.0f, 0.0f };
+	circle.radius = 0.35f;
+	b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.1, restitution=0.1 (bouncy).\n";
+
+	enemy.bodyId = bodyId;
+
+	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
+
+	// Add motion & render request for ECS synchronization
+	auto& motion = registry.motions.emplace(entity);
+	motion.angle = 0.f;
+	motion.position = pos;
+
+	float scale = circle.radius * 100.f;
+	motion.scale = vec2(scale, scale);
+	std::cout << "world_init.cpp: createEnemy: Added motion component to enemy.\n";
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::BLUE_INVADER_1,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+	std::cout << "Inserted render request for enemy.\n";
+
+	return entity;
+}
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! {{{ OK }}} TODO A1: implement grid lines as gridLines with renderRequests and colors

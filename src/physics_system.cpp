@@ -55,8 +55,8 @@ void PhysicsSystem::step(float elapsed_ms)
     b2Vec2 playerPosition = b2Body_GetPosition(playerBodyID);
 
     // Update motion component
-    Motion& component_motion = registry.motions.get(playerEntity_physicsBody);
-    component_motion.position = vec2(playerPosition.x, playerPosition.y);
+    Motion& playerComponent_motion = registry.motions.get(playerEntity_physicsBody);
+    playerComponent_motion.position = vec2(playerPosition.x, playerPosition.y);
 
 
     // ENEMY ENTITIES.

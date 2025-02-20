@@ -33,25 +33,52 @@ float lerp(float start, float end, float t) {
 // Advances physics simulation
 void PhysicsSystem::step(float elapsed_ms)
 {
+    // To make things clearer, we'll separate player and enemy entities. Can refactor later to group them up.
+    
+    // Share this
     // Box2D v3 Upgrade: Use `b2World_Step()` instead of `world.Step()`
     float timeStep = elapsed_ms / 1000.0f;
     b2World_Step(worldId, timeStep, 4);  // 4 is the recommended substep count
+    // Access physics body registry
+    auto& physicsBody_registry = registry.physicsBodies;
 
+
+    // PLAYER ENTITY
     // Access player registry
     auto& player_registry = registry.players;
     Player& player = player_registry.components[0];
 
-    // Access physics body registry
-    auto& physicsBody_registry = registry.physicsBodies;
-    Entity entity_physicsBody = player_registry.entities[0];
+    Entity playerEntity_physicsBody = player_registry.entities[0];
 
-    PhysicsBody& component_physicsBody = registry.physicsBodies.get(entity_physicsBody);
-    b2BodyId bodyId = component_physicsBody.bodyId;
-    b2Vec2 position = b2Body_GetPosition(bodyId);
+    PhysicsBody& playerComponent_physicsBody = registry.physicsBodies.get(playerEntity_physicsBody);
+    b2BodyId playerBodyID = playerComponent_physicsBody.bodyId;
+    b2Vec2 playerPosition = b2Body_GetPosition(playerBodyID);
 
     // Update motion component
-    Motion& component_motion = registry.motions.get(entity_physicsBody);
-    component_motion.position = vec2(position.x, position.y);
+    Motion& component_motion = registry.motions.get(playerEntity_physicsBody);
+    component_motion.position = vec2(playerPosition.x, playerPosition.y);
+
+
+    // ENEMY ENTITIES.
+    //
+    auto& enemy_registry = registry.enemies; //list of enemy entities stored in here
+
+    // Iterate over every enemy entity to make them affected by Box2D physics.
+    for (int i = 0; i < enemy_registry.entities.size(); i++) {
+
+        Entity enemy_entity = enemy_registry.entities[i];
+
+        // Get box2D stuff from enemy entity
+        PhysicsBody& enemy_physicsBody = registry.physicsBodies.get(enemy_entity);
+        b2BodyId enemyBodyID = enemy_physicsBody.bodyId;
+        b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyID);
+
+        // Update motion component of enemy entity
+        Motion& enemyMotion = registry.motions.get(enemy_entity);
+        enemyMotion.position = vec2(enemyPosition.x, enemyPosition.y);
+
+    }
+
 
     // === UPDATE CAMERA POSITION ===
     // The camera has the following unique features:
@@ -61,18 +88,18 @@ void PhysicsSystem::step(float elapsed_ms)
     //  - Vertically the camera will only start following after jumping or falling a certain distance
 	//  - When reaching the edge of the world, the camera locks on the boundary of the level (except for ground)
     // @Zach
-    Camera& camera = registry.cameras.get(entity_physicsBody);
+    Camera& camera = registry.cameras.get(playerEntity_physicsBody);
 
-	float camX = position.x;
-	float camY = position.y;
+	float camX = playerPosition.x;
+	float camY = playerPosition.y;
 
     // Push camera ahead when moving fast horizontally (Right)
-	std::cout << "Player velocity = (" << b2Body_GetLinearVelocity(bodyId).x << ", " << b2Body_GetLinearVelocity(bodyId).y << ")\n";
-    if (b2Body_GetLinearVelocity(bodyId).x > QUICK_MOVEMENT_THRESHOLD) {
+	std::cout << "Player velocity = (" << b2Body_GetLinearVelocity(playerBodyID).x << ", " << b2Body_GetLinearVelocity(playerBodyID).y << ")\n";
+    if (b2Body_GetLinearVelocity(playerBodyID).x > QUICK_MOVEMENT_THRESHOLD) {
         speedy = true;
         // Initialize camera movement
-        camera_next_step = lerp(position.x, position.x + HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
-        camera_objective_loc = position.x + HORIZONTAL_FOCAL_SHIFT;
+        camera_next_step = lerp(playerPosition.x, playerPosition.x + HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
+        camera_objective_loc = playerPosition.x + HORIZONTAL_FOCAL_SHIFT;
 		if (camera_next_step < camera_objective_loc) {
 			camX = camera_next_step;
 			shift_index++;
@@ -82,11 +109,11 @@ void PhysicsSystem::step(float elapsed_ms)
         }
 	}
 	// Push camera ahead when moving fast horizontally (Left)
-	else if (b2Body_GetLinearVelocity(bodyId).x < -QUICK_MOVEMENT_THRESHOLD) {
+	else if (b2Body_GetLinearVelocity(playerBodyID).x < -QUICK_MOVEMENT_THRESHOLD) {
         speedy = true;
         // Initialize camera movement
-		camera_next_step = lerp(position.x, position.x - HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
-        camera_objective_loc = position.x - HORIZONTAL_FOCAL_SHIFT;
+		camera_next_step = lerp(playerPosition.x, playerPosition.x - HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
+        camera_objective_loc = playerPosition.x - HORIZONTAL_FOCAL_SHIFT;
         if (camera_next_step > camera_objective_loc) {
             camX = camera_next_step;
             shift_index++;
@@ -100,13 +127,13 @@ void PhysicsSystem::step(float elapsed_ms)
 	}
 
     // Slowly reset camera if no longer above movement threshold
-	if (!speedy && position.x != camera_objective_loc) {
-		if (position.x < camera_objective_loc) {
-            camera_objective_loc = position.x + HORIZONTAL_FOCAL_SHIFT;
+	if (!speedy && playerPosition.x != camera_objective_loc) {
+		if (playerPosition.x < camera_objective_loc) {
+            camera_objective_loc = playerPosition.x + HORIZONTAL_FOCAL_SHIFT;
 			camX = lerp(camX, camX + HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
 		}
-		else if (position.x > camera_objective_loc) {
-            camera_objective_loc = position.x - HORIZONTAL_FOCAL_SHIFT;
+		else if (playerPosition.x > camera_objective_loc) {
+            camera_objective_loc = playerPosition.x - HORIZONTAL_FOCAL_SHIFT;
 			camX = lerp(camX, camX - HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
 		}
         if (shift_index > 1) {
@@ -120,37 +147,37 @@ void PhysicsSystem::step(float elapsed_ms)
     // Only move camera vertically if the player moves past a certain threshold
     // See: https://info.sonicretro.org/File:SPGCameraAir.gif
     // Moving Up
-	if (position.y > prev_y) {
+	if (playerPosition.y > prev_y) {
         // Save the center for reference
         if (center_y == -1.f) {
 			center_y = prev_y;
         }
 
         // Do not move camera if player is not airborne yet
-        if (position.y > center_y && position.y < center_y + VERTICAL_THRESHOLD) {
+        if (playerPosition.y > center_y && playerPosition.y < center_y + VERTICAL_THRESHOLD) {
             camY = center_y;
 		}
 		// Move camera if player is sufficiently airborne
-		else if (position.y >= center_y + VERTICAL_THRESHOLD) {
+		else if (playerPosition.y >= center_y + VERTICAL_THRESHOLD) {
 			center_y = -1.f; // Reset center
-			camY = position.y - VERTICAL_THRESHOLD;
+			camY = playerPosition.y - VERTICAL_THRESHOLD;
 		}
 	}
     // Moving Down
-    else if (position.y < prev_y) {
+    else if (playerPosition.y < prev_y) {
         // Save the center for reference
         if (center_y == -1.f) {
             center_y = prev_y;
         }
 
         // Do not move camera if player has not fallen enough
-        if (position.y < center_y && position.y > center_y - VERTICAL_THRESHOLD) {
+        if (playerPosition.y < center_y && playerPosition.y > center_y - VERTICAL_THRESHOLD) {
             camY = center_y;
         }
         // Move camera if player has fallen far enough
-        else if (position.y <= center_y - VERTICAL_THRESHOLD) {
+        else if (playerPosition.y <= center_y - VERTICAL_THRESHOLD) {
             center_y = -1.f; // Reset center
-            camY = position.y + VERTICAL_THRESHOLD;
+            camY = playerPosition.y + VERTICAL_THRESHOLD;
         }
     }
 

@@ -13,8 +13,8 @@
 WorldSystem::WorldSystem(b2WorldId worldId) :
 	points(0),
 	max_towers(MAX_TOWERS_START),
-	next_invader_spawn(0),
-	invader_spawn_rate_ms(INVADER_SPAWN_RATE_MS),
+	next_enemy_spawn(0),
+	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
 	worldId(worldId)
 {
 	// seeding rng with random device
@@ -185,6 +185,25 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			}
 		}
 
+		// Spawns new enemies. borrows code from invader spawning.
+		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+		if (next_enemy_spawn <= 0.f) {
+
+			// reset timer
+			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+
+			//figure out x and y coordinates
+			float max_x = WINDOW_WIDTH_PX * 3.0; //this is also the room width
+			float max_y = WINDOW_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
+
+			// random x and y coordinates on the map to spawn enemy
+			float pos_x = uniform_dist(rng) * max_x; 
+			float pos_y = uniform_dist(rng) * max_y;
+
+			// create enemy at random position
+			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+		}
+
 	}
 
 	return game_active;
@@ -223,8 +242,8 @@ void WorldSystem::restart_game() {
 
 	points = 0;
 	max_towers = MAX_TOWERS_START;
-	next_invader_spawn = 0;
-	invader_spawn_rate_ms = INVADER_SPAWN_RATE_MS;
+	next_enemy_spawn = 0;
+	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome

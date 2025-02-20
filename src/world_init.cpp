@@ -71,13 +71,6 @@ Entity createBall(b2WorldId worldId)
 // This will create an enemy entity and place it on a random position in the map.
 Entity createEnemy(b2WorldId worldID, vec2 pos) {
 
-	//figure out x and y coordinates
-	float min_x = 0;
-	float max_x = WINDOW_WIDTH_PX * 3.0; //this is also the room width
-	float min_y = 0;
-	float max_y = WINDOW_HEIGHT_PX; // this is also room height
-
-
 	Entity entity = Entity();
 
 	// Add physics and enemy components

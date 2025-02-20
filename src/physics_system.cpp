@@ -64,7 +64,6 @@ void PhysicsSystem::step(float elapsed_ms)
     float timeStep = elapsed_ms / 1000.0f;
     b2World_Step(worldId, timeStep, 4);  // 4 is the recommended substep count
     // collisions and other events detected in b2World_Step()
-    
 
     // Access physics body registry
     auto& physicsBody_registry = registry.physicsBodies;

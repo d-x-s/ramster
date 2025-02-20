@@ -9,5 +9,4 @@ class AISystem
 {
 public:
 	void step(float elapsed_ms);
-	
 };

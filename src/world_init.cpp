@@ -99,9 +99,10 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 	shapeDef.restitution = ENEMY_RESTITUTION; 
 
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
+	// We'll update the enemy hitbox later.
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = 0.35f;
+	circle.radius = 0.5f;
 	b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.1, restitution=0.1 (bouncy).\n";
 

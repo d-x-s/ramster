@@ -166,6 +166,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// Removing out of screen entities
 		auto& motions_registry = registry.motions;
 
+		/* Given that stuff bounce off map walls we will not need this.. 
 		// {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
 		// Remove entities that leave the screen on the left side
 		// Iterate backwards to be able to remove without interfering with the next object to visit
@@ -184,6 +185,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 				}
 			}
 		}
+		*/
 
 		// Spawns new enemies. borrows code from invader spawning.
 		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;

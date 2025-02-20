@@ -47,7 +47,7 @@ const int GRID_LINE_WIDTH_PX = 2;
 const int TOWER_TIMER_MS = 1000;	// number of milliseconds between tower shots
 const int MAX_TOWERS_START = 5;
 
-const int ENEMY_SPAWN_RATE_MS = 2 * 1000;
+const int ENEMY_SPAWN_RATE_MS = 10 * 1000;
 
 const int INVADER_VELOCITY_GREY = 80;
 const int INVADER_VELOCITY_RED = 70;

@@ -57,12 +57,24 @@ void AISystem::step(float elapsed_ms)
 		// Player is to the right.
 		if (enemy_posX < player_posX) {
 			// accelerate right
+			nonjump_movement_force = { forceMagnitude, 0 };
 		}
 		// Player is to the left.
 		else if (player_posX < enemy_posX) {
 			// accelerate left
+			nonjump_movement_force = { -forceMagnitude, 0 };
 		}
 
+		// Apply whatever decision made to box2D
+		// sanity check that enemy entity decided to move before applying
+		if (nonjump_movement_force != b2Vec2_zero || jump_impulse != b2Vec2_zero) {
+			PhysicsBody& phys = registry.physicsBodies.get(enemyEntity);
+			b2BodyId bodyId = phys.bodyId;
+			float multiplier = 0.5f; // raising/lowering this number affects the speed of the enemy. lower = more sluggish.
+			b2Vec2 bodyPosition = b2Body_GetPosition(bodyId);
+			b2Body_ApplyForce(bodyId, nonjump_movement_force * multiplier, bodyPosition, true);
+		}
+		
 	}
 
 }

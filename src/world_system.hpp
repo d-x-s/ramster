@@ -105,7 +105,7 @@ private:
 	int max_towers;	// see default value in common.hpp
 
 	// Number of invaders stopped by the towers, displayed in the window title
-	unsigned int points;
+	int points;
 
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }

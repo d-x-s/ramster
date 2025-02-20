@@ -30,6 +30,30 @@ float lerp(float start, float end, float t) {
 	return start * (1 - t) + end * t;
 }
 
+// Returns the local bounding coordinates scaled by the current size of the entity
+vec2 get_bounding_box(const Motion& motion)
+{
+    // abs is to avoid negative scale due to the facing direction.
+    return { abs(motion.scale.x), abs(motion.scale.y) };
+}
+
+// This is a SUPER APPROXIMATE check that puts a circle around the bounding boxes and sees
+// if the center point of either object is inside the other's bounding-box-circle. You can
+// surely implement a more accurate detection
+bool collides(const Motion& motion1, const Motion& motion2)
+{
+    vec2 dp = motion1.position - motion2.position;
+    float dist_squared = dot(dp, dp);
+    const vec2 other_bonding_box = get_bounding_box(motion1) / 2.f;
+    const float other_r_squared = dot(other_bonding_box, other_bonding_box);
+    const vec2 my_bonding_box = get_bounding_box(motion2) / 2.f;
+    const float my_r_squared = dot(my_bonding_box, my_bonding_box);
+    const float r_squared = max(other_r_squared, my_r_squared);
+    if (dist_squared < r_squared)
+        return true;
+    return false;
+}
+
 // Advances physics simulation
 void PhysicsSystem::step(float elapsed_ms)
 {
@@ -39,9 +63,11 @@ void PhysicsSystem::step(float elapsed_ms)
     // Box2D v3 Upgrade: Use `b2World_Step()` instead of `world.Step()`
     float timeStep = elapsed_ms / 1000.0f;
     b2World_Step(worldId, timeStep, 4);  // 4 is the recommended substep count
+    // collisions and other events detected in b2World_Step()
+    
+
     // Access physics body registry
     auto& physicsBody_registry = registry.physicsBodies;
-
 
     // PLAYER ENTITY
     // Access player registry
@@ -204,4 +230,41 @@ void PhysicsSystem::step(float elapsed_ms)
 
     // Debugging output
     // std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";
+
+
+    // COLLISION HANDLING
+    // Ran out of time, will use A1 for now, figure out collision callbacks later.
+    // check for collisions between all moving entities
+    ComponentContainer<Motion>& motion_container = registry.motions;
+    for (uint i = 0; i < motion_container.components.size(); i++)
+    {
+        Motion& motion_i = motion_container.components[i];
+        Entity entity_i = motion_container.entities[i];
+
+        // note starting j at i+1 to compare all (i,j) pairs only once (and to not compare with itself)
+        for (uint j = i + 1; j < motion_container.components.size(); j++)
+        {
+            Motion& motion_j = motion_container.components[j];
+            if (collides(motion_i, motion_j))
+            {
+                Entity entity_j = motion_container.entities[j];
+                // Create a collisions event
+                // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
+                // CK: why the duplication, except to allow searching by entity_id
+                registry.collisions.emplace_with_duplicates(entity_i, entity_j);
+            }
+        }
+    }
+    //WIP BOX2D CODE:
+    /*
+    * b2ContactEvents contactEvents = b2World_GetContactEvents(worldId);
+
+    for (int i = 0; i < contactEvents.beginCount; i++) {
+        b2ContactBeginTouchEvent event = contactEvents.beginEvents[i];
+        b2BodyId collisionBody_A = b2Shape_GetBody(event.shapeIdA);
+        b2BodyId collisionBody_B = b2Shape_GetBody(event.shapeIdB);
+
+        std::cout << "TEST XXXXXXXXXXXXXXXXXXXXXXXX" << b2Body_GetUserData(collisionBody_A) << std::endl;
+    }
+    */
 }

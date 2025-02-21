@@ -68,6 +68,77 @@ Entity createBall(b2WorldId worldId)
 	return entity;
 }
 
+// This will create an enemy entity and place it on a random position in the map.
+Entity createEnemy(b2WorldId worldID, vec2 pos) {
+
+	Entity entity = Entity();
+
+	// Add physics and enemy components
+	PhysicsBody& enemyBody = registry.physicsBodies.emplace(entity);
+	EnemyPhysics& enemy_physics = registry.enemyPhysics.emplace(entity);
+	enemy_physics.isGrounded = false;
+
+	auto& enemy_registry = registry.enemies;
+	Enemy& enemy = registry.enemies.emplace(entity);
+
+	// Define a dynamic body
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = b2Vec2{ pos[0], pos[1]};
+	// commenting this out should disable rolling...?  bodyDef.fixedRotation = false; // Allow rolling
+
+	// Use `b2CreateBody()` instead of `world.CreateBody()`
+	b2BodyId bodyId = b2CreateBody(worldID, &bodyDef);
+	std::cout << "Dynamic body ENEMY created at position ("
+		<< bodyDef.position.x << ", " << bodyDef.position.y << ")\n";
+
+	// Define shape properties using Box2D v3 functions
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	shapeDef.density = ENEMY_DENSITY;
+	shapeDef.friction = ENEMY_FRICTION;
+	shapeDef.restitution = ENEMY_RESTITUTION; 
+
+	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
+	// We'll update the enemy hitbox later.
+	b2Circle circle;
+	circle.center = b2Vec2{ 0.0f, 0.0f };
+	circle.radius = 0.5f;
+	b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.1, restitution=0.1 (bouncy).\n";
+
+	enemyBody.bodyId = bodyId;
+
+	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
+
+	// Add motion & render request for ECS synchronization
+	auto& motion = registry.motions.emplace(entity);
+	motion.angle = 0.f;
+	motion.position = pos;
+
+	float scale = circle.radius * 100.f;
+	motion.scale = vec2(scale, scale);
+	std::cout << "world_init.cpp: createEnemy: Added motion component to enemy.\n";
+
+  std::vector<TEXTURE_ASSET_ID> frames = { TEXTURE_ASSET_ID::FLOATER_1, TEXTURE_ASSET_ID::FLOATER_2, TEXTURE_ASSET_ID::FLOATER_3 };
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			frames[0],                    // base apperance is just the first frame
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE,
+			frames,                       // store all animation frames
+			{},							              // no custom scale per frame
+			true,						              // loop the animation
+			200.0f,                       // frame time (ms)
+			0.0f,                         // elapsed time
+			0                             // current frame index
+		}
+	);
+	std::cout << "Inserted render request for enemy.\n";
+
+	return entity;
+}
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! {{{ OK }}} TODO A1: implement grid lines as gridLines with renderRequests and colors
@@ -113,7 +184,7 @@ Entity createLine(vec2 start_pos, vec2 end_pos)
 		}
 	);
 
-	registry.colors.insert(entity, vec3(1.0f, 0.0f, 0.0f));
+	registry.colors.insert(entity, vec3(1.0f, 1.0f, 1.0f));
 	return entity;
 }
 
@@ -179,8 +250,8 @@ Entity createInvader(RenderSystem* renderer, vec2 position)
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE,
 			frames,                       // store all animation frames
-			{},							  // no custom scale per frame
-			true,						  // loop the animation
+			{},							              // no custom scale per frame
+			true,						              // loop the animation
 			200.0f,                       // frame time (ms)
 			0.0f,                         // elapsed time
 			0                             // current frame index

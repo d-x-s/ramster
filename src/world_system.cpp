@@ -13,8 +13,8 @@
 WorldSystem::WorldSystem(b2WorldId worldId) :
 	points(0),
 	max_towers(MAX_TOWERS_START),
-	next_invader_spawn(0),
-	invader_spawn_rate_ms(INVADER_SPAWN_RATE_MS),
+	next_enemy_spawn(0),
+	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
 	worldId(worldId)
 {
 	// seeding rng with random device
@@ -166,6 +166,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		// Removing out of screen entities
 		auto& motions_registry = registry.motions;
 
+		/* Given that stuff bounce off map walls we will not need this.. 
 		// {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
 		// Remove entities that leave the screen on the left side
 		// Iterate backwards to be able to remove without interfering with the next object to visit
@@ -183,6 +184,26 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 					registry.remove_all_components_of(motions_registry.entities[i]);
 				}
 			}
+		}
+		*/
+
+		// Spawns new enemies. borrows code from invader spawning.
+		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+		if (next_enemy_spawn <= 0.f) {
+
+			// reset timer
+			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+
+			//figure out x and y coordinates
+			float max_x = WINDOW_WIDTH_PX * 3.0; //this is also the room width
+			float max_y = WINDOW_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
+
+			// random x and y coordinates on the map to spawn enemy
+			float pos_x = uniform_dist(rng) * max_x; 
+			float pos_y = max_y;  // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
+
+			// create enemy at random position
+			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
 		}
 
 	}
@@ -281,8 +302,8 @@ void WorldSystem::restart_game() {
 
 	points = 0;
 	max_towers = MAX_TOWERS_START;
-	next_invader_spawn = 0;
-	invader_spawn_rate_ms = INVADER_SPAWN_RATE_MS;
+	next_enemy_spawn = 0;
+	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
@@ -322,7 +343,7 @@ void WorldSystem::restart_game() {
 	}
 
 	// generate the vertices for the terrain formed by the chain and render it
-	generateTerrain(0.0f, WINDOW_WIDTH_PX * 3.0, 100.0f, 2.0f, 100);
+	generateTerrain(0.0f, WINDOW_WIDTH_PX * 3.0, 145.0f, 5.0f, 100);
 
 	// turn off trigger for fadeout shader
 	registry.screenStates.components[0].fadeout = 0.0f;
@@ -342,87 +363,82 @@ void WorldSystem::restart_game() {
 // Compute collisions between entities
 void WorldSystem::handle_collisions() {
 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// {{{ OK }}} TODO A1: Loop over all collisions detected by the physics system
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// This is mostly a repurposing of collision handling implementation from A1
 	ComponentContainer<Collision>& collision_container = registry.collisions;
 	for (uint i = 0; i < collision_container.components.size(); i++) {
 		Entity entity = collision_container.entities[i];
 		Collision& collision = collision_container.components[i];
 		Entity other = collision.other; // the other entity in the collision
 
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		// {{{ OK }}} TODO A1: handle collision between deadly (projectile) and invader
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		if ((registry.projectiles.has(entity) && registry.invaders.has(other)) ||
-			(registry.projectiles.has(other) && registry.invaders.has(entity))) {
-			if (registry.invaders.has(entity)) {
-				Invader& invader_component = registry.invaders.get(entity);
-				Projectile& projectile_component = registry.projectiles.get(other);
-				invader_component.health -= projectile_component.damage;
-				if (invader_component.health <= 0) {
-					// explosion
-					Motion& motion = registry.motions.get(entity);
-					createExplosion(renderer, motion.position);
-					// remove tower and invader
+		// Player - Enemy Collision
+		if ((registry.enemies.has(entity) && registry.players.has(other)) ||
+			(registry.enemies.has(other) && registry.players.has(entity))) {
+			if (registry.enemies.has(entity)) {
+
+				// Figure out the position, velocity characteristics of player and enemy
+				Entity enemyEntity = entity;
+				Entity playerEntity = other;
+				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
+				b2BodyId enemyBodyId = enemyPhys.bodyId;
+				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
+				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
+				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
+				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
+				b2BodyId playerBodyId = playerPhys.bodyId;
+				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
+				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
+				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
+
+				// For now we'll base everything entirely on speed.
+				// If player speed > enemy speed, then enemy gets killed.
+				if (playerSpeed > enemySpeed) {
+					b2DestroyBody(enemyBodyId);
 					registry.remove_all_components_of(entity);
 					Mix_PlayChannel(-1, chicken_dead_sound, 0);
-					points += 1;
+					points++;
 				}
-				registry.remove_all_components_of(other);
+				// Otherwise player takes dmg (just loses pts for now) and we remove enemy.
+				else {
+					b2DestroyBody(enemyBodyId);
+					registry.remove_all_components_of(entity);
+					Mix_PlayChannel(-1, chicken_eat_sound, 0);
+					points -= 5; //bigger penalty
+				}
+
 			}
-			else { // it must be that registry.invaders.has(other)
-				Invader& invader_component = registry.invaders.get(other);
-				Projectile& projectile_component = registry.projectiles.get(entity);
-				invader_component.health -= projectile_component.damage;
-				if (invader_component.health <= 0) {
-					// explosion
-					Motion& motion = registry.motions.get(other);
-					createExplosion(renderer, motion.position);
-					// remove tower and invader
+			else { 
+				
+				// Figure out the position, velocity characteristics of player and enemy
+				Entity enemyEntity = other;
+				Entity playerEntity = entity;
+				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
+				b2BodyId enemyBodyId = enemyPhys.bodyId;
+				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
+				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
+				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
+				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
+				b2BodyId playerBodyId = playerPhys.bodyId;
+				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
+				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
+				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
+
+				// For now we'll base everything entirely on speed.
+				// If player speed > enemy speed, then enemy gets killed.
+				if (playerSpeed > enemySpeed) {
+					b2DestroyBody(enemyBodyId);
 					registry.remove_all_components_of(other);
 					Mix_PlayChannel(-1, chicken_dead_sound, 0);
-					points += 1;
+					points++;
 				}
-				registry.remove_all_components_of(entity);
-			}
-			continue;
-		}
+				// Otherwise player takes dmg (for now it just applies vignette effect)
+				else {
+					b2DestroyBody(enemyBodyId);
+					registry.remove_all_components_of(other);
+					Mix_PlayChannel(-1, chicken_eat_sound, 0);
+					points-=5;
+				}
 
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		// {{{ OK }}} TODO A1: handle collision between tower and invader
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		if ((registry.towers.has(entity) && registry.invaders.has(other)) ||
-			(registry.towers.has(other) && registry.invaders.has(entity))) {
-			if (registry.invaders.has(entity)) {
-				// explosion
-				Motion& motion = registry.motions.get(entity);
-				createExplosion(renderer, motion.position);
-				// remove tower and invader
-				Invader& invader_component = registry.invaders.get(entity);
-				Tower& tower_component = registry.towers.get(other);
-				registry.remove_all_components_of(entity);
-				registry.remove_all_components_of(other);
 			}
-			else { // it must be that registry.invaders.has(other)
-				// explosion
-				Motion& motion = registry.motions.get(other);
-				createExplosion(renderer, motion.position);
-				// remove tower and invader
-				Invader& invader_component = registry.invaders.get(other);
-				Tower& tower_component = registry.towers.get(entity);
-				registry.remove_all_components_of(other);
-				registry.remove_all_components_of(entity);
-			}
-
-			// activate vignette effect
-			registry.screenStates.components[0].darken_screen_factor = 1.0f;
-			registry.screenStates.components[0].vignette = 1.0f;
-			trigger_vignette(2000.0f);
-
-			Mix_PlayChannel(-1, chicken_eat_sound, 0);
-			max_towers -= 1;
-			continue;
 		}
 	}
 

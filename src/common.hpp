@@ -47,7 +47,7 @@ const int GRID_LINE_WIDTH_PX = 2;
 const int TOWER_TIMER_MS = 1000;	// number of milliseconds between tower shots
 const int MAX_TOWERS_START = 5;
 
-const int INVADER_SPAWN_RATE_MS = 2 * 1000;
+const int ENEMY_SPAWN_RATE_MS = 3 * 1000;
 
 const int INVADER_VELOCITY_GREY = 80;
 const int INVADER_VELOCITY_RED = 70;
@@ -87,6 +87,13 @@ const float BALL_DENSTIY = 1.0f;
 const float BALL_FRICTION = 0.3f;
 const float BALL_RESTITUTION = 0.3f;
 const float BALL_ANGULAR_DAMPING = 75.0f;
+
+
+// ENEMY 2DBODY
+// Shares most of player 2D body but different density, friction, restitution, etc.
+const float ENEMY_DENSITY = 0.5f; // lower number = less affected by gravity 
+const float ENEMY_FRICTION = 0.02f; //enemy friction. for now we're setting it low so it's less affected by gravity & spins less
+const float ENEMY_RESTITUTION = 0.4f; //enemy bounciness... increase this number to make things more chaotic.
 
 // These are hard coded to the dimensions of the entity's texture
 

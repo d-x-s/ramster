@@ -88,6 +88,13 @@ const float BALL_FRICTION = 0.3f;
 const float BALL_RESTITUTION = 0.3f;
 const float BALL_ANGULAR_DAMPING = 75.0f;
 
+
+// ENEMY 2DBODY
+// Shares most of player 2D body but different density, friction, restitution, etc.
+const float ENEMY_DENSITY = 0.5f; // lower number = less affected by gravity 
+const float ENEMY_FRICTION = 0.02f; //enemy friction. for now we're setting it low so it's less affected by gravity & spins less
+const float ENEMY_RESTITUTION = 0.4f; //enemy bounciness... increase this number to make things more chaotic.
+
 // These are hard coded to the dimensions of the entity's texture
 
 // invaders are 64x64 px, but cells are 60x60

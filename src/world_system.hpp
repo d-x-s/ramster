@@ -112,6 +112,9 @@ private:
 	// Counter for grapple
 	int grappleCounter;
 
+	// Bool to check if grapple is active
+	bool grappleActive;
+
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
 

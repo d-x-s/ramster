@@ -16,7 +16,8 @@ WorldSystem::WorldSystem(b2WorldId worldId) :
 	next_enemy_spawn(0),
 	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
 	worldId(worldId),
-	grappleCounter(0)
+	grappleCounter(0),
+	grappleActive(false)
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
@@ -305,6 +306,7 @@ void WorldSystem::restart_game() {
 	max_towers = MAX_TOWERS_START;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+	grappleActive = false;
 
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
@@ -604,27 +606,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 	}
 
 	if (action == GLFW_PRESS) {
-		b2Vec2 impulse = { 0, 0 };
-		const float impulseMagnitude = 5.0f;      // Default impulse magnitude for horizontal movement
-		const float jumpImpulseMagnitude = 8.0f;  // A stronger impulse for jumping
-
-		// Determine impulse direction based on key pressed
-		if (key == GLFW_KEY_W) {
-			impulse = { 0, impulseMagnitude };
-		}
-		else if (key == GLFW_KEY_A) {
-			impulse = { -impulseMagnitude, 0 };
-		}
-		else if (key == GLFW_KEY_S) {
-			impulse = { 0, -impulseMagnitude };
-		}
-		else if (key == GLFW_KEY_D) {
-			impulse = { impulseMagnitude, 0 };
-		}
-		else if (key == GLFW_KEY_SPACE) {
-			// Jump: apply a strong upward impulse
-			impulse = { 0, jumpImpulseMagnitude };
-		} else if (key == GLFW_KEY_E) {
+		if (key == GLFW_KEY_E) {
 			Entity ballEntity = registry.physicsBodies.entities[0];  
     		Entity grapplePointEntity = registry.physicsBodies.entities[1];  
 
@@ -643,27 +625,15 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 
 			if (distance <= 300.0f) {
 				createGrapple(worldId, ballBodyId, grappleBodyId, distance);
+				grappleActive = true;
 			}
 		} else if (key == GLFW_KEY_Q) {
-			Entity grappleEntity = registry.grapples.entities[grappleCounter];
-			Grapple& grapple = registry.grapples.get(grappleEntity);
-			b2DestroyJoint(grapple.jointId);
-			grappleCounter++;
-		}
-
-		// Apply impulse if non-zero.
-		if (impulse.x != 0 || impulse.y != 0) {
-			// Assuming registry.players.entities[0] holds the player entity.
-			if (!registry.players.entities.empty()) {
-				Entity playerEntity = registry.players.entities[0];
-				if (registry.physicsBodies.has(playerEntity)) {
-					PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
-					b2BodyId bodyId = phys.bodyId;
-					//b2Vec2 bodyPosition = b2Body_GetPosition(bodyId);
-					b2Body_ApplyLinearImpulseToCenter(bodyId, impulse, true);
-					std::cout << "Applied impulse (" << impulse.x << ", " << impulse.y
-						<< ") to player ball." << std::endl;
-				}
+			if (grappleActive) {
+				Entity grappleEntity = registry.grapples.entities[grappleCounter];
+				Grapple& grapple = registry.grapples.get(grappleEntity);
+				b2DestroyJoint(grapple.jointId);
+				grappleCounter++;
+				grappleActive = false;
 			}
 		}
 	}

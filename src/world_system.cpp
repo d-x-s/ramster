@@ -280,7 +280,7 @@ void WorldSystem::generateTerrain(float startX, float endX, float amplitude, flo
 		chainDef.count = count;
 		chainDef.points = testPoints;
 		chainDef.isLoop = true;
-		chainDef.friction = 0.0f;
+		chainDef.friction = 0.2f;
 		chainDef.restitution = 0.1f;
 
 		b2BodyDef bodyDef = b2DefaultBodyDef();
@@ -469,11 +469,19 @@ void WorldSystem::update_isGrounded() {
 	b2ContactData * contactData = new b2ContactData[num_contacts];
 	b2Body_GetContactData(bodyId, contactData, num_contacts);
 
+	// get the ball's shape id.
+	// The # shapes should always be 1, since the player is initialized as a singular ball shape!
+	int player_num_shapes = b2Body_GetShapeCount(bodyId);
+	b2ShapeId* shapeArray = new b2ShapeId[player_num_shapes];
+	b2Body_GetShapes(bodyId, shapeArray, player_num_shapes);
+
+	b2ShapeId player_shape = shapeArray[0];
+
 	for (int i = 0; i < num_contacts; i++) {
 		b2ContactData contact = contactData[i];
 		
 		// if the collision involves the player.
-		if ((contact.shapeIdA.index1 == bodyId.index1 || contact.shapeIdB.index1 == bodyId.index1)) {
+		if ((contact.shapeIdA.index1 == player_shape.index1 || contact.shapeIdB.index1 == player_shape.index1)) {
 			b2Manifold manifold = contact.manifold;
 			b2Vec2 normal = manifold.normal;
 

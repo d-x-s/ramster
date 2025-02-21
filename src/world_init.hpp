@@ -6,6 +6,9 @@
 
 #include <box2d/box2d.h>
 
+// enemy
+Entity createEnemy(b2WorldId worldID, vec2 pos);
+
 // invaders
 Entity createInvader(RenderSystem* renderer, vec2 position);
 

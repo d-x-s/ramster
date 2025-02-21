@@ -10,6 +10,12 @@ struct Player
 
 };
 
+// Enemy component
+struct Enemy
+{
+
+};
+
 // Tower
 struct Tower {
 	float range;	// for vision / detection
@@ -213,5 +219,9 @@ struct Camera {
 };
 
 struct PlayerPhysics {
+	bool isGrounded;
+};
+
+struct EnemyPhysics {
 	bool isGrounded;
 };

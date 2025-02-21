@@ -3,6 +3,7 @@
 #include "common.hpp"
 #include "render_system.hpp"
 #include "tinyECS/registry.hpp"
+#include "iostream"
 
 class AISystem
 {

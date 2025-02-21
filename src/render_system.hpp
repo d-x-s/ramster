@@ -45,7 +45,10 @@ class RenderSystem {
 		textures_path("projectiles/gold_bubble.png"),
 		textures_path("effects/explosion1.png"),
 		textures_path("effects/explosion2.png"),
-		textures_path("effects/explosion3.png")
+		textures_path("effects/explosion3.png"),
+    textures_path("invaders/floater_1.png"),
+    textures_path("invaders/floater_2.png"),
+    textures_path("invaders/floater_3.png"),
 	};
 
 	std::array<GLuint, effect_count> effects;
@@ -55,7 +58,7 @@ class RenderSystem {
 		shader_path("egg"),
 		shader_path("chicken"),
 		shader_path("textured"),
-		shader_path("vignette")
+		shader_path("vignette"),
 	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
@@ -96,6 +99,7 @@ public:
 private:
 	// Internal drawing functions for each entity type
 	void drawGridLine(Entity entity, const mat3& projection);
+	void drawLine(Entity entity, const mat3& projection);
 	void drawTexturedMesh(Entity entity, const mat3& projection, float elapsed_ms, bool game_active);
 	void drawToScreen();
 

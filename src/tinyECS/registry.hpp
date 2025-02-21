@@ -34,6 +34,7 @@ public:
 	ComponentContainer<PlayerPhysics> playerPhysics;
 	ComponentContainer<EnemyPhysics> enemyPhysics;
 	ComponentContainer<Camera> cameras;
+	ComponentContainer<Line> lines;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -58,6 +59,7 @@ public:
 
 		registry_list.push_back(&physicsBodies);
 		registry_list.push_back(&playerPhysics);
+		registry_list.push_back(&lines);
 		registry_list.push_back(&enemyPhysics);
 	}
 

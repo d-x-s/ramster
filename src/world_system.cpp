@@ -234,58 +234,58 @@ void WorldSystem::stop_game() {
 // Function to create a smooth sine wave curve (hill)
 void WorldSystem::generateTerrain(float startX, float endX, float amplitude, float frequency, int segments) {
 	if (lines.empty()) {
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // Experimental code that renders a sine wave, no chain creation
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		std::vector<glm::vec2> points;
-		std::vector<b2Vec2> chainPoints;
-		float width = endX - startX;
+ //   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ //   // Experimental code that renders a sine wave, no chain creation
+ //   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//	std::vector<glm::vec2> points;
+	//	std::vector<b2Vec2> chainPoints;
+	//	float width = endX - startX;
 
-		// Generate points along a sine wave
-		for (int i = 0; i <= segments; ++i) {
-			float t = (float)i / segments;
-			float x = startX + t * width;
-			float y = amplitude * sin(frequency * t * M_PI);
-			points.push_back(glm::vec2(x, y + WINDOW_HEIGHT_PX / 4));
+	//	// Generate points along a sine wave
+	//	for (int i = 0; i <= segments; ++i) {
+	//		float t = (float)i / segments;
+	//		float x = startX + t * width;
+	//		float y = amplitude * sin(frequency * t * M_PI);
+	//		points.push_back(glm::vec2(x, y + WINDOW_HEIGHT_PX / 4));
 
-			// Print points for rendering
-			std::cout << "Render Point[" << i << "]: x = " << x
-				<< ", y = " << y + WINDOW_HEIGHT_PX / 4 << std::endl;
-		}
+	//		// Print points for rendering
+	//		std::cout << "Render Point[" << i << "]: x = " << x
+	//			<< ", y = " << y + WINDOW_HEIGHT_PX / 4 << std::endl;
+	//	}
 
-		// Connect consecutive points with lines
-		for (int i = 0; i < (int)points.size() - 1; ++i) {
-			lines.push_back(createLine(points[i], points[i + 1]));
-		}
+	//	// Connect consecutive points with lines
+	//	for (int i = 0; i < (int)points.size() - 1; ++i) {
+	//		lines.push_back(createLine(points[i], points[i + 1]));
+	//	}
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // NOTE: uncomment the block below and comment the block above to test chain shape creation
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		// b2Vec2 testPoints[] = {
-		// 	{ 400.0, 0.0 }, { 500.0, 50.0}, { 600.0, 100.0 },
-		// 	{ 700.0, 100.0 }, { 800.0, 50.0 }, { 900.0, 0.0}, 
-		// 	{ 400.0, 0.0 }
-		// };
+		b2Vec2 testPoints[] = {
+			{ 400.0, 0.0 }, { 900.0, 0.0}, { 800.0, 50.0 },
+			{ 700.0, 100.0 }, { 600.0, 100.0 }, { 500.0, 50.0}, 
+			{ 400.0, 0.0 }
+		};
 
-		// // render the line segments between points
-		// int count = sizeof(testPoints) / sizeof(testPoints[0]);
-		// for (int i = 0; i < count - 1; ++i) {
-		// 	lines.push_back(
-		// 		createLine(
-		// 			glm::vec2(testPoints[i].x, testPoints[i].y), 
-		// 			glm::vec2(testPoints[i + 1].x, testPoints[i + 1].y)));
-		// }
+		// render the line segments between points
+		int count = sizeof(testPoints) / sizeof(testPoints[0]);
+		for (int i = 0; i < count - 1; ++i) {
+			lines.push_back(
+				createLine(
+					glm::vec2(testPoints[i].x, testPoints[i].y), 
+					glm::vec2(testPoints[i + 1].x, testPoints[i + 1].y)));
+		}
 
-		// b2ChainDef chainDef = b2DefaultChainDef();
-		// chainDef.count = count;
-		// chainDef.points = testPoints;
-		// chainDef.isLoop = false;
-		// chainDef.friction = 0.0f;
-		// chainDef.restitution = 0.1f;
+		b2ChainDef chainDef = b2DefaultChainDef();
+		chainDef.count = count;
+		chainDef.points = testPoints;
+		chainDef.isLoop = true;
+		chainDef.friction = 0.2f;
+		chainDef.restitution = 0.1f;
 
-		// b2BodyDef bodyDef = b2DefaultBodyDef();
-		// b2BodyId _ = b2CreateBody(worldId, &bodyDef);
-		// b2CreateChain(_, &chainDef);
+		b2BodyDef bodyDef = b2DefaultBodyDef();
+		b2BodyId _ = b2CreateBody(worldId, &bodyDef);
+		b2CreateChain(_, &chainDef);
 	}
 }
 
@@ -469,11 +469,19 @@ void WorldSystem::update_isGrounded() {
 	b2ContactData * contactData = new b2ContactData[num_contacts];
 	b2Body_GetContactData(bodyId, contactData, num_contacts);
 
+	// get the ball's shape id.
+	// The # shapes should always be 1, since the player is initialized as a singular ball shape!
+	int player_num_shapes = b2Body_GetShapeCount(bodyId);
+	b2ShapeId* shapeArray = new b2ShapeId[player_num_shapes];
+	b2Body_GetShapes(bodyId, shapeArray, player_num_shapes);
+
+	b2ShapeId player_shape = shapeArray[0];
+
 	for (int i = 0; i < num_contacts; i++) {
 		b2ContactData contact = contactData[i];
 		
 		// if the collision involves the player.
-		if ((contact.shapeIdA.index1 == bodyId.index1 || contact.shapeIdB.index1 == bodyId.index1)) {
+		if ((contact.shapeIdA.index1 == player_shape.index1 || contact.shapeIdB.index1 == player_shape.index1)) {
 			b2Manifold manifold = contact.manifold;
 			b2Vec2 normal = manifold.normal;
 

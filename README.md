@@ -27,3 +27,7 @@ This write-up will be moved elsewhere upon the actual M1 submission.
 - `<cd build>` and open `ramster.sln`
 - build the Ramster project
 - exe is in `build/Debug`
+
+## M1 Interpolation Implementation
+Linear interpolation is implemented whenever the camera moves away and towards the player horizontally. The lerp() function documented in the
+grading rubric is used, with starting x-coordinate, ending x-coordinate, and an in-between frame counter as parameters.

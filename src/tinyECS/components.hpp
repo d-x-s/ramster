@@ -215,3 +215,8 @@ struct Camera {
 struct PlayerPhysics {
 	bool isGrounded;
 };
+
+struct Line {
+	vec2 start_pos = { 0,  0 };
+	vec2 end_pos = { 10, 10 };	// default to diagonal line
+};

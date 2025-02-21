@@ -55,7 +55,7 @@ class RenderSystem {
 		shader_path("egg"),
 		shader_path("chicken"),
 		shader_path("textured"),
-		shader_path("vignette")
+		shader_path("vignette"),
 	};
 
 	std::array<GLuint, geometry_count> vertex_buffers;
@@ -96,6 +96,7 @@ public:
 private:
 	// Internal drawing functions for each entity type
 	void drawGridLine(Entity entity, const mat3& projection);
+	void drawLine(Entity entity, const mat3& projection);
 	void drawTexturedMesh(Entity entity, const mat3& projection, float elapsed_ms, bool game_active);
 	void drawToScreen();
 

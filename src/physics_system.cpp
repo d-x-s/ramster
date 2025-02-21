@@ -56,10 +56,10 @@ void PhysicsSystem::step(float elapsed_ms)
     // === UPDATE CAMERA POSITION ===
     // The camera has the following unique features:
     //  - Default follows the player in the center
-	//  - When moving fast horizontally, the camera pushes ahead to show more of the level
-	//  - When no longer moving fast, the camera gradually resets to the center
+	  //  - When moving fast horizontally, the camera pushes ahead to show more of the level
+	  //  - When no longer moving fast, the camera gradually resets to the center
     //  - Vertically the camera will only start following after jumping or falling a certain distance
-	//  - When reaching the edge of the world, the camera locks on the boundary of the level (except for ground)
+	  //  - When reaching the edge of the world, the camera locks on the boundary of the level (except for ground)
     // @Zach
     Camera& camera = registry.cameras.get(entity_physicsBody);
 
@@ -67,7 +67,7 @@ void PhysicsSystem::step(float elapsed_ms)
 	float camY = position.y;
 
     // Push camera ahead when moving fast horizontally (Right)
-	std::cout << "Player velocity = (" << b2Body_GetLinearVelocity(bodyId).x << ", " << b2Body_GetLinearVelocity(bodyId).y << ")\n";
+	  // std::cout << "Player velocity = (" << b2Body_GetLinearVelocity(bodyId).x << ", " << b2Body_GetLinearVelocity(bodyId).y << ")\n";
     if (b2Body_GetLinearVelocity(bodyId).x > QUICK_MOVEMENT_THRESHOLD) {
         speedy = true;
         // Initialize camera movement

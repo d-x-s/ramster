@@ -210,6 +210,64 @@ void WorldSystem::stop_game() {
 	}
 }
 
+// Function to create a smooth sine wave curve (hill)
+void WorldSystem::generateTerrain(float startX, float endX, float amplitude, float frequency, int segments) {
+	if (lines.empty()) {
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // Experimental code that renders a sine wave, no chain creation
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		std::vector<glm::vec2> points;
+		std::vector<b2Vec2> chainPoints;
+		float width = endX - startX;
+
+		// Generate points along a sine wave
+		for (int i = 0; i <= segments; ++i) {
+			float t = (float)i / segments;
+			float x = startX + t * width;
+			float y = amplitude * sin(frequency * t * M_PI);
+			points.push_back(glm::vec2(x, y + WINDOW_HEIGHT_PX / 4));
+
+			// Print points for rendering
+			std::cout << "Render Point[" << i << "]: x = " << x
+				<< ", y = " << y + WINDOW_HEIGHT_PX / 4 << std::endl;
+		}
+
+		// Connect consecutive points with lines
+		for (int i = 0; i < (int)points.size() - 1; ++i) {
+			lines.push_back(createLine(points[i], points[i + 1]));
+		}
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // NOTE: uncomment the block below and comment the block above to test chain shape creation
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		// b2Vec2 testPoints[] = {
+		// 	{ 400.0, 0.0 }, { 500.0, 50.0}, { 600.0, 100.0 },
+		// 	{ 700.0, 100.0 }, { 800.0, 50.0 }, { 900.0, 0.0}, 
+		// 	{ 400.0, 0.0 }
+		// };
+
+		// // render the line segments between points
+		// int count = sizeof(testPoints) / sizeof(testPoints[0]);
+		// for (int i = 0; i < count - 1; ++i) {
+		// 	lines.push_back(
+		// 		createLine(
+		// 			glm::vec2(testPoints[i].x, testPoints[i].y), 
+		// 			glm::vec2(testPoints[i + 1].x, testPoints[i + 1].y)));
+		// }
+
+		// b2ChainDef chainDef = b2DefaultChainDef();
+		// chainDef.count = count;
+		// chainDef.points = testPoints;
+		// chainDef.isLoop = false;
+		// chainDef.friction = 0.0f;
+		// chainDef.restitution = 0.1f;
+
+		// b2BodyDef bodyDef = b2DefaultBodyDef();
+		// b2BodyId _ = b2CreateBody(worldId, &bodyDef);
+		// b2CreateChain(_, &chainDef);
+	}
+}
+
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
 
@@ -262,6 +320,9 @@ void WorldSystem::restart_game() {
 			grid_lines.push_back(createGridLine(vec2(0, col * cell_height), vec2(WINDOW_WIDTH_PX * 3.0, grid_line_width)));
 		}
 	}
+
+	// generate the vertices for the terrain formed by the chain and render it
+	generateTerrain(0.0f, WINDOW_WIDTH_PX * 3.0, 100.0f, 2.0f, 100);
 
 	// turn off trigger for fadeout shader
 	registry.screenStates.components[0].fadeout = 0.0f;

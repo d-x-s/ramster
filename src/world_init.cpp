@@ -17,7 +17,7 @@ Entity createBall(b2WorldId worldId)
 	// Define a dynamic body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
-	bodyDef.position = b2Vec2{ 100.0f, 100.0f };
+	bodyDef.position = b2Vec2{ 300.0f, 300.0f };
 	bodyDef.fixedRotation = false; // Allow rolling
 
 	// Use `b2CreateBody()` instead of `world.CreateBody()`
@@ -76,12 +76,10 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos)
 {
 	Entity entity = Entity();
 
-	// {{{ OK }}} TODO A1: create a gridLine component
 	GridLine& gridLine = registry.gridLines.emplace(entity);
 	gridLine.start_pos = start_pos;
 	gridLine.end_pos = start_pos + end_pos;
 
-	// re-use the "DEBUG_LINE" renderRequest
 	registry.renderRequests.insert(
 		entity,
 		{
@@ -91,9 +89,31 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos)
 		}
 	);
 	
-	// {{{ OK }}} TODO A1: grid line color (choose your own color, RGB gray)
-	registry.colors.insert(entity, vec3(0.5f, 0.5f, 0.5f)); 
+	registry.colors.insert(entity, vec3(0.0f, 1.0f, 0.0f)); 
+	return entity;
+}
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!! line segments between arbitrary points
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Entity createLine(vec2 start_pos, vec2 end_pos)
+{
+	Entity entity = Entity();
+
+	Line& line = registry.lines.emplace(entity);
+	line.start_pos = start_pos;
+	line.end_pos = end_pos;
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::TEXTURE_COUNT,
+			EFFECT_ASSET_ID::EGG,
+			GEOMETRY_BUFFER_ID::DEBUG_LINE
+		}
+	);
+
+	registry.colors.insert(entity, vec3(1.0f, 0.0f, 0.0f));
 	return entity;
 }
 
@@ -298,32 +318,6 @@ Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
 		}
 	);
 
-	return entity;
-}
-
-Entity createLine(vec2 position, vec2 scale)
-{
-	Entity entity = Entity();
-
-	// Store a reference to the potentially re-used mesh object (the value is stored in the resource cache)
-	registry.renderRequests.insert(
-		entity,
-		{
-			// usage TEXTURE_COUNT when no texture is needed, i.e., an .obj or other vertices are used instead
-			TEXTURE_ASSET_ID::TEXTURE_COUNT,
-			EFFECT_ASSET_ID::EGG,
-			GEOMETRY_BUFFER_ID::DEBUG_LINE
-		}
-	);
-
-	// Create motion
-	Motion& motion = registry.motions.emplace(entity);
-	motion.angle = 0.f;
-	motion.velocity = { 0, 0 };
-	motion.position = position;
-	motion.scale = scale;
-
-	registry.debugComponents.emplace(entity);
 	return entity;
 }
 

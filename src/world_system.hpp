@@ -68,6 +68,7 @@ private:
 
 	// grid
 	std::vector<Entity> grid_lines;
+	std::vector<Entity> lines;
 
 	// music references
 	Mix_Music* background_music;
@@ -95,6 +96,7 @@ private:
 
 	// restart level
 	void restart_game();
+	void generateTerrain(float startX, float endX, float amplitude, float frequency, int segments);
 
 	// OpenGL window handle
 	GLFWwindow* window;

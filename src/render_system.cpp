@@ -67,13 +67,11 @@ void RenderSystem::drawGridLine(Entity entity, const mat3& projection) {
 		gl_has_errors();
 
 		glEnableVertexAttribArray(in_position_loc);
-		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-			sizeof(ColoredVertex), (void*)0);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (void*)0);
 		gl_has_errors();
 
 		glEnableVertexAttribArray(in_color_loc);
-		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
-			sizeof(ColoredVertex), (void*)sizeof(vec3));
+		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (void*)sizeof(vec3));
 		gl_has_errors();
 	}
 	else
@@ -111,6 +109,101 @@ void RenderSystem::drawGridLine(Entity entity, const mat3& projection) {
 	gl_has_errors();
 }
 
+void RenderSystem::drawLine(Entity entity, const mat3& projection) {
+	Line& line = registry.lines.get(entity);
+	Transform transform;
+
+	// Calculate direction vector and length
+	vec2 direction = line.end_pos - line.start_pos;
+	float length = glm::length(direction);
+
+	// Calculate angle using atan2 (Y over X for correct orientation)
+	float angle = atan2(direction.y, direction.x);
+
+	// Translate to midpoint
+	transform.translate((line.start_pos + line.end_pos) * 0.5f);
+
+	// Rotate the line to align with the start and end points
+	transform.rotate(angle);
+
+	// Apply scaling: length in X, and line thickness in Y
+	float line_thickness = 5.0f; // Adjust for visibility
+	transform.scale(vec2(length, line_thickness));
+
+	// Continue with rendering as before
+	assert(registry.renderRequests.has(entity));
+	const RenderRequest& render_request = registry.renderRequests.get(entity);
+
+	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
+	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
+	const GLuint program = (GLuint)effects[used_effect_enum];
+
+	// Setting shaders
+	glUseProgram(program);
+	gl_has_errors();
+
+	assert(render_request.used_geometry != GEOMETRY_BUFFER_ID::GEOMETRY_COUNT);
+	const GLuint vbo = vertex_buffers[(GLuint)render_request.used_geometry];
+	const GLuint ibo = index_buffers[(GLuint)render_request.used_geometry];
+
+	// Setting vertex and index buffers
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	gl_has_errors();
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	gl_has_errors();
+
+	if (render_request.used_effect == EFFECT_ASSET_ID::EGG) {
+		GLint in_position_loc = glGetAttribLocation(program, "in_position");
+		gl_has_errors();
+
+		GLint in_color_loc = glGetAttribLocation(program, "in_color");
+		gl_has_errors();
+
+		glEnableVertexAttribArray(in_position_loc);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
+			sizeof(ColoredVertex), (void*)0);
+		gl_has_errors();
+
+		glEnableVertexAttribArray(in_color_loc);
+		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
+			sizeof(ColoredVertex), (void*)sizeof(vec3));
+		gl_has_errors();
+	}
+	else {
+		assert(false && "Type of render request not supported");
+	}
+
+	// Getting uniform locations for glUniform* calls
+	GLint color_uloc = glGetUniformLocation(program, "fcolor");
+	const vec3 color = registry.colors.has(entity) ? registry.colors.get(entity) : vec3(1);
+	glUniform3fv(color_uloc, 1, (float*)&color);
+	gl_has_errors();
+
+	// Get number of indices from index buffer
+	GLint size = 0;
+	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);
+	gl_has_errors();
+
+	GLsizei num_indices = size / sizeof(uint16_t);
+
+	GLint currProgram;
+	glGetIntegerv(GL_CURRENT_PROGRAM, &currProgram);
+
+	// Setting uniform values
+	GLuint transform_loc = glGetUniformLocation(currProgram, "transform");
+	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float*)&transform.mat);
+	gl_has_errors();
+
+	GLuint projection_loc = glGetUniformLocation(currProgram, "projection");
+	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float*)&projection);
+	gl_has_errors();
+
+	// Drawing the line as two triangles forming a rectangle
+	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, nullptr);
+	gl_has_errors();
+}
+
 void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float elapsed_ms, bool game_active)
 {
 	// Transformation code, see Rendering and Transformation in the template
@@ -135,14 +228,14 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 		motion.angle = glm::degrees(angleRadians); // Convert radians to degrees
 
 		// Report data
-		std::cout << "Box2D Ball Body position = (" << b2Body_GetPosition(phys.bodyId).x << ", " << b2Body_GetPosition(phys.bodyId).y << ")\n";
+		// std::cout << "Box2D Ball Body position = (" << b2Body_GetPosition(phys.bodyId).x << ", " << b2Body_GetPosition(phys.bodyId).y << ")\n";
 	}
 
 	// TRANSLATE: Move to the correct position
 	transform.translate(motion.position);
 
-	// SCALE
-	transform.scale(motion.scale + 10.0f);
+	// SCALE (TODO, remove the arbitrary scale up)
+	transform.scale(motion.scale + 5.0f);
 
 	// ROTATE: Apply Box2D rotation to sprite
 	transform.rotate(glm::radians(motion.angle));
@@ -155,7 +248,7 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	//		transform.scale(motion.scale * render_request.animation_frames_scale[index]);
 	//	}
 	//}
-	//else { // otherwise juset set to the static size
+	//else { // otherwise just set to the static size
 	//	transform.scale(motion.scale);
 	//}
 
@@ -313,14 +406,14 @@ void RenderSystem::drawToScreen()
 	glBindBuffer(
 		GL_ELEMENT_ARRAY_BUFFER,
 		index_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]); // Note, GL_ELEMENT_ARRAY_BUFFER associates
-																	 // indices to the bound GL_ARRAY_BUFFER
+	// indices to the bound GL_ARRAY_BUFFER
 	gl_has_errors();
 
 	// add the "vignette" effect
 	const GLuint vignette_program = effects[(GLuint)EFFECT_ASSET_ID::VIGNETTE];
 
 	// set clock
-	GLuint time_uloc       = glGetUniformLocation(vignette_program, "time");
+	GLuint time_uloc = glGetUniformLocation(vignette_program, "time");
 	glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
 
 	// screen effects
@@ -328,7 +421,7 @@ void RenderSystem::drawToScreen()
 	GLuint apply_vignette_uloc = glGetUniformLocation(vignette_program, "apply_vignette");
 	GLuint apply_fadeout_uloc = glGetUniformLocation(vignette_program, "apply_fadeout");
 
-	ScreenState &screen = registry.screenStates.get(screen_state_entity);
+	ScreenState& screen = registry.screenStates.get(screen_state_entity);
 	// std::cout << "screen.darken_screen_factor: " << screen.darken_screen_factor << " entity id: " << screen_state_entity << std::endl;
 	glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
 	glUniform1f(apply_vignette_uloc, screen.vignette);
@@ -339,7 +432,7 @@ void RenderSystem::drawToScreen()
 	// same VBO)
 	GLint in_position_loc = glGetAttribLocation(vignette_program, "in_position");
 	glEnableVertexAttribArray(in_position_loc);
-	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void *)0);
+	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
 	gl_has_errors();
 
 	// Bind our texture in Texture Unit 0
@@ -352,7 +445,7 @@ void RenderSystem::drawToScreen()
 	glDrawElements(
 		GL_TRIANGLES, 3, GL_UNSIGNED_SHORT,
 		nullptr); // one triangle = 3 vertices; nullptr indicates that there is
-				  // no offset from the bound index buffer
+	// no offset from the bound index buffer
 	gl_has_errors();
 }
 
@@ -367,21 +460,21 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 	// First render to the custom framebuffer
 	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
 	gl_has_errors();
-	
+
 	// clear backbuffer
 	glViewport(0, 0, w, h);
 	glDepthRange(0.00001, 10);
-	
-	// white background
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+	// black background
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	glClearDepth(10.f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_DEPTH_TEST); // native OpenGL does not work with a depth buffer
-							  // and alpha blending, one would have to sort
-							  // sprites back to front
+	// and alpha blending, one would have to sort
+	// sprites back to front
 	gl_has_errors();
 
 	mat3 projection_2D = createProjectionMatrix();
@@ -398,6 +491,10 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 		// draw grid lines separately, as they do not have motion but need to be rendered
 		else if (registry.gridLines.has(entity)) {
 			drawGridLine(entity, projection_2D);
+		}
+		// draw terrain lines separately
+		else if (registry.lines.has(entity)) {
+			drawLine(entity, projection_2D);
 		}
 	}
 

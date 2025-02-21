@@ -13,13 +13,18 @@
 WorldSystem::WorldSystem(b2WorldId worldId) :
 	points(0),
 	max_towers(MAX_TOWERS_START),
-	next_invader_spawn(0),
-	invader_spawn_rate_ms(INVADER_SPAWN_RATE_MS),
+	next_enemy_spawn(0),
+	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
 	worldId(worldId),
 	grappleCounter(0)
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
+
+	// initialize key states with needed keys.
+	for (int i = 0; i < PLAYER_CONTROL_KEYS.size(); i++) {
+		keyStates[PLAYER_CONTROL_KEYS[i]] = false;
+	}
 }
 
 WorldSystem::~WorldSystem() {
@@ -41,7 +46,7 @@ WorldSystem::~WorldSystem() {
 
 // Debugging
 namespace {
-	void glfw_err_cb(int error, const char *desc) {
+	void glfw_err_cb(int error, const char* desc) {
 		std::cerr << error << ": " << desc << std::endl;
 	}
 }
@@ -93,7 +98,7 @@ GLFWwindow* WorldSystem::create_window() {
 	auto key_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2, int _3) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_key(_0, _1, _2, _3); };
 	auto cursor_pos_redirect = [](GLFWwindow* wnd, double _0, double _1) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_move({ _0, _1 }); };
 	auto mouse_button_pressed_redirect = [](GLFWwindow* wnd, int _button, int _action, int _mods) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_button_pressed(_button, _action, _mods); };
-	
+
 	glfwSetKeyCallback(window, key_redirect);
 	glfwSetCursorPosCallback(window, cursor_pos_redirect);
 	glfwSetMouseButtonCallback(window, mouse_button_pressed_redirect);
@@ -102,7 +107,7 @@ GLFWwindow* WorldSystem::create_window() {
 }
 
 bool WorldSystem::start_and_load_sounds() {
-	
+
 	//////////////////////////////////////
 	// Loading music and sounds with SDL
 	if (SDL_Init(SDL_INIT_AUDIO) < 0) {
@@ -139,7 +144,7 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	Mix_PlayMusic(background_music, -1);
 
 	// Set all states to default
-    restart_game();
+	restart_game();
 	createBall(worldId);
 }
 
@@ -153,12 +158,16 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Remove debug info from the last step
 	while (registry.debugComponents.entities.size() > 0)
-	    registry.remove_all_components_of(registry.debugComponents.entities.back());
+		registry.remove_all_components_of(registry.debugComponents.entities.back());
 
 	if (game_active) {
+		update_isGrounded();
+		handle_movement();
+
 		// Removing out of screen entities
 		auto& motions_registry = registry.motions;
 
+		/* Given that stuff bounce off map walls we will not need this.. 
 		// {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
 		// Remove entities that leave the screen on the left side
 		// Iterate backwards to be able to remove without interfering with the next object to visit
@@ -177,48 +186,27 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 				}
 			}
 		}
+		*/
 
-		// spawn new invaders
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		// {{{ OK }}} TODO A1: limit them to cells on the far-left, except (0, 0)
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		//next_invader_spawn -= elapsed_ms_since_last_update * current_speed;
-		//if (next_invader_spawn < 0.f) {
-		//	// reset timer
-		//	next_invader_spawn = (INVADER_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (INVADER_SPAWN_RATE_MS / 2);
+		// Spawns new enemies. borrows code from invader spawning.
+		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+		if (next_enemy_spawn <= 0.f) {
 
-		//	// grid dimensions
-		//	int first_col = 0;      // always spawn in the first column
-		//	int total_rows = 10;    // 10 rows indexed 0-9
+			// reset timer
+			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
 
-		//	// select a random row to spawn invader (spawn in row 1-9)
-		//	int row = 1 + (uniform_dist(rng) * 9);
+			//figure out x and y coordinates
+			float max_x = WINDOW_WIDTH_PX * 3.0; //this is also the room width
+			float max_y = WINDOW_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
 
-		//	// convert to world coordinates
-		//	float x_pos = (first_col + 0.5f) * GRID_CELL_WIDTH_PX;
-		//	float y_pos = (row + 0.5f) * GRID_CELL_HEIGHT_PX;
+			// random x and y coordinates on the map to spawn enemy
+			float pos_x = uniform_dist(rng) * max_x; 
+			float pos_y = max_y;  // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
 
-		//	// create invader with random initial position in first column
-		//	createInvader(renderer, vec2(x_pos, y_pos));
-		//}
-	}
+			// create enemy at random position
+			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+		}
 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// {{{ OK }}} TODO A1: game over fade out
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	assert(registry.screenStates.components.size() <= 1);
-    ScreenState &screen = registry.screenStates.components[0];
-    float min_counter_ms = 3000.f;
-
-	// reduce vignette strength starting from 1.0 to 0
-	if (vignette_timer_ms > 0.0f) {
-		vignette_timer_ms -= elapsed_ms_since_last_update;
-		registry.screenStates.components[0].darken_screen_factor =
-			std::max(vignette_timer_ms / 2000.0f, 0.0f); // clamp to non-negative
-	}
-	else {
-		// reset the boolean flag that triggers the vignette shader
-		registry.screenStates.components[0].vignette = 0.0f;
 	}
 
 	return game_active;
@@ -244,6 +232,64 @@ void WorldSystem::stop_game() {
 	}
 }
 
+// Function to create a smooth sine wave curve (hill)
+void WorldSystem::generateTerrain(float startX, float endX, float amplitude, float frequency, int segments) {
+	if (lines.empty()) {
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // Experimental code that renders a sine wave, no chain creation
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		std::vector<glm::vec2> points;
+		std::vector<b2Vec2> chainPoints;
+		float width = endX - startX;
+
+		// Generate points along a sine wave
+		for (int i = 0; i <= segments; ++i) {
+			float t = (float)i / segments;
+			float x = startX + t * width;
+			float y = amplitude * sin(frequency * t * M_PI);
+			points.push_back(glm::vec2(x, y + WINDOW_HEIGHT_PX / 4));
+
+			// Print points for rendering
+			std::cout << "Render Point[" << i << "]: x = " << x
+				<< ", y = " << y + WINDOW_HEIGHT_PX / 4 << std::endl;
+		}
+
+		// Connect consecutive points with lines
+		for (int i = 0; i < (int)points.size() - 1; ++i) {
+			lines.push_back(createLine(points[i], points[i + 1]));
+		}
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // NOTE: uncomment the block below and comment the block above to test chain shape creation
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		// b2Vec2 testPoints[] = {
+		// 	{ 400.0, 0.0 }, { 500.0, 50.0}, { 600.0, 100.0 },
+		// 	{ 700.0, 100.0 }, { 800.0, 50.0 }, { 900.0, 0.0}, 
+		// 	{ 400.0, 0.0 }
+		// };
+
+		// // render the line segments between points
+		// int count = sizeof(testPoints) / sizeof(testPoints[0]);
+		// for (int i = 0; i < count - 1; ++i) {
+		// 	lines.push_back(
+		// 		createLine(
+		// 			glm::vec2(testPoints[i].x, testPoints[i].y), 
+		// 			glm::vec2(testPoints[i + 1].x, testPoints[i + 1].y)));
+		// }
+
+		// b2ChainDef chainDef = b2DefaultChainDef();
+		// chainDef.count = count;
+		// chainDef.points = testPoints;
+		// chainDef.isLoop = false;
+		// chainDef.friction = 0.0f;
+		// chainDef.restitution = 0.1f;
+
+		// b2BodyDef bodyDef = b2DefaultBodyDef();
+		// b2BodyId _ = b2CreateBody(worldId, &bodyDef);
+		// b2CreateChain(_, &chainDef);
+	}
+}
+
 // Reset the world state to its initial state
 void WorldSystem::restart_game() {
 
@@ -257,13 +303,13 @@ void WorldSystem::restart_game() {
 
 	points = 0;
 	max_towers = MAX_TOWERS_START;
-	next_invader_spawn = 0;
-	invader_spawn_rate_ms = INVADER_SPAWN_RATE_MS;
+	next_enemy_spawn = 0;
+	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
 
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
 	while (registry.motions.entities.size() > 0)
-	    registry.remove_all_components_of(registry.motions.entities.back());
+		registry.remove_all_components_of(registry.motions.entities.back());
 
 	// debugging for memory/component leaks
 	registry.list_all_components();
@@ -274,7 +320,7 @@ void WorldSystem::restart_game() {
 	int grid_line_width = GRID_LINE_WIDTH_PX;
 
 	// render room lines
-	
+
 	// Room dimensions in Box2D world coordinates
 	const float roomWidth = 20.0f;
 	const float roomHeight = 15.0f;
@@ -297,6 +343,9 @@ void WorldSystem::restart_game() {
 		}
 	}
 
+	// generate the vertices for the terrain formed by the chain and render it
+	generateTerrain(0.0f, WINDOW_WIDTH_PX * 3.0, 145.0f, 5.0f, 100);
+
 	//create grapple point
 	createGrapplePoint(worldId);
 
@@ -318,87 +367,82 @@ void WorldSystem::restart_game() {
 // Compute collisions between entities
 void WorldSystem::handle_collisions() {
 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// {{{ OK }}} TODO A1: Loop over all collisions detected by the physics system
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// This is mostly a repurposing of collision handling implementation from A1
 	ComponentContainer<Collision>& collision_container = registry.collisions;
 	for (uint i = 0; i < collision_container.components.size(); i++) {
 		Entity entity = collision_container.entities[i];
 		Collision& collision = collision_container.components[i];
 		Entity other = collision.other; // the other entity in the collision
 
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		// {{{ OK }}} TODO A1: handle collision between deadly (projectile) and invader
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		if ((registry.projectiles.has(entity) && registry.invaders.has(other)) ||
-			(registry.projectiles.has(other) && registry.invaders.has(entity))) {
-			if (registry.invaders.has(entity)) {
-				Invader& invader_component = registry.invaders.get(entity);
-				Projectile& projectile_component = registry.projectiles.get(other);
-				invader_component.health -= projectile_component.damage;
-				if (invader_component.health <= 0) {
-					// explosion
-					Motion& motion = registry.motions.get(entity);
-					createExplosion(renderer, motion.position);
-					// remove tower and invader
+		// Player - Enemy Collision
+		if ((registry.enemies.has(entity) && registry.players.has(other)) ||
+			(registry.enemies.has(other) && registry.players.has(entity))) {
+			if (registry.enemies.has(entity)) {
+
+				// Figure out the position, velocity characteristics of player and enemy
+				Entity enemyEntity = entity;
+				Entity playerEntity = other;
+				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
+				b2BodyId enemyBodyId = enemyPhys.bodyId;
+				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
+				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
+				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
+				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
+				b2BodyId playerBodyId = playerPhys.bodyId;
+				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
+				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
+				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
+
+				// For now we'll base everything entirely on speed.
+				// If player speed > enemy speed, then enemy gets killed.
+				if (playerSpeed > enemySpeed) {
+					b2DestroyBody(enemyBodyId);
 					registry.remove_all_components_of(entity);
 					Mix_PlayChannel(-1, chicken_dead_sound, 0);
-					points += 1;
+					points++;
 				}
-				registry.remove_all_components_of(other);
+				// Otherwise player takes dmg (just loses pts for now) and we remove enemy.
+				else {
+					b2DestroyBody(enemyBodyId);
+					registry.remove_all_components_of(entity);
+					Mix_PlayChannel(-1, chicken_eat_sound, 0);
+					points -= 5; //bigger penalty
+				}
+
 			}
-			else { // it must be that registry.invaders.has(other)
-				Invader& invader_component = registry.invaders.get(other);
-				Projectile& projectile_component = registry.projectiles.get(entity);
-				invader_component.health -= projectile_component.damage;
-				if (invader_component.health <= 0) {
-					// explosion
-					Motion& motion = registry.motions.get(other);
-					createExplosion(renderer, motion.position);
-					// remove tower and invader
+			else { 
+				
+				// Figure out the position, velocity characteristics of player and enemy
+				Entity enemyEntity = other;
+				Entity playerEntity = entity;
+				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
+				b2BodyId enemyBodyId = enemyPhys.bodyId;
+				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
+				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
+				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
+				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
+				b2BodyId playerBodyId = playerPhys.bodyId;
+				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
+				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
+				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
+
+				// For now we'll base everything entirely on speed.
+				// If player speed > enemy speed, then enemy gets killed.
+				if (playerSpeed > enemySpeed) {
+					b2DestroyBody(enemyBodyId);
 					registry.remove_all_components_of(other);
 					Mix_PlayChannel(-1, chicken_dead_sound, 0);
-					points += 1;
+					points++;
 				}
-				registry.remove_all_components_of(entity);
-			}
-			continue;
-		}
+				// Otherwise player takes dmg (for now it just applies vignette effect)
+				else {
+					b2DestroyBody(enemyBodyId);
+					registry.remove_all_components_of(other);
+					Mix_PlayChannel(-1, chicken_eat_sound, 0);
+					points-=5;
+				}
 
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		// {{{ OK }}} TODO A1: handle collision between tower and invader
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		if ((registry.towers.has(entity) && registry.invaders.has(other)) ||
-			(registry.towers.has(other) && registry.invaders.has(entity))) {
-			if (registry.invaders.has(entity)) {
-				// explosion
-				Motion& motion = registry.motions.get(entity);
-				createExplosion(renderer, motion.position);
-				// remove tower and invader
-				Invader& invader_component = registry.invaders.get(entity);
-				Tower& tower_component = registry.towers.get(other);
-				registry.remove_all_components_of(entity);
-				registry.remove_all_components_of(other);
 			}
-			else { // it must be that registry.invaders.has(other)
-				// explosion
-				Motion& motion = registry.motions.get(other);
-				createExplosion(renderer, motion.position);
-				// remove tower and invader
-				Invader& invader_component = registry.invaders.get(other);
-				Tower& tower_component = registry.towers.get(entity);
-				registry.remove_all_components_of(other);
-				registry.remove_all_components_of(entity);
-			}
-
-			// activate vignette effect
-			registry.screenStates.components[0].darken_screen_factor = 1.0f;
-			registry.screenStates.components[0].vignette = 1.0f;
-			trigger_vignette(2000.0f);
-			
-			Mix_PlayChannel(-1, chicken_eat_sound, 0);
-			max_towers -= 1;
-			continue;
 		}
 	}
 
@@ -409,6 +453,127 @@ void WorldSystem::handle_collisions() {
 // Should the game be over ?
 bool WorldSystem::is_over() const {
 	return bool(glfwWindowShouldClose(window));
+}
+
+void WorldSystem::update_isGrounded() {
+	Entity playerEntity = registry.players.entities[0];
+	PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
+	b2BodyId bodyId = phys.bodyId;
+
+	// calculate if ball is grounded or not.
+	int num_contacts = b2Body_GetContactCapacity(bodyId);
+	bool& isGroundedRef = registry.playerPhysics.get(playerEntity).isGrounded;
+
+	if (num_contacts == 0) {
+		isGroundedRef = false;
+		return;
+	}
+
+
+	b2ContactData * contactData = new b2ContactData[num_contacts];
+	b2Body_GetContactData(bodyId, contactData, num_contacts);
+
+	for (int i = 0; i < num_contacts; i++) {
+		b2ContactData contact = contactData[i];
+		
+		// if the collision involves the player.
+		if ((contact.shapeIdA.index1 == bodyId.index1 || contact.shapeIdB.index1 == bodyId.index1)) {
+			b2Manifold manifold = contact.manifold;
+			b2Vec2 normal = manifold.normal;
+
+			if (normal.y >= 0.15f) {
+				isGroundedRef = true;
+				delete[] contactData;
+				return;
+			}
+		}
+	}
+
+	isGroundedRef = false;
+	delete[] contactData;
+}
+
+// call inside step() function for the most precise and responsive movement handling.
+void WorldSystem::handle_movement() {
+
+	// first, update states.
+	int state = glfwGetKey(window, GLFW_KEY_E);
+
+	for (int i = 0; i < PLAYER_CONTROL_KEYS.size(); i++) {
+		int key = PLAYER_CONTROL_KEYS[i];
+		int action = glfwGetKey(window, key);
+
+		// set the keyState
+		if (action == GLFW_PRESS) {
+			keyStates[key] = true;
+		}
+		else if (action == GLFW_RELEASE) {
+			keyStates[key] = false;
+		}
+
+	}
+
+	b2Vec2 nonjump_movement_force = { 0, 0 };
+	b2Vec2 jump_impulse   = { 0, 0 };
+	const float forceMagnitude = GROUNDED_MOVEMENT_FORCE;
+	const float jumpImpulseMagnitude = JUMP_IMPULSE;
+
+	// Determine impulse direction based on key pressed
+	if (keyStates[GLFW_KEY_W]) {
+		// nonjump_movement_force = { 0, forceMagnitude };
+	}
+	else if (keyStates[GLFW_KEY_A]) {
+		nonjump_movement_force = { -forceMagnitude, 0 };
+	}
+	else if (keyStates[GLFW_KEY_S]) {
+		// nonjump_movement_force = { 0, -forceMagnitude };
+	}
+	else if (keyStates[GLFW_KEY_D]) {
+		nonjump_movement_force = { forceMagnitude, 0 };
+	}
+
+	// jump is set seperately, since it can be used in conjunction with the movement keys.
+	if (keyStates[GLFW_KEY_SPACE]) {
+		// Jump: apply a strong upward impulse
+		jump_impulse = { 0, jumpImpulseMagnitude };
+	}
+
+	// Apply impulse if non-zero.
+	if (nonjump_movement_force != b2Vec2_zero || jump_impulse != b2Vec2_zero) {
+		// Assuming registry.players.entities[0] holds the player entity.
+		if (!registry.players.entities.empty()) {
+			Entity playerEntity = registry.players.entities[0];
+
+			if (registry.physicsBodies.has(playerEntity)) {
+				PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
+				b2BodyId bodyId = phys.bodyId;
+
+				// make sure player is grounded.
+				bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
+
+				// if jump is registered, it should override any other force being applied.
+				if (jump_impulse != b2Vec2_zero && isGrounded) {
+					b2Body_ApplyLinearImpulseToCenter(bodyId, jump_impulse, true);
+				}
+				else if (nonjump_movement_force != b2Vec2_zero) {
+					float multiplier = 1.0f;
+
+					if (!isGrounded) {
+						multiplier = AIR_STRAFE_FORCE_MULTIPLIER;
+					}
+
+					// apply force slightly above center of mass to make ball spin.
+					// don't get the reference of the position, we don't want to alter the value.
+					b2Vec2 bodyPosition = b2Body_GetPosition(bodyId);
+					bodyPosition.y += 2.f;
+					b2Body_ApplyForce(bodyId, nonjump_movement_force * multiplier, bodyPosition, true);
+				}
+			}
+		}
+	}
+
+
+
 }
 
 // on key callback
@@ -434,7 +599,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 	}
 
 	// Debug toggle with D
-	if (key == GLFW_KEY_D && action == GLFW_RELEASE) {
+	if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
 		debugging.in_debug_mode = !debugging.in_debug_mode;
 	}
 
@@ -555,8 +720,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 		//   if it exists there
 		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		if (tile_x == 13 && tile_y != 0) {
-			vec2 tower_pos = vec2((tile_x + 0.5f) * GRID_CELL_WIDTH_PX, 
-								  (tile_y + 0.5f) * GRID_CELL_HEIGHT_PX);
+			vec2 tower_pos = vec2((tile_x + 0.5f) * GRID_CELL_WIDTH_PX,
+				(tile_y + 0.5f) * GRID_CELL_HEIGHT_PX);
 			if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 				// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 				// {{{ OK }}} TODO A1: right-click removes towers
@@ -587,8 +752,8 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 					return;
 				}
 				else {
-					std::cout << "cannot place any more towers, max towers is: " << max_towers << 
-						         " and there are currently this number of towers: " << numTowers << std::endl;
+					std::cout << "cannot place any more towers, max towers is: " << max_towers <<
+						" and there are currently this number of towers: " << numTowers << std::endl;
 					return;
 				}
 			}

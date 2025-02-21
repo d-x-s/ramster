@@ -8,13 +8,16 @@ Entity createBall(b2WorldId worldId)
 
 	// Add physics and player components
 	PhysicsBody& ball = registry.physicsBodies.emplace(entity);
+	PlayerPhysics& ball_physics = registry.playerPhysics.emplace(entity);
+	ball_physics.isGrounded = false;
+
 	auto& player_registry = registry.players;
 	Player& player = registry.players.emplace(entity);
 
 	// Define a dynamic body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
-	bodyDef.position = b2Vec2{ 100.0f, 100.0f };
+	bodyDef.position = b2Vec2{ 300.0f, 300.0f };
 	bodyDef.fixedRotation = false; // Allow rolling
 
 	// Use `b2CreateBody()` instead of `world.CreateBody()`
@@ -24,24 +27,28 @@ Entity createBall(b2WorldId worldId)
 
 	// Define shape properties using Box2D v3 functions
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
-	shapeDef.density = 1.0f;
-	shapeDef.friction = 0.3f;
-	shapeDef.restitution = 0.8f; // Higher restitution makes it bouncy
+	shapeDef.density = BALL_DENSTIY;
+	shapeDef.friction = BALL_FRICTION;
+	shapeDef.restitution = BALL_RESTITUTION; // Higher restitution makes it bouncy
 
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = 0.1f;
+	circle.radius = 0.35f;
 	b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.3, restitution=0.8 (bouncy).\n";
 
 	ball.bodyId = bodyId;
 
+	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
+
 	// Add motion & render request for ECS synchronization
 	auto& motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
 	motion.position = vec2(100.0f, 100.0f);
-	motion.scale = vec2(32.0, 32.0);
+
+	float scale = circle.radius * 100.f;
+	motion.scale = vec2(scale, scale);
 	std::cout << "world_init.cpp: createBall: Added motion component to ball.\n";
 
 	// Associate player with camera
@@ -61,6 +68,77 @@ Entity createBall(b2WorldId worldId)
 	return entity;
 }
 
+// This will create an enemy entity and place it on a random position in the map.
+Entity createEnemy(b2WorldId worldID, vec2 pos) {
+
+	Entity entity = Entity();
+
+	// Add physics and enemy components
+	PhysicsBody& enemyBody = registry.physicsBodies.emplace(entity);
+	EnemyPhysics& enemy_physics = registry.enemyPhysics.emplace(entity);
+	enemy_physics.isGrounded = false;
+
+	auto& enemy_registry = registry.enemies;
+	Enemy& enemy = registry.enemies.emplace(entity);
+
+	// Define a dynamic body
+	b2BodyDef bodyDef = b2DefaultBodyDef();
+	bodyDef.type = b2_dynamicBody;
+	bodyDef.position = b2Vec2{ pos[0], pos[1]};
+	// commenting this out should disable rolling...?  bodyDef.fixedRotation = false; // Allow rolling
+
+	// Use `b2CreateBody()` instead of `world.CreateBody()`
+	b2BodyId bodyId = b2CreateBody(worldID, &bodyDef);
+	std::cout << "Dynamic body ENEMY created at position ("
+		<< bodyDef.position.x << ", " << bodyDef.position.y << ")\n";
+
+	// Define shape properties using Box2D v3 functions
+	b2ShapeDef shapeDef = b2DefaultShapeDef();
+	shapeDef.density = ENEMY_DENSITY;
+	shapeDef.friction = ENEMY_FRICTION;
+	shapeDef.restitution = ENEMY_RESTITUTION; 
+
+	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
+	// We'll update the enemy hitbox later.
+	b2Circle circle;
+	circle.center = b2Vec2{ 0.0f, 0.0f };
+	circle.radius = 0.5f;
+	b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.1, restitution=0.1 (bouncy).\n";
+
+	enemyBody.bodyId = bodyId;
+
+	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
+
+	// Add motion & render request for ECS synchronization
+	auto& motion = registry.motions.emplace(entity);
+	motion.angle = 0.f;
+	motion.position = pos;
+
+	float scale = circle.radius * 100.f;
+	motion.scale = vec2(scale, scale);
+	std::cout << "world_init.cpp: createEnemy: Added motion component to enemy.\n";
+
+  std::vector<TEXTURE_ASSET_ID> frames = { TEXTURE_ASSET_ID::FLOATER_1, TEXTURE_ASSET_ID::FLOATER_2, TEXTURE_ASSET_ID::FLOATER_3 };
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			frames[0],                    // base apperance is just the first frame
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE,
+			frames,                       // store all animation frames
+			{},							              // no custom scale per frame
+			true,						              // loop the animation
+			200.0f,                       // frame time (ms)
+			0.0f,                         // elapsed time
+			0                             // current frame index
+		}
+	);
+	std::cout << "Inserted render request for enemy.\n";
+
+	return entity;
+}
 Entity createGrapplePoint(b2WorldId worldId){
 	Entity entity = Entity();
 
@@ -123,12 +201,10 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos)
 {
 	Entity entity = Entity();
 
-	// {{{ OK }}} TODO A1: create a gridLine component
 	GridLine& gridLine = registry.gridLines.emplace(entity);
 	gridLine.start_pos = start_pos;
 	gridLine.end_pos = start_pos + end_pos;
 
-	// re-use the "DEBUG_LINE" renderRequest
 	registry.renderRequests.insert(
 		entity,
 		{
@@ -138,9 +214,31 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos)
 		}
 	);
 	
-	// {{{ OK }}} TODO A1: grid line color (choose your own color, RGB gray)
-	registry.colors.insert(entity, vec3(0.5f, 0.5f, 0.5f)); 
+	registry.colors.insert(entity, vec3(0.0f, 1.0f, 0.0f)); 
+	return entity;
+}
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!! line segments between arbitrary points
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Entity createLine(vec2 start_pos, vec2 end_pos)
+{
+	Entity entity = Entity();
+
+	Line& line = registry.lines.emplace(entity);
+	line.start_pos = start_pos;
+	line.end_pos = end_pos;
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::TEXTURE_COUNT,
+			EFFECT_ASSET_ID::EGG,
+			GEOMETRY_BUFFER_ID::DEBUG_LINE
+		}
+	);
+
+	registry.colors.insert(entity, vec3(1.0f, 1.0f, 1.0f));
 	return entity;
 }
 
@@ -206,8 +304,8 @@ Entity createInvader(RenderSystem* renderer, vec2 position)
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE,
 			frames,                       // store all animation frames
-			{},							  // no custom scale per frame
-			true,						  // loop the animation
+			{},							              // no custom scale per frame
+			true,						              // loop the animation
 			200.0f,                       // frame time (ms)
 			0.0f,                         // elapsed time
 			0                             // current frame index
@@ -345,32 +443,6 @@ Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
 		}
 	);
 
-	return entity;
-}
-
-Entity createLine(vec2 position, vec2 scale)
-{
-	Entity entity = Entity();
-
-	// Store a reference to the potentially re-used mesh object (the value is stored in the resource cache)
-	registry.renderRequests.insert(
-		entity,
-		{
-			// usage TEXTURE_COUNT when no texture is needed, i.e., an .obj or other vertices are used instead
-			TEXTURE_ASSET_ID::TEXTURE_COUNT,
-			EFFECT_ASSET_ID::EGG,
-			GEOMETRY_BUFFER_ID::DEBUG_LINE
-		}
-	);
-
-	// Create motion
-	Motion& motion = registry.motions.emplace(entity);
-	motion.angle = 0.f;
-	motion.velocity = { 0, 0 };
-	motion.position = position;
-	motion.scale = scale;
-
-	registry.debugComponents.emplace(entity);
 	return entity;
 }
 

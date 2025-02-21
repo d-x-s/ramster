@@ -10,6 +10,12 @@ struct Player
 
 };
 
+// Enemy component
+struct Enemy
+{
+
+};
+
 // Tower
 struct Tower {
 	float range;	// for vision / detection
@@ -152,7 +158,10 @@ enum class TEXTURE_ASSET_ID {
 	EXPLOSION_1 = PROJECTILE + 1,
 	EXPLOSION_2 = EXPLOSION_1 + 1,
 	EXPLOSION_3 = EXPLOSION_2 + 1,
-	TEXTURE_COUNT = EXPLOSION_3 + 1,
+  FLOATER_1 = EXPLOSION_3 + 1,
+  FLOATER_2 = FLOATER_1 + 1,
+  FLOATER_3 = FLOATER_2 + 1,
+	TEXTURE_COUNT = FLOATER_3 + 1,
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
@@ -194,11 +203,11 @@ struct RenderRequest {
 
 	// embed optional animation data
 	std::vector<TEXTURE_ASSET_ID> animation_frames;	// animation frames
-	std::vector<float> animation_frames_scale;		// optionally assign scale to each frame independently
-	bool is_loop = true;							// if true, loop the animation
-	float animation_frame_time = 0;					// time per frame in ms
-	float animation_elapsed_time = 0;				// relative elapsed time
-	int animation_current_frame = 0;				// current frame index
+	std::vector<float> animation_frames_scale;		  // optionally assign scale to each frame independently
+	bool is_loop = true;							              // if true, loop the animation
+	float animation_frame_time = 0;					        // time per frame in ms
+	float animation_elapsed_time = 0;				        // relative elapsed time
+	int animation_current_frame = 0;				        // current frame index
 };
 
 struct Explosion { };
@@ -214,4 +223,17 @@ struct Grapple {
 struct Camera {
 	vec2 position;  // Camera's world position
 	float zoom = 1.0f;  // Optional zoom factor
+};
+
+struct PlayerPhysics {
+	bool isGrounded;
+};
+
+struct Line {
+	vec2 start_pos = { 0,  0 };
+	vec2 end_pos = { 10, 10 };	// default to diagonal line
+};
+
+struct EnemyPhysics {
+	bool isGrounded;
 };

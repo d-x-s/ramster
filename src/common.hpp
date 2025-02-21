@@ -5,6 +5,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <array>
 
 // glfw (OpenGL)
 #define NOMINMAX
@@ -46,7 +47,7 @@ const int GRID_LINE_WIDTH_PX = 2;
 const int TOWER_TIMER_MS = 1000;	// number of milliseconds between tower shots
 const int MAX_TOWERS_START = 5;
 
-const int INVADER_SPAWN_RATE_MS = 2 * 1000;
+const int ENEMY_SPAWN_RATE_MS = 3 * 1000;
 
 const int INVADER_VELOCITY_GREY = 80;
 const int INVADER_VELOCITY_RED = 70;
@@ -60,6 +61,39 @@ const int INVADER_HEALTH_BLUE = 120;
 
 const int PROJECTILE_VELOCITY = -100;
 const int PROJECTILE_DAMAGE = 10;
+
+// KEY STATES
+const std::vector<int> PLAYER_CONTROL_KEYS = {
+    GLFW_KEY_W,
+    GLFW_KEY_A,
+    GLFW_KEY_S,
+    GLFW_KEY_D,
+    GLFW_KEY_SPACE
+};
+
+
+// PLAYER 2DBODY
+
+
+// PLAYER PHYSICS
+const float GRAVITY = -980; // should be implemented as a force, not an impulse.
+
+const float GROUNDED_MOVEMENT_FORCE = 300.0f;
+const float AIR_STRAFE_FORCE_MULTIPLIER = 0.5f;
+const float JUMP_IMPULSE = 80.0f;
+
+// WARNING: don't mess with the density, if you do all the forces have to be re-tuned.
+const float BALL_DENSTIY = 1.0f;
+const float BALL_FRICTION = 0.3f;
+const float BALL_RESTITUTION = 0.3f;
+const float BALL_ANGULAR_DAMPING = 75.0f;
+
+
+// ENEMY 2DBODY
+// Shares most of player 2D body but different density, friction, restitution, etc.
+const float ENEMY_DENSITY = 0.5f; // lower number = less affected by gravity 
+const float ENEMY_FRICTION = 0.02f; //enemy friction. for now we're setting it low so it's less affected by gravity & spins less
+const float ENEMY_RESTITUTION = 0.4f; //enemy bounciness... increase this number to make things more chaotic.
 
 // These are hard coded to the dimensions of the entity's texture
 

@@ -26,6 +26,12 @@ int main()
 	worldDef.gravity.y = -9.8f;
 	b2WorldId worldId = b2CreateWorld(&worldDef);
 
+	b2Vec2 gravity_vector;
+	gravity_vector.x = 0.f;
+	gravity_vector.y = GRAVITY;
+
+	b2World_SetGravity(worldId, gravity_vector);
+
 	// Room dimensions
 	const float roomWidth = WINDOW_WIDTH_PX * 3.0;
 	const float roomHeight = WINDOW_HEIGHT_PX;
@@ -41,14 +47,16 @@ int main()
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 		b2CreatePolygonShape(bodyId, &shapeDef, &polygon);
 
+		shapeDef.friction = 0.1f;
+
 		return bodyId;
 	};
 
 	// Create room boundaries
-	create_wall(roomWidth / 2, 0.0f, roomWidth / 2, wallThickness);			// Floor
-	create_wall(roomWidth / 2, roomHeight, roomWidth / 2, wallThickness);	// Ceiling
-	create_wall(0.0f, roomHeight / 2, wallThickness, roomHeight / 2);		// Left Wall
-	create_wall(roomWidth, roomHeight / 2, wallThickness, roomHeight / 2);	// Right Wall
+	b2BodyId floorId = create_wall(roomWidth / 2, 0.0f, roomWidth / 2, wallThickness);			// Floor
+	b2BodyId ceilingId = create_wall(roomWidth / 2, roomHeight, roomWidth / 2, wallThickness);	// Ceiling
+	b2BodyId leftWallId = create_wall(0.0f, roomHeight / 2, wallThickness, roomHeight / 2);		// Left Wall
+	b2BodyId rightWallId = create_wall(roomWidth, roomHeight / 2, wallThickness, roomHeight / 2);	// Right Wall
 
 	// global systems
 	WorldSystem   world_system(worldId);

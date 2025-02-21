@@ -6,6 +6,9 @@
 
 #include <box2d/box2d.h>
 
+// enemy
+Entity createEnemy(b2WorldId worldID, vec2 pos);
+
 // invaders
 Entity createInvader(RenderSystem* renderer, vec2 position);
 
@@ -22,8 +25,8 @@ Entity createExplosion(RenderSystem* renderer, vec2 position);
 // grid lines to show tile positions
 Entity createGridLine(vec2 start_pos, vec2 end_pos);
 
-// debugging red lines
-Entity createLine(vec2 position, vec2 size);
+// terrain lines
+Entity createLine(vec2 start_pos, vec2 end_pos);
 
 // grapple point
 Entity createGrapplePoint(b2WorldId worldId);

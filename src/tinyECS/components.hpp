@@ -216,6 +216,10 @@ struct PhysicsBody {
 	b2BodyId bodyId;
 };
 
+struct GrapplePoint {
+
+};
+
 struct Grapple {
 	b2JointId jointId;
 	b2BodyId ballBodyId;

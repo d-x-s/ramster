@@ -2,6 +2,7 @@
 #include "physics_system.hpp"
 #include "world_init.hpp"
 #include <iostream>
+#include "world_system.hpp"
 
 // Constructor
 PhysicsSystem::PhysicsSystem(b2WorldId worldId) : worldId(worldId)
@@ -16,8 +17,12 @@ float camera_next_step = 0.f;      // The next step in the camera's movement
 float camera_objective_loc = -1.f; // Where the camera wants to end up (X-axis)
 int shift_index = 1;               // What stage of the camera's movement it is in (X-axis)
 bool speedy = false;               // Whether the player is moving faster than QUICK_MOVEMENT_THRESHOLD
+float prev_x = 0.f;                // The previous x position of the camera
 float prev_y = 0.f;                // The previous y position of the camera
 float center_y = -1.f;             // The center y position of the camera
+vec2 grapple_shift = { 0.f, 0.f }; // What stage of the camera's movement it is in towards grapple
+float reset_shift = 0.f;           // What stage of the camera's movement it is in after grapple
+bool after_grapple = false;        // Whether the camera is resetting after a grapple
 
 // Camera Constants
 float QUICK_MOVEMENT_THRESHOLD = 700.f;
@@ -225,6 +230,30 @@ void PhysicsSystem::step(float elapsed_ms)
     }
   }
 
+  // Get grapple point position (static for now)
+  Entity grapplePointEntity = registry.grapplePoints.entities[0];
+  PhysicsBody& grappleBody = registry.physicsBodies.get(grapplePointEntity);
+  b2BodyId grappleBodyId = grappleBody.bodyId;
+  b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
+
+  // Move camera towards grapple point
+  if (grappleActive) {
+      // Initialize variables
+      camX = lerp(prev_x, grapplePos.x, grapple_shift.x);
+	  camY = lerp(prev_y, grapplePos.y, grapple_shift.y);
+
+	  if (camX != grapplePos.x || camY != grapplePos.y) {
+          grapple_shift += 0.02;
+	  }
+  }
+  // Reset camera back to player
+  else {
+      if (grapple_shift != vec2(0.f, 0.f)) {
+          after_grapple = true;
+          grapple_shift = { 0.f, 0.f };
+      }
+  }
+
   // Hard coded for now, will change to be dynamic later
   float LEFT_BOUNDARY = WINDOW_WIDTH_PX / 2.f;
   float RIGHT_BOUNDARY = WINDOW_WIDTH_PX * 2.5f;
@@ -234,19 +263,37 @@ void PhysicsSystem::step(float elapsed_ms)
   // This happens last because it has the highest priority
   if (camX < LEFT_BOUNDARY)
   {
-    camX = WINDOW_WIDTH_PX / 2.f;
+      camX = WINDOW_WIDTH_PX / 2.f;
   }
   if (camX > RIGHT_BOUNDARY)
   {
-    camX = WINDOW_WIDTH_PX * 2.5f;
+      camX = WINDOW_WIDTH_PX * 2.5f;
   }
   if (camY > TOP_BOUNDARY)
   {
-    camY = WINDOW_HEIGHT_PX / 2.f;
+      camY = WINDOW_HEIGHT_PX / 2.f;
   }
+
+  // If the camera is post-grapple, we need to dynamically move it back 
+  // to wherever it needs to go
+  if (after_grapple)
+  {
+      // If we have reached destination or player re-grapples, stop the process
+      if (reset_shift >= 1.0f || grappleActive) {
+          after_grapple = false;
+		  reset_shift = 0.f;
+      }
+      else {
+          camX = lerp(prev_x, camX, reset_shift);
+          camY = lerp(prev_y, camY, reset_shift);
+          reset_shift += 0.001;
+      }
+  }
+
 
   camera.position = vec2(camX, camY);
 
+  prev_x = camX;
   prev_y = camY;
 
   // Debugging output

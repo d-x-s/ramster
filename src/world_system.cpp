@@ -9,6 +9,9 @@
 
 #include "physics_system.hpp"
 
+// Global Variables
+bool grappleActive = false;
+
 // create the world
 WorldSystem::WorldSystem(b2WorldId worldId) :
 	points(0),
@@ -16,8 +19,7 @@ WorldSystem::WorldSystem(b2WorldId worldId) :
 	next_enemy_spawn(0),
 	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
 	worldId(worldId),
-	grappleCounter(0),
-	grappleActive(false)
+	grappleCounter(0)
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());

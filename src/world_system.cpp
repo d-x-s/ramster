@@ -18,8 +18,7 @@ WorldSystem::WorldSystem(b2WorldId worldId) :
 	max_towers(MAX_TOWERS_START),
 	next_enemy_spawn(0),
 	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
-	worldId(worldId),
-	grappleCounter(0)
+	worldId(worldId)
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());

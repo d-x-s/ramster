@@ -17,7 +17,7 @@ Entity createBall(b2WorldId worldId)
 	// Define a dynamic body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
-	bodyDef.position = b2Vec2{ 300.0f, 300.0f };
+	bodyDef.position = b2Vec2{ 110.0f, 300.0f };
 	bodyDef.fixedRotation = false; // Allow rolling
 	bodyDef.isBullet = true; // Prevent tunneling at high speeds
 
@@ -35,7 +35,7 @@ Entity createBall(b2WorldId worldId)
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = 0.35f;
+	circle.radius = 0.5f;
 	b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.3, restitution=0.8 (bouncy).\n";
 
@@ -48,7 +48,7 @@ Entity createBall(b2WorldId worldId)
 	motion.angle = 0.f;
 	motion.position = vec2(100.0f, 100.0f);
 
-	float scale = circle.radius * 100.f;
+	float scale = circle.radius * 75.0f;
 	motion.scale = vec2(scale, scale);
 	std::cout << "world_init.cpp: createBall: Added motion component to ball.\n";
 

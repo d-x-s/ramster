@@ -241,70 +241,72 @@ void WorldSystem::stop_game() {
 // Function to create a smooth sine wave curve (hill)
 void WorldSystem::generateTerrain(float startX, float endX, float amplitude, float frequency, int segments) {
 	if (lines.empty()) {
- //   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- //   // Experimental code that renders a sine wave, no chain creation
- //   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//	std::vector<glm::vec2> points;
-	//	std::vector<b2Vec2> chainPoints;
-	//	float width = endX - startX;
-
-	//	// Generate points along a sine wave
-	//	for (int i = 0; i <= segments; ++i) {
-	//		float t = (float)i / segments;
-	//		float x = startX + t * width;
-	//		float y = amplitude * sin(frequency * t * M_PI);
-	//		points.push_back(glm::vec2(x, y + WINDOW_HEIGHT_PX / 4));
-
-	//		// Print points for rendering
-	//		std::cout << "Render Point[" << i << "]: x = " << x
-	//			<< ", y = " << y + WINDOW_HEIGHT_PX / 4 << std::endl;
-	//	}
-
-	//	// Connect consecutive points with lines
-	//	for (int i = 0; i < (int)points.size() - 1; ++i) {
-	//		lines.push_back(createLine(points[i], points[i + 1]));
-	//	}
-
+    /*
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // NOTE: uncomment the block below and comment the block above to test chain shape creation
+    // Experimental code that renders a sine wave, no chain creation
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//std::vector<b2Vec2> testPoints = {
-	//		{ 400.0, 0.0 }, { 900.0, 0.0}, { 800.0, 50.0 },
-	//		{ 700.0, 100.0 }, { 600.0, 100.0 }, { 500.0, 50.0},
-	//		{ 400.0, 0.0 }
-	//};
-    
-     std::vector<b2Vec2> testPoints = {
-		 	{ 0.0, 288.0 }, { 50.0, 288.0}, { 100.0, 288.0 },
-		 	{ 150.0, 200.0 }, { 200.0, 128.0 }, { 250.0, 72.0}, 
-		 	{ 300.0, 32.0 }, { 350.0, 8.0 }, {400.0, 0.0},
-		 	{ 0.0, 0.0}, { 0.0, 288.0 }
-		 };
+		std::vector<glm::vec2> points;
+		std::vector<b2Vec2> chainPoints;
+		float width = endX - startX;
 
-    // reverse for counter-clockwise winding order
-    int count = testPoints.size();
-    std::cout << "Original testPoints:" << std::endl;
-    for (int i = 0; i < count; i++) {
-        std::cout << "{" << testPoints[i].x << ", " << testPoints[i].y << "}";
-        if (i < count - 1)
-            std::cout << ",";
-        std::cout << std::endl;
-    }
+		// Generate points along a sine wave
+		for (int i = 0; i <= segments; ++i) {
+			float t = (float)i / segments;
+			float x = startX + t * width;
+			float y = amplitude * sin(frequency * t * M_PI);
+			points.push_back(glm::vec2(x, y + WINDOW_HEIGHT_PX / 4));
 
-    //testPoints.pop_back();
+			// Print points for rendering
+			std::cout << "Render Point[" << i << "]: x = " << x
+				<< ", y = " << y + WINDOW_HEIGHT_PX / 4 << std::endl;
+		}
+
+		// Connect consecutive points with lines
+		for (int i = 0; i < (int)points.size() - 1; ++i) {
+			lines.push_back(createLine(points[i], points[i + 1]));
+		}
+    */
+
+    // hardcoded points that make up the ramp
+		std::vector<b2Vec2> testPoints = {
+			{ 0.0f, 288.0f },
+			{ 16.67f, 288.0f },
+			{ 33.33f, 288.0f },
+			{ 50.0f, 288.0f },
+			{ 66.67f, 288.0f },
+			{ 83.33f, 288.0f },
+			{ 100.0f, 288.0f },
+			{ 116.67f, 258.67f },
+			{ 133.33f, 229.33f },
+			{ 150.0f, 200.0f },
+			{ 166.67f, 176.0f },
+			{ 183.33f, 152.0f },
+			{ 200.0f, 128.0f },
+			{ 216.67f, 109.33f },
+			{ 233.33f, 90.67f },
+			{ 250.0f, 72.0f },
+			{ 266.67f, 58.67f },
+			{ 283.33f, 45.33f },
+			{ 300.0f, 32.0f },
+			{ 316.67f, 24.0f },
+			{ 333.33f, 16.0f },
+			{ 350.0f, 8.0f },
+			{ 366.67f, 5.33f },
+			{ 383.33f, 2.67f },
+			{ 400.0f, 0.0f },
+			{ 266.67f, 0.0f },
+			{ 133.33f, 0.0f },
+			{ 0.0f, 0.0f },
+			{ 0.0f, 96.0f },
+			{ 0.0f, 192.0f },
+			{ 0.0f, 288.0f }
+		};
+
+    // reverse vertices for counter-clockwise winding order
     std::reverse(testPoints.begin(), testPoints.end());
-    //testPoints.push_back(testPoints.front());
-
-    std::cout << "reversed testPoints:" << std::endl;
-    for (int i = 0; i < count; i++) {
-        std::cout << "{" << testPoints[i].x << ", " << testPoints[i].y << "}";
-        if (i < count - 1)
-            std::cout << ",";
-        std::cout << std::endl;
-    }
 
 		// render the line segments between points
-		// int count = sizeof(testPoints) / sizeof(testPoints[0]);
+    int count = testPoints.size();
 		for (int i = 0; i < count - 1; ++i) {
 			lines.push_back(
 				createLine(

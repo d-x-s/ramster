@@ -83,7 +83,7 @@ const float AIR_STRAFE_FORCE_MULTIPLIER = 0.5f;
 const float JUMP_IMPULSE = 80.0f;
 
 // WARNING: don't mess with the density, if you do all the forces have to be re-tuned.
-const float BALL_DENSTIY = 1.0f;
+const float BALL_DENSTIY = 0.50f;
 const float BALL_FRICTION = 0.01f;
 const float BALL_RESTITUTION = 0.3f;
 const float BALL_ANGULAR_DAMPING = 75.0f;

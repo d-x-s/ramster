@@ -18,8 +18,7 @@ WorldSystem::WorldSystem(b2WorldId worldId) :
 	max_towers(MAX_TOWERS_START),
 	next_enemy_spawn(0),
 	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
-	worldId(worldId),
-	grappleCounter(0)
+	worldId(worldId)
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
@@ -209,7 +208,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			// create enemy at random position
 			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
 		}
-		
+
+		if (grappleActive) {
+			updateGrappleLines();
+		}
+
 	}
 
 	return game_active;
@@ -608,7 +611,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 	}
 
 	if (action == GLFW_PRESS) {
-		if (key == GLFW_KEY_E) {
+		if (key == GLFW_KEY_LEFT_SHIFT ) {
 			Entity ballEntity = registry.physicsBodies.entities[0];  
     		Entity grapplePointEntity = registry.physicsBodies.entities[1];  
 
@@ -625,16 +628,11 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
     		float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
                            			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
 
-			if (distance <= 300.0f && grappleActive == false) {
+			if (distance <= 300.0f && !grappleActive) {
 				createGrapple(worldId, ballBodyId, grappleBodyId, distance);
 				grappleActive = true;
-			}
-		} else if (key == GLFW_KEY_Q) {
-			if (grappleActive) {
-				Entity grappleEntity = registry.grapples.entities[grappleCounter];
-				Grapple& grapple = registry.grapples.get(grappleEntity);
-				b2DestroyJoint(grapple.jointId);
-				grappleCounter++;
+			} else if (grappleActive) {
+				removeGrapple();
 				grappleActive = false;
 			}
 		}
@@ -660,4 +658,22 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 		return;
 	}
 }
+
+void WorldSystem::updateGrappleLines() {
+    for (Entity grappleEntity : registry.grapples.entities) {
+        Grapple& grapple = registry.grapples.get(grappleEntity);
+
+        // Get current positions
+        b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
+        b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
+
+        // Update line entity positions
+        if (registry.lines.has(grapple.lineEntity)) {
+            Line& line = registry.lines.get(grapple.lineEntity);
+            line.start_pos = vec2(ballPos.x, ballPos.y);
+            line.end_pos = vec2(grapplePos.x, grapplePos.y);
+        }
+    }
+}
+
 

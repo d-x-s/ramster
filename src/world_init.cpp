@@ -177,23 +177,45 @@ Entity createGrapplePoint(b2WorldId worldId){
 }
 
 Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBodyId, float distance) {
-	Entity entity = Entity();
+    Entity entity = Entity();
 
-	b2DistanceJointDef djd = b2DefaultDistanceJointDef();
-
-	djd.bodyIdA = ballBodyId;
-	djd.bodyIdB = grappleBodyId;
-
-	djd.length = distance;
+    // Create distance joint between ball and grapple Point
+    b2DistanceJointDef djd = b2DefaultDistanceJointDef();
+    djd.bodyIdA = ballBodyId;
+    djd.bodyIdB = grappleBodyId;
+    djd.length = distance;
     djd.collideConnected = false;
-	djd.maxLength = 300.0f;
+    djd.maxLength = 300.0f;
 
-	b2JointId jointId = b2CreateDistanceJoint(worldId, &djd);
+    b2JointId jointId = b2CreateDistanceJoint(worldId, &djd);
 
-	Grapple& grapple = registry.grapples.emplace(entity);
+    // Store grapple data
+    Grapple& grapple = registry.grapples.emplace(entity);
     grapple.jointId = jointId;
+    grapple.ballBodyId = ballBodyId;
+    grapple.grappleBodyId = grappleBodyId;
 
-	return entity;
+    // Create line entity to visualize grapple
+    b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+    b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
+
+    Entity lineEntity = createLine(vec2(ballPos.x, ballPos.y), vec2(grapplePos.x, grapplePos.y));
+    grapple.lineEntity = lineEntity;  // Store the line entity for updates
+
+    return entity;
+}
+
+void removeGrapple(){
+	for (Entity& grapple_entity : registry.grapples.entities) {
+		Grapple& grapple = registry.grapples.get(grapple_entity);
+		b2DestroyJoint(grapple.jointId);
+		registry.remove_all_components_of(grapple_entity);
+
+		if (registry.lines.has(grapple.lineEntity)) {
+        	registry.remove_all_components_of(grapple.lineEntity);
+    	}
+	}
+	
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

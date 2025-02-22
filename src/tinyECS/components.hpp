@@ -222,6 +222,9 @@ struct GrapplePoint {
 
 struct Grapple {
 	b2JointId jointId;
+	b2BodyId ballBodyId;
+	b2BodyId grappleBodyId;
+	Entity lineEntity;
 };
 
 struct Camera {

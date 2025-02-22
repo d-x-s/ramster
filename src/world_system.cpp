@@ -9,13 +9,17 @@
 
 #include "physics_system.hpp"
 
+// Global Variables
+bool grappleActive = false;
+
 // create the world
 WorldSystem::WorldSystem(b2WorldId worldId) :
 	points(0),
 	max_towers(MAX_TOWERS_START),
 	next_enemy_spawn(0),
 	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
-	worldId(worldId)
+	worldId(worldId),
+	grappleCounter(0)
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
@@ -205,7 +209,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			// create enemy at random position
 			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
 		}
-
+		
 	}
 
 	return game_active;
@@ -304,6 +308,7 @@ void WorldSystem::restart_game() {
 	max_towers = MAX_TOWERS_START;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+	grappleActive = false;
 
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
@@ -344,6 +349,9 @@ void WorldSystem::restart_game() {
 
 	// generate the vertices for the terrain formed by the chain and render it
 	generateTerrain(0.0f, WINDOW_WIDTH_PX * 3.0, 145.0f, 5.0f, 100);
+
+	//create grapple point
+	createGrapplePoint(worldId);
 
 	// turn off trigger for fadeout shader
 	registry.screenStates.components[0].fadeout = 0.0f;
@@ -606,6 +614,39 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 	if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
 		debugging.in_debug_mode = !debugging.in_debug_mode;
 	}
+
+	if (action == GLFW_PRESS) {
+		if (key == GLFW_KEY_E) {
+			Entity ballEntity = registry.physicsBodies.entities[0];  
+    		Entity grapplePointEntity = registry.physicsBodies.entities[1];  
+
+    		PhysicsBody& ballBody = registry.physicsBodies.get(ballEntity);
+    		PhysicsBody& grappleBody = registry.physicsBodies.get(grapplePointEntity);
+
+    		b2BodyId ballBodyId = ballBody.bodyId;
+    		b2BodyId grappleBodyId = grappleBody.bodyId;
+
+			b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+    		b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
+
+    		// Compute the distance between the two points
+    		float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
+                           			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
+
+			if (distance <= 300.0f && grappleActive == false) {
+				createGrapple(worldId, ballBodyId, grappleBodyId, distance);
+				grappleActive = true;
+			}
+		} else if (key == GLFW_KEY_Q) {
+			if (grappleActive) {
+				Entity grappleEntity = registry.grapples.entities[grappleCounter];
+				Grapple& grapple = registry.grapples.get(grappleEntity);
+				b2DestroyJoint(grapple.jointId);
+				grappleCounter++;
+				grappleActive = false;
+			}
+		}
+	}
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
@@ -626,76 +667,5 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 	if (!game_active) {
 		return;
 	}
-
-	// on button press
-	if (action == GLFW_PRESS) {
-
-		int tile_x = (int)(mouse_pos_x / GRID_CELL_WIDTH_PX);
-		int tile_y = (int)(mouse_pos_y / GRID_CELL_HEIGHT_PX);
-
-		std::cout << "mouse button: " << button << std::endl;
-		std::cout << "mouse action: " << action << std::endl;
-		std::cout << "mouse position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
-		std::cout << "mouse tile position: " << tile_x << ", " << tile_y << std::endl;
-
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		// {{{ OK }}} TODO A1: place invaders on the left, except top left spot
-		// - A mouse left-click on the far-left side of the screen (column 0) will result in
-		//   an invader spawning in the current cell(except for cell 0, 0)
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		if (tile_x == 0 && tile_y != 0) {
-			float invader_x_pos = (tile_x + 0.5f) * GRID_CELL_WIDTH_PX;
-			float invader_y_pos = (tile_y + 0.5f) * GRID_CELL_HEIGHT_PX;
-			createInvader(renderer, vec2(invader_x_pos, invader_y_pos));
-			return;
-		}
-
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		// {{{ OK }}} TODO A1: place a tower on the right, except top right spot
-		// - A mouse left-click on the farright side of the screen (column 13) 
-		//   will result in a tower being spawned in that cell.
-		// - If an existing tower is present, it will remove and replace with a new tower
-		// - A mouse right-click on the farright of the screen will remove the tower in that cell
-		//   if it exists there
-		// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		if (tile_x == 13 && tile_y != 0) {
-			vec2 tower_pos = vec2((tile_x + 0.5f) * GRID_CELL_WIDTH_PX,
-				(tile_y + 0.5f) * GRID_CELL_HEIGHT_PX);
-			if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-				// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				// {{{ OK }}} TODO A1: right-click removes towers
-				// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				for (Entity& tower_entity : registry.towers.entities) {
-					const Motion& tower_motion = registry.motions.get(tower_entity);
-					if (tower_motion.position == tower_pos) {
-						removeTower(tower_pos);
-						return;
-					}
-				}
-			}
-			else if (button == GLFW_MOUSE_BUTTON_LEFT) {
-				// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				// {{{ OK }}} TODO A1: left-click adds new tower (removing any existing towers), up to max_towers
-				// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				for (Entity& tower_entity : registry.towers.entities) {
-					const Motion& tower_motion = registry.motions.get(tower_entity);
-					if (tower_motion.position == tower_pos) {
-						removeTower(tower_pos);
-						createTower(renderer, tower_pos);
-						return;
-					}
-				}
-				int numTowers = registry.towers.entities.size();
-				if (numTowers < max_towers) {
-					createTower(renderer, tower_pos);
-					return;
-				}
-				else {
-					std::cout << "cannot place any more towers, max towers is: " << max_towers <<
-						" and there are currently this number of towers: " << numTowers << std::endl;
-					return;
-				}
-			}
-		}
-	}
 }
+

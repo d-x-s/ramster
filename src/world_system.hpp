@@ -14,6 +14,9 @@
 
 #include "render_system.hpp"
 
+// Global Variables
+extern bool grappleActive; // Bool to check if grapple is active
+
 // Container for all our entities and game logic.
 // Individual rendering / updates are deferred to the update() methods.
 class WorldSystem
@@ -108,6 +111,9 @@ private:
 
 	// Number of invaders stopped by the towers, displayed in the window title
 	int points;
+
+	// Counter for grapple
+	int grappleCounter;
 
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }

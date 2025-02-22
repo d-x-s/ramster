@@ -209,7 +209,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			// create enemy at random position
 			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
 		}
-
+		
 	}
 
 	return game_active;
@@ -625,7 +625,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
     		float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
                            			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
 
-			if (distance <= 300.0f) {
+			if (distance <= 300.0f && grappleActive == false) {
 				createGrapple(worldId, ballBodyId, grappleBodyId, distance);
 				grappleActive = true;
 			}

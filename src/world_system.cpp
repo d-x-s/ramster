@@ -265,14 +265,43 @@ void WorldSystem::generateTerrain(float startX, float endX, float amplitude, flo
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     // NOTE: uncomment the block below and comment the block above to test chain shape creation
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		b2Vec2 testPoints[] = {
-			{ 400.0, 0.0 }, { 900.0, 0.0}, { 800.0, 50.0 },
-			{ 700.0, 100.0 }, { 600.0, 100.0 }, { 500.0, 50.0}, 
-			{ 400.0, 0.0 }
-		};
+	//std::vector<b2Vec2> testPoints = {
+	//		{ 400.0, 0.0 }, { 900.0, 0.0}, { 800.0, 50.0 },
+	//		{ 700.0, 100.0 }, { 600.0, 100.0 }, { 500.0, 50.0},
+	//		{ 400.0, 0.0 }
+	//};
+    
+     std::vector<b2Vec2> testPoints = {
+		 	{ 0.0, 288.0 }, { 50.0, 288.0}, { 100.0, 288.0 },
+		 	{ 150.0, 200.0 }, { 200.0, 128.0 }, { 250.0, 72.0}, 
+		 	{ 300.0, 32.0 }, { 350.0, 8.0 }, {400.0, 0.0},
+		 	{ 0.0, 0.0}, { 0.0, 288.0 }
+		 };
+
+    // reverse for counter-clockwise winding order
+    int count = testPoints.size();
+    std::cout << "Original testPoints:" << std::endl;
+    for (int i = 0; i < count; i++) {
+        std::cout << "{" << testPoints[i].x << ", " << testPoints[i].y << "}";
+        if (i < count - 1)
+            std::cout << ",";
+        std::cout << std::endl;
+    }
+
+    //testPoints.pop_back();
+    std::reverse(testPoints.begin(), testPoints.end());
+    //testPoints.push_back(testPoints.front());
+
+    std::cout << "reversed testPoints:" << std::endl;
+    for (int i = 0; i < count; i++) {
+        std::cout << "{" << testPoints[i].x << ", " << testPoints[i].y << "}";
+        if (i < count - 1)
+            std::cout << ",";
+        std::cout << std::endl;
+    }
 
 		// render the line segments between points
-		int count = sizeof(testPoints) / sizeof(testPoints[0]);
+		// int count = sizeof(testPoints) / sizeof(testPoints[0]);
 		for (int i = 0; i < count - 1; ++i) {
 			lines.push_back(
 				createLine(
@@ -282,10 +311,10 @@ void WorldSystem::generateTerrain(float startX, float endX, float amplitude, flo
 
 		b2ChainDef chainDef = b2DefaultChainDef();
 		chainDef.count = count;
-		chainDef.points = testPoints;
+		chainDef.points = testPoints.data();
 		chainDef.isLoop = true;
 		chainDef.friction = 0.2f;
-		chainDef.restitution = 0.1f;
+		chainDef.restitution = 0.5f;
 
 		b2BodyDef bodyDef = b2DefaultBodyDef();
 		b2BodyId _ = b2CreateBody(worldId, &bodyDef);

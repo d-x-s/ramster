@@ -19,6 +19,7 @@ Entity createBall(b2WorldId worldId)
 	bodyDef.type = b2_dynamicBody;
 	bodyDef.position = b2Vec2{ 300.0f, 300.0f };
 	bodyDef.fixedRotation = false; // Allow rolling
+	bodyDef.isBullet = true; // Prevent tunneling at high speeds
 
 	// Use `b2CreateBody()` instead of `world.CreateBody()`
 	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);

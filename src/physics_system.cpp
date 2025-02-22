@@ -31,6 +31,7 @@ float CAMERA_DELAY = 100.f;      // Higher = Slower camera movement
 float VERTICAL_THRESHOLD = 50.f; // Lower = Camera will follow more aggressively
 
 // M1 Linear Interpolation for Camera Movement
+// See: https://www.gamedev.net/tutorials/programming/general-and-gameplay-programming/a-brief-introduction-to-lerp-r4954/
 float lerp(float start, float end, float t)
 {
   return start * (1 - t) + end * t;

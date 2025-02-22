@@ -238,75 +238,15 @@ void WorldSystem::stop_game() {
 	}
 }
 
-// Function to create a smooth sine wave curve (hill)
-void WorldSystem::generateTerrain(float startX, float endX, float amplitude, float frequency, int segments) {
+void WorldSystem::generateTestTerrain() {
 	if (lines.empty()) {
-    /*
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // Experimental code that renders a sine wave, no chain creation
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		std::vector<glm::vec2> points;
-		std::vector<b2Vec2> chainPoints;
-		float width = endX - startX;
+		std::vector<b2Vec2> testPoints = generateTestPoints();
 
-		// Generate points along a sine wave
-		for (int i = 0; i <= segments; ++i) {
-			float t = (float)i / segments;
-			float x = startX + t * width;
-			float y = amplitude * sin(frequency * t * M_PI);
-			points.push_back(glm::vec2(x, y + WINDOW_HEIGHT_PX / 4));
-
-			// Print points for rendering
-			std::cout << "Render Point[" << i << "]: x = " << x
-				<< ", y = " << y + WINDOW_HEIGHT_PX / 4 << std::endl;
-		}
-
-		// Connect consecutive points with lines
-		for (int i = 0; i < (int)points.size() - 1; ++i) {
-			lines.push_back(createLine(points[i], points[i + 1]));
-		}
-    */
-
-    // hardcoded points that make up the ramp
-		std::vector<b2Vec2> testPoints = {
-			{ 0.0f, 288.0f },
-			{ 16.67f, 288.0f },
-			{ 33.33f, 288.0f },
-			{ 50.0f, 288.0f },
-			{ 66.67f, 288.0f },
-			{ 83.33f, 288.0f },
-			{ 100.0f, 288.0f },
-			{ 116.67f, 258.67f },
-			{ 133.33f, 229.33f },
-			{ 150.0f, 200.0f },
-			{ 166.67f, 176.0f },
-			{ 183.33f, 152.0f },
-			{ 200.0f, 128.0f },
-			{ 216.67f, 109.33f },
-			{ 233.33f, 90.67f },
-			{ 250.0f, 72.0f },
-			{ 266.67f, 58.67f },
-			{ 283.33f, 45.33f },
-			{ 300.0f, 32.0f },
-			{ 316.67f, 24.0f },
-			{ 333.33f, 16.0f },
-			{ 350.0f, 8.0f },
-			{ 366.67f, 5.33f },
-			{ 383.33f, 2.67f },
-			{ 400.0f, 0.0f },
-			{ 266.67f, 0.0f },
-			{ 133.33f, 0.0f },
-			{ 0.0f, 0.0f },
-			{ 0.0f, 96.0f },
-			{ 0.0f, 192.0f },
-			{ 0.0f, 288.0f }
-		};
-
-    // reverse vertices for counter-clockwise winding order
-    std::reverse(testPoints.begin(), testPoints.end());
+		// reverse vertices for counter-clockwise winding order
+		std::reverse(testPoints.begin(), testPoints.end());
 
 		// render the line segments between points
-    int count = testPoints.size();
+		int count = testPoints.size();
 		for (int i = 0; i < count - 1; ++i) {
 			lines.push_back(
 				createLine(
@@ -318,13 +258,50 @@ void WorldSystem::generateTerrain(float startX, float endX, float amplitude, flo
 		chainDef.count = count;
 		chainDef.points = testPoints.data();
 		chainDef.isLoop = true;
-		chainDef.friction = 0.2f;
-		chainDef.restitution = 0.5f;
+		chainDef.friction = TERRAIN_DEFAULT_FRICTION;
+		chainDef.restitution = TERRAIN_DEFAULT_RESTITUTION;
 
 		b2BodyDef bodyDef = b2DefaultBodyDef();
 		b2BodyId _ = b2CreateBody(worldId, &bodyDef);
 		b2CreateChain(_, &chainDef);
 	}
+}
+
+std::vector<b2Vec2> WorldSystem::generateTestPoints() {	
+	// hardcoded points that make up a ramp
+	return {
+		{ 0.0f, 288.0f },
+		{ 16.67f, 288.0f },
+		{ 33.33f, 288.0f },
+		{ 50.0f, 288.0f },
+		{ 66.67f, 288.0f },
+		{ 83.33f, 288.0f },
+		{ 100.0f, 288.0f },
+		{ 116.67f, 258.67f },
+		{ 133.33f, 229.33f },
+		{ 150.0f, 200.0f },
+		{ 166.67f, 176.0f },
+		{ 183.33f, 152.0f },
+		{ 200.0f, 128.0f },
+		{ 216.67f, 109.33f },
+		{ 233.33f, 90.67f },
+		{ 250.0f, 72.0f },
+		{ 266.67f, 58.67f },
+		{ 283.33f, 45.33f },
+		{ 300.0f, 32.0f },
+		{ 316.67f, 24.0f },
+		{ 333.33f, 16.0f },
+		{ 350.0f, 8.0f },
+		{ 366.67f, 5.33f },
+		{ 383.33f, 2.67f },
+		{ 400.0f, 0.0f },
+		{ 266.67f, 0.0f },
+		{ 133.33f, 0.0f },
+		{ 0.0f, 0.0f },
+		{ 0.0f, 96.0f },
+		{ 0.0f, 192.0f },
+		{ 0.0f, 288.0f }
+	};
 }
 
 // Reset the world state to its initial state
@@ -382,7 +359,7 @@ void WorldSystem::restart_game() {
 	}
 
 	// generate the vertices for the terrain formed by the chain and render it
-	generateTerrain(0.0f, WINDOW_WIDTH_PX * 3.0, 145.0f, 5.0f, 100);
+	generateTestTerrain();
 
 	//create grapple point
 	createGrapplePoint(worldId);

@@ -610,7 +610,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 	}
 
 	if (action == GLFW_PRESS) {
-		if (key == GLFW_KEY_E) {
+		if (key == GLFW_KEY_LEFT_SHIFT ) {
 			Entity ballEntity = registry.physicsBodies.entities[0];  
     		Entity grapplePointEntity = registry.physicsBodies.entities[1];  
 
@@ -627,12 +627,10 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
     		float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
                            			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
 
-			if (distance <= 300.0f && grappleActive == false) {
+			if (distance <= 300.0f && !grappleActive) {
 				createGrapple(worldId, ballBodyId, grappleBodyId, distance);
 				grappleActive = true;
-			}
-		} else if (key == GLFW_KEY_Q) {
-			if (grappleActive) {
+			} else if (grappleActive) {
 				removeGrapple();
 				grappleActive = false;
 			}

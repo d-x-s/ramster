@@ -144,7 +144,7 @@ Entity createGrapplePoint(b2WorldId worldId){
 
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_staticBody;
-	bodyDef.position = b2Vec2{ 300.0f, 300.0f };
+	bodyDef.position = b2Vec2{ 1200.0f, 300.0f };
 
     b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
@@ -159,8 +159,10 @@ Entity createGrapplePoint(b2WorldId worldId){
 	PhysicsBody& grappleBody = registry.physicsBodies.emplace(entity);
     grappleBody.bodyId = bodyId;
 
+	GrapplePoint& grapplePoint = registry.grapplePoints.emplace(entity);
+
 	auto& motion = registry.motions.emplace(entity);
-	motion.position = vec2(300.0f, 300.0f);
+	motion.position = vec2(1200.0f, 300.0f);
 
 	registry.renderRequests.insert(
 		entity,

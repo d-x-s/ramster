@@ -15,7 +15,9 @@ WorldSystem::WorldSystem(b2WorldId worldId) :
 	max_towers(MAX_TOWERS_START),
 	next_enemy_spawn(0),
 	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
-	worldId(worldId)
+	worldId(worldId),
+	grappleCounter(0),
+	grappleActive(false)
 {
 	// seeding rng with random device
 	rng = std::default_random_engine(std::random_device()());
@@ -205,7 +207,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			// create enemy at random position
 			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
 		}
-
+		
 	}
 
 	return game_active;
@@ -304,6 +306,7 @@ void WorldSystem::restart_game() {
 	max_towers = MAX_TOWERS_START;
 	next_enemy_spawn = 0;
 	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+	grappleActive = false;
 
 	// Remove all entities that we created
 	// All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
@@ -344,6 +347,9 @@ void WorldSystem::restart_game() {
 
 	// generate the vertices for the terrain formed by the chain and render it
 	generateTerrain(0.0f, WINDOW_WIDTH_PX * 3.0, 145.0f, 5.0f, 100);
+
+	//create grapple point
+	createGrapplePoint(worldId);
 
 	// turn off trigger for fadeout shader
 	registry.screenStates.components[0].fadeout = 0.0f;
@@ -598,6 +604,39 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 	if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
 		debugging.in_debug_mode = !debugging.in_debug_mode;
 	}
+
+	if (action == GLFW_PRESS) {
+		if (key == GLFW_KEY_E) {
+			Entity ballEntity = registry.physicsBodies.entities[0];  
+    		Entity grapplePointEntity = registry.physicsBodies.entities[1];  
+
+    		PhysicsBody& ballBody = registry.physicsBodies.get(ballEntity);
+    		PhysicsBody& grappleBody = registry.physicsBodies.get(grapplePointEntity);
+
+    		b2BodyId ballBodyId = ballBody.bodyId;
+    		b2BodyId grappleBodyId = grappleBody.bodyId;
+
+			b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+    		b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
+
+    		// Compute the distance between the two points
+    		float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
+                           			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
+
+			if (distance <= 300.0f && grappleActive == false) {
+				createGrapple(worldId, ballBodyId, grappleBodyId, distance);
+				grappleActive = true;
+			}
+		} else if (key == GLFW_KEY_Q) {
+			if (grappleActive) {
+				Entity grappleEntity = registry.grapples.entities[grappleCounter];
+				Grapple& grapple = registry.grapples.get(grappleEntity);
+				b2DestroyJoint(grapple.jointId);
+				grappleCounter++;
+				grappleActive = false;
+			}
+		}
+	}
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
@@ -691,3 +730,4 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 		}
 	}
 }
+

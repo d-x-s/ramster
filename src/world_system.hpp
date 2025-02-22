@@ -109,6 +109,12 @@ private:
 	// Number of invaders stopped by the towers, displayed in the window title
 	int points;
 
+	// Counter for grapple
+	int grappleCounter;
+
+	// Bool to check if grapple is active
+	bool grappleActive;
+
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
 

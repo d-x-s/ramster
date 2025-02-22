@@ -35,6 +35,7 @@ public:
 	ComponentContainer<EnemyPhysics> enemyPhysics;
 	ComponentContainer<Camera> cameras;
 	ComponentContainer<Line> lines;
+	ComponentContainer<Grapple> grapples;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -61,6 +62,7 @@ public:
 		registry_list.push_back(&playerPhysics);
 		registry_list.push_back(&lines);
 		registry_list.push_back(&enemyPhysics);
+		registry_list.push_back(&grapples);
 	}
 
 	void clear_all_components() {

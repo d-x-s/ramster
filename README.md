@@ -30,6 +30,6 @@ This write-up will be moved elsewhere upon the actual M1 submission.
 
 ## M1 Interpolation Implementation
 Linear interpolation is implemented whenever the camera performs movement not centered on the player. The lerp() function
-provided in the grading rubric is utilized. As an example, whenever the player grapples to a grapple point, the camera will center
-on it. To calcualte the in-between camera frames, the lerp() function is used in first the x direction, then the y direction.
+provided in the grading rubric is utilized. As an example, whenever the player grapples to a grapple point, the camera will go center
+on it. To calculate the in-between camera frames, the lerp() function is used in first the x direction, then the y direction.
 The t parameter is represented with a shift variable starting at 0 and incrementing by 0.02 up to 1.

@@ -33,6 +33,7 @@ Entity createGrapplePoint(b2WorldId worldId);
 
 // grapple hook
 Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBodyId, float distance);
+void removeGrapple();
 
 // legacy
 // the player

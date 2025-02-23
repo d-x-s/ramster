@@ -1,0 +1,5 @@
+Reported Date,Reporter,Assignee,Severity,Status,Short Desc.,Expected Results,Actual Results,Steps to Reproduce
+2/18/2025,Zach,Davis,P0 - Crashing,Open,Game crashes when pressing r,Game should not crash when pressing r,Game crashes when pressing r,Press r
+2/18/2025,Davis,Zach,P5 - Minor,Open,Ball clips through curved terrain,Edge of ball sprite should not pass through terrain line,Ball is clipping,Visible when playing game
+2/19/2025,Davis,Andrew,P3 - Major,Resolved,Cannot rotate about grapple point if length of grapple is too long causing player to hit ground,Grapple length should dynamically shorten,Grapple length constant,Attach to grapple point at a distance
+2/23/2025,Ning,Ning,P5 - Minor,Open,Ball rotation speed when de-accelerating doesn't match up nicely with actual ball velocity.,ball angular momentum should slow down and speed up at same rate as ball velocity,ball spins too fast despite almost being at a standstill,roll in one direction on ground and then hold down the opposite movement key to de-accelerate.

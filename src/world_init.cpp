@@ -185,7 +185,7 @@ Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBod
     djd.bodyIdB = grappleBodyId;
     djd.length = distance;
     djd.collideConnected = false;
-    djd.maxLength = 300.0f;
+    djd.maxLength = 280.0f;
 
     b2JointId jointId = b2CreateDistanceJoint(worldId, &djd);
 

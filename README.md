@@ -1,14 +1,16 @@
 
 # Ramster
 Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius hamster in a ball who the player will control. Ramster’s Revenge tells the story of the titular main character’s journey breaking out of the lab in which he was made. An evil corporation experimenting on highly intelligent hamsters is in for a rude awakening when Ramster, the smartest of the test subjects escapes from his cage! Shortly after breaking out of the cell, Ramster comes across the HamHook 3000, a high tech grappling hook that allows Ramster to swing across the map and aid in his escape. Living up to his name, Ramster also uses the HamHook to ram into enemies, such as evil lab workers trying to put Ramster back in his cell. Determined and armed, Ramster will stop at nothing to see the outside world and fulfill his dream of living as a normal housepet hamster. Finally, Ramster also has a special catchphrase for when he gets really serious: I’m going HAM!
+![m1](https://github.students.cs.ubc.ca/CPSC427-2024W-T2/team-20/assets/5330/eac1752b-a5cd-4048-8334-60de8acae6d4)
 
 ## Controls
-`A/D`: move left/right
-`Space`: jump
-`LeftShift`: attach/detach to a grapple point
+| Input | Action |
+|----------|----------|
+| `A/D` | Move left/right |
+| `Space` | Jump |
+| `LeftShift` | Attach/detach to a grapple point |
 
 ## M1 Basic Elements
-
 | Category | Task | Satisfying Feature(s) |
 |----------|----------|----------|
 | Rendering | Textured Geometry | Ramster and Enemy Sprites   |
@@ -20,16 +22,16 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 | Gameplay | Simple collision detection & resolution | Player collision with terrain and enemy entities|
 | Stability | Stable frame rate and minimal game lag | ✅ |
 | Stability | No crashes, glitches, or unpredictable behaviour | ✅   |
-| Software Engineering | Test Plan | see `docs` |
-| Reporting | Bug List | see `docs` |
-| Reporting | Demo Video | see Canvas |
+| Software Engineering | Test Plan | See `docs` |
+| Reporting | Bug List | See `docs` |
+| Reporting | Demo Video | See Canvas |
 
-## Creative Elements
-[3] Graphics: Complex geometry
+## M1 Creative Elements
+[3 | Graphics]: Complex geometry
 - Rendering curved terrain
 - Advanced camera mechanics with lock-on delay, view borders, and grapple support
 
-[11] Physics: Complex physical interactions with the environment
+[11 | Physics]: Complex physical interactions with the environment
 - Collision support for curved terrain
 - Working grapple implemented with joints
 

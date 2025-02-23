@@ -1,35 +1,44 @@
-# M1 Submission Notes
-This write-up will be moved elsewhere upon the actual M1 submission.
 
-## Commits
-- don't forget that you are marked on the quality and quantity of your commits
-- proper commit format is being enforced!
-  - **to set this up run ./setup.sh in the root**
+# Ramster
+Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius hamster in a ball who the player will control. Ramster’s Revenge tells the story of the titular main character’s journey breaking out of the lab in which he was made. An evil corporation experimenting on highly intelligent hamsters is in for a rude awakening when Ramster, the smartest of the test subjects escapes from his cage! Shortly after breaking out of the cell, Ramster comes across the HamHook 3000, a high tech grappling hook that allows Ramster to swing across the map and aid in his escape. Living up to his name, Ramster also uses the HamHook to ram into enemies, such as evil lab workers trying to put Ramster back in his cell. Determined and armed, Ramster will stop at nothing to see the outside world and fulfill his dream of living as a normal housepet hamster. Finally, Ramster also has a special catchphrase for when he gets really serious: I’m going HAM!
 
-## Box2D Prerequisites
-- To get started with Box2D, read the [documentation](https://box2d.org/documentation/).
-- Understand how the world and bodies interact [HelloBox2D](https://box2d.org/documentation/hello.html).
-- Read the [Box2D FAQ](https://box2d.org/documentation/md_faq.html).
-- One of the best references is here [box2d-raylib](https://github.com/erincatto/box2d-raylib)
+## Controls
+`A/D`: move left/right
+`Space`: jump
+`LeftShift`: attach/detach to a grapple point
 
-## PR Etiquette
-- Follow a good branch naming convention: `<milestone>-<name>-<feature-name>`.  
-  Example: `m1-davis-map_system`
-- Include a written description of your changes.
-- Include a GIF or screenshots of your contribution.
-- PRs must have **one reviewer**.  
-  - In addition to reviewing code, the reviewer **must** check out the branch, build, and playtest the changes.
+## M1 Basic Elements
 
-## Building
-- Check that you are on VS2022
-- FetchContent is used to get the Box2D library so make sure you have an internet connection
-- in root, do `<mkdir build>`, `<cd build>`, `<Cmake ..>`
-- `<cd build>` and open `ramster.sln`
-- build the Ramster project
-- exe is in `build/Debug`
+| Category | Task | Satisfying Feature(s) |
+|----------|----------|----------|
+| Rendering | Textured Geometry | Ramster and Enemy Sprites   |
+| Rendering | Basic 2D transformations   | Advanced Camera, Terrain Rendering, Ramster and Enemy Movement|
+| Rendering | Key-frame/state interpolation | Advanced Camera   |
+| Gameplay | Keyboard/mouse control | Player controllable with keyboard  |
+| Gameplay | Random/coded action | Enemy entities track and move towards player   |
+| Gameplay | Well-defined game-space boundaries | Walls keep entities enclosed within a playable room   |
+| Gameplay | Simple collision detection & resolution | Player collision with terrain and enemy entities|
+| Stability | Stable frame rate and minimal game lag | ✅ |
+| Stability | No crashes, glitches, or unpredictable behaviour | ✅   |
+| Software Engineering | Test Plan | see `docs` |
+| Reporting | Bug List | see `docs` |
+| Reporting | Demo Video | see Canvas |
+
+## Creative Elements
+[3] Graphics: Complex geometry
+- Rendering curved terrain
+- Advanced camera mechanics with lock-on delay, view borders, and grapple support
+
+[11] Physics: Complex physical interactions with the environment
+- Collision support for curved terrain
+- Working grapple implemented with joints
 
 ## M1 Interpolation Implementation
-Linear interpolation is implemented whenever the camera performs movement not centered on the player. The lerp() function
-provided in the grading rubric is utilized. As an example, whenever the player grapples to a grapple point, the camera will go center
-on it. To calculate the in-between camera frames, the lerp() function is used in first the x direction, then the y direction.
-The t parameter is represented with a shift variable starting at 0 and incrementing by 0.02 up to 1.
+Linear interpolation is implemented whenever the camera performs movement not centered on the player. The `lerp()` function provided in the grading rubric is utilized. As an example, whenever the player grapples to a grapple point, the camera will go center on it. To calculate the in-between camera frames, the `lerp()` function is used in first the `x` direction, then the `y` direction. The `t` parameter is represented with a shift variable starting at `0` and incrementing by `0.02` up to `1`.
+
+## Building the Game
+1)  Open Visual Studio (2022 is preferred)
+2) From the repository root, do `mkdir build`, `cd build`, `Cmake ..`
+4) `cd build` and open `ramster.sln` in Visual Studio
+5) Build the Ramster project
+6) Playable `.exe` is located in `build/Debug`

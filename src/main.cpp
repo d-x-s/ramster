@@ -12,6 +12,7 @@
 #include "physics_system.hpp"
 #include "render_system.hpp"
 #include "world_system.hpp"
+#include "world_init.hpp"
 
 using Clock = std::chrono::high_resolution_clock;
 
@@ -48,6 +49,16 @@ int main()
 		b2CreatePolygonShape(bodyId, &shapeDef, &polygon);
 
 		shapeDef.friction = 0.1f;
+
+    // for debugging purposes, draw the walls of the room
+		// vec2 topLeft = { x - halfWidth, y + halfHeight };
+		// vec2 topRight = { x + halfWidth, y + halfHeight };
+		// vec2 bottomRight = { x + halfWidth, y - halfHeight };
+		// vec2 bottomLeft = { x - halfWidth, y - halfHeight };
+		// Entity topEdge = createLine(topLeft, topRight);
+		// Entity rightEdge = createLine(topRight, bottomRight);
+		// Entity bottomEdge = createLine(bottomRight, bottomLeft);
+		// Entity leftEdge = createLine(bottomLeft, topLeft);
 
 		return bodyId;
 	};

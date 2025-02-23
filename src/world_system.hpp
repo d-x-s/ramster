@@ -99,7 +99,10 @@ private:
 
 	// restart level
 	void restart_game();
-	void generateTerrain(float startX, float endX, float amplitude, float frequency, int segments);
+
+	// prototype for generating chain terrain
+	void generateTestTerrain();
+	std::vector<b2Vec2> WorldSystem::generateTestPoints();
 
 	// OpenGL window handle
 	GLFWwindow* window;

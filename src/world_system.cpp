@@ -238,62 +238,70 @@ void WorldSystem::stop_game() {
 	}
 }
 
-// Function to create a smooth sine wave curve (hill)
-void WorldSystem::generateTerrain(float startX, float endX, float amplitude, float frequency, int segments) {
+void WorldSystem::generateTestTerrain() {
 	if (lines.empty()) {
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // Experimental code that renders a sine wave, no chain creation
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		std::vector<glm::vec2> points;
-		std::vector<b2Vec2> chainPoints;
-		float width = endX - startX;
+		std::vector<b2Vec2> testPoints = generateTestPoints();
 
-		// Generate points along a sine wave
-		for (int i = 0; i <= segments; ++i) {
-			float t = (float)i / segments;
-			float x = startX + t * width;
-			float y = amplitude * sin(frequency * t * M_PI);
-			points.push_back(glm::vec2(x, y + WINDOW_HEIGHT_PX / 4));
+		// reverse vertices for counter-clockwise winding order
+		std::reverse(testPoints.begin(), testPoints.end());
 
-			// Print points for rendering
-			std::cout << "Render Point[" << i << "]: x = " << x
-				<< ", y = " << y + WINDOW_HEIGHT_PX / 4 << std::endl;
+		// render the line segments between points
+		int count = testPoints.size();
+		for (int i = 0; i < count - 1; ++i) {
+			lines.push_back(
+				createLine(
+					glm::vec2(testPoints[i].x, testPoints[i].y), 
+					glm::vec2(testPoints[i + 1].x, testPoints[i + 1].y)));
 		}
 
-		// Connect consecutive points with lines
-		for (int i = 0; i < (int)points.size() - 1; ++i) {
-			lines.push_back(createLine(points[i], points[i + 1]));
-		}
+		b2ChainDef chainDef = b2DefaultChainDef();
+		chainDef.count = count;
+		chainDef.points = testPoints.data();
+		chainDef.isLoop = true;
+		chainDef.friction = TERRAIN_DEFAULT_FRICTION;
+		chainDef.restitution = TERRAIN_DEFAULT_RESTITUTION;
 
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // NOTE: uncomment the block below and comment the block above to test chain shape creation
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		// b2Vec2 testPoints[] = {
-		// 	{ 400.0, 0.0 }, { 500.0, 50.0}, { 600.0, 100.0 },
-		// 	{ 700.0, 100.0 }, { 800.0, 50.0 }, { 900.0, 0.0}, 
-		// 	{ 400.0, 0.0 }
-		// };
-
-		// // render the line segments between points
-		// int count = sizeof(testPoints) / sizeof(testPoints[0]);
-		// for (int i = 0; i < count - 1; ++i) {
-		// 	lines.push_back(
-		// 		createLine(
-		// 			glm::vec2(testPoints[i].x, testPoints[i].y), 
-		// 			glm::vec2(testPoints[i + 1].x, testPoints[i + 1].y)));
-		// }
-
-		// b2ChainDef chainDef = b2DefaultChainDef();
-		// chainDef.count = count;
-		// chainDef.points = testPoints;
-		// chainDef.isLoop = false;
-		// chainDef.friction = 0.0f;
-		// chainDef.restitution = 0.1f;
-
-		// b2BodyDef bodyDef = b2DefaultBodyDef();
-		// b2BodyId _ = b2CreateBody(worldId, &bodyDef);
-		// b2CreateChain(_, &chainDef);
+		b2BodyDef bodyDef = b2DefaultBodyDef();
+		b2BodyId _ = b2CreateBody(worldId, &bodyDef);
+		b2CreateChain(_, &chainDef);
 	}
+}
+
+std::vector<b2Vec2> WorldSystem::generateTestPoints() {	
+	// hardcoded points that make up a ramp
+	return {
+		{ 0.0f, 288.0f },
+		{ 16.67f, 288.0f },
+		{ 33.33f, 288.0f },
+		{ 50.0f, 288.0f },
+		{ 66.67f, 288.0f },
+		{ 83.33f, 288.0f },
+		{ 100.0f, 288.0f },
+		{ 116.67f, 258.67f },
+		{ 133.33f, 229.33f },
+		{ 150.0f, 200.0f },
+		{ 166.67f, 176.0f },
+		{ 183.33f, 152.0f },
+		{ 200.0f, 128.0f },
+		{ 216.67f, 109.33f },
+		{ 233.33f, 90.67f },
+		{ 250.0f, 72.0f },
+		{ 266.67f, 58.67f },
+		{ 283.33f, 45.33f },
+		{ 300.0f, 32.0f },
+		{ 316.67f, 24.0f },
+		{ 333.33f, 16.0f },
+		{ 350.0f, 8.0f },
+		{ 366.67f, 5.33f },
+		{ 383.33f, 2.67f },
+		{ 400.0f, 0.0f },
+		{ 266.67f, 0.0f },
+		{ 133.33f, 0.0f },
+		{ 0.0f, 0.0f },
+		{ 0.0f, 96.0f },
+		{ 0.0f, 192.0f },
+		{ 0.0f, 288.0f }
+	};
 }
 
 // Reset the world state to its initial state
@@ -351,7 +359,7 @@ void WorldSystem::restart_game() {
 	}
 
 	// generate the vertices for the terrain formed by the chain and render it
-	generateTerrain(0.0f, WINDOW_WIDTH_PX * 3.0, 145.0f, 5.0f, 100);
+	generateTestTerrain();
 
 	//create grapple point
 	createGrapplePoint(worldId);
@@ -480,11 +488,19 @@ void WorldSystem::update_isGrounded() {
 	b2ContactData * contactData = new b2ContactData[num_contacts];
 	b2Body_GetContactData(bodyId, contactData, num_contacts);
 
+	// get the ball's shape id.
+	// The # shapes should always be 1, since the player is initialized as a singular ball shape!
+	int player_num_shapes = b2Body_GetShapeCount(bodyId);
+	b2ShapeId* shapeArray = new b2ShapeId[player_num_shapes];
+	b2Body_GetShapes(bodyId, shapeArray, player_num_shapes);
+
+	b2ShapeId player_shape = shapeArray[0];
+
 	for (int i = 0; i < num_contacts; i++) {
 		b2ContactData contact = contactData[i];
 		
 		// if the collision involves the player.
-		if ((contact.shapeIdA.index1 == bodyId.index1 || contact.shapeIdB.index1 == bodyId.index1)) {
+		if ((contact.shapeIdA.index1 == player_shape.index1 || contact.shapeIdB.index1 == player_shape.index1)) {
 			b2Manifold manifold = contact.manifold;
 			b2Vec2 normal = manifold.normal;
 

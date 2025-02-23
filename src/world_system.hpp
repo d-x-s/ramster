@@ -102,7 +102,7 @@ private:
 
 	// prototype for generating chain terrain
 	void generateTestTerrain();
-	std::vector<b2Vec2> WorldSystem::generateTestPoints();
+	std::vector<b2Vec2> generateTestPoints();
 
 	// OpenGL window handle
 	GLFWwindow* window;

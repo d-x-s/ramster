@@ -43,7 +43,7 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 Linear interpolation is implemented whenever the camera performs movement not centered on the player. The `lerp()` function provided in the grading rubric is utilized. As an example, whenever the player grapples to a grapple point, the camera will go center on it. To calculate the in-between camera frames, the `lerp()` function is used in first the `x` direction, then the `y` direction. The `t` parameter is represented with a shift variable starting at `0` and incrementing by `0.02` up to `1`.
 
 ## Building the Game
-1)  Open Visual Studio (2022 is preferred)
+1) Open Visual Studio (2022 is preferred)
 2) From the repository root, do `mkdir build`, `cd build`, `Cmake ..`
 4) `cd build` and open `ramster.sln` in Visual Studio
 5) Build the Ramster project
@@ -54,7 +54,7 @@ Linear interpolation is implemented whenever the camera performs movement not ce
 |----------|----------|
 | `Andrew Yang` | Grapple |
 | `Davis Song` | Physics Integration, Map System and Rendering |
-| `Luke Lu` | Ball Physics |
-| `Ning Leng` | Enemy AI |
+| `Luke Lu` | Enemy AI |
+| `Ning Leng` | Ball Physics |
 | `Zach Chernenko` | Advanced Camera |
 

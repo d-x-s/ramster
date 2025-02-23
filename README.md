@@ -35,6 +35,7 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 - Advanced camera mechanics with lock-on delay, view borders, and grapple support
 
 **[11 | Physics]**: Complex physical interactions with the environment
+- Accurate ball physics including angular velocity, rotation, and friction
 - Collision support for curved terrain
 - Working grapple implemented with joints
 
@@ -46,4 +47,14 @@ Linear interpolation is implemented whenever the camera performs movement not ce
 2) From the repository root, do `mkdir build`, `cd build`, `Cmake ..`
 4) `cd build` and open `ramster.sln` in Visual Studio
 5) Build the Ramster project
-6) Playable `.exe` is located in `build/Debug`
+6) Playable `ramster.exe` is located in `build/Debug`
+
+## Group Members
+| Member | Ownership |
+|----------|----------|
+| `Andrew Yang` | Grapple |
+| `Davis Song` | Physics Integration, Map System and Rendering |
+| `Luke Lu` | Ball Physics |
+| `Ning Leng` | Enemy AI |
+| `Zach Chernenko` | Advanced Camera |
+

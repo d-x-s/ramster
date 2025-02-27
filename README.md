@@ -31,9 +31,9 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 
 ## M1 Creative Elements (for grading)
 **[11 | Physics]**: Complex physical interactions with the environment
-- Accurate ball physics including angular velocity, rotation, and friction
-- Collision support for curved terrain
-- Working grapple implemented with joints
+- (Basic) Accurate ball physics including angular velocity, rotation, and friction
+- (Basic) Collision support for curved terrain
+- (Advanced) Working grapple implemented with joints
 
 ## M1 Extra Creative Elements (save for later)
 **[3 | Graphics]**: Complex geometry

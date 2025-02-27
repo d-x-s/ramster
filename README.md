@@ -31,8 +31,8 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 
 ## M1 Creative Elements
 **[3 | Graphics]**: Complex geometry
-- Rendering curved terrain
-- Advanced camera mechanics with lock-on delay, view borders, and grapple support
+- Rendering curved terrain; specifically translate, scale, and rotate line segments into place to form a curve
+- **USE THIS FOR M1 GRADING:** Advanced camera mechanics with lock-on delay, view borders, and grapple support; specifically the upgraded camera projection matrix and logic for conditional camera movement based on player physics like the Sonic franchise of games
 
 **[11 | Physics]**: Complex physical interactions with the environment
 - Accurate ball physics including angular velocity, rotation, and friction

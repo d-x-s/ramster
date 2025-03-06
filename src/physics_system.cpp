@@ -47,18 +47,75 @@ vec2 get_bounding_box(const Motion &motion)
 // This is a SUPER APPROXIMATE check that puts a circle around the bounding boxes and sees
 // if the center point of either object is inside the other's bounding-box-circle. You can
 // surely implement a more accurate detection
-bool collides(const Motion &motion1, const Motion &motion2)
+// NOTE THAT THIS SHOULD REALLY ONLY BE CALLED WITH EITHER PLAYER OR ENEMY, AS IT DEPENDS ON ENTITIES HAVING ONE SHAPE!!!
+bool collides(const Entity &entity1, const Entity &entity2)
 {
-  vec2 dp = motion1.position - motion2.position;
+    // Get body IDs to identify entities in box2D
+    b2BodyId entity1_id = registry.physicsBodies.get(entity1).bodyId;
+    b2BodyId entity2_id = registry.physicsBodies.get(entity2).bodyId;
+    
+    // Figure out the shapes
+    // Entity 1
+    int entity1_numShapes = b2Body_GetShapeCount(entity1_id);
+    b2ShapeId* entity1_shapeArray = new b2ShapeId[entity1_numShapes];
+    b2Body_GetShapes(entity1_id, entity1_shapeArray, entity1_numShapes);
+    b2ShapeId entity1_shape = entity1_shapeArray[0]; 
+    // Entity 2
+    int entity2_numShapes = b2Body_GetShapeCount(entity2_id);
+    b2ShapeId* entity2_shapeArray = new b2ShapeId[entity2_numShapes];
+    b2Body_GetShapes(entity2_id, entity2_shapeArray, entity2_numShapes);
+    b2ShapeId entity2_shape = entity2_shapeArray[0];
+
+    // get the ball's shape id.
+// The # shapes should always be 1, since the player is initialized as a singular ball shape!
+    int player_num_shapes = b2Body_GetShapeCount(bodyId);
+    b2ShapeId* shapeArray = new b2ShapeId[player_num_shapes];
+    b2Body_GetShapes(bodyId, shapeArray, player_num_shapes);
+
+
+    // calculate if ball is grounded or not.
+    int num_contacts = b2Body_GetContactCapacity(bodyId);
+    bool& isGroundedRef = registry.playerPhysics.get(playerEntity).isGrounded;
+
+    if (num_contacts == 0) {
+        isGroundedRef = false;
+        return;
+    }
+
+
+    b2ContactData* contactData = new b2ContactData[num_contacts];
+    b2Body_GetContactData(bodyId, contactData, num_contacts);
+
+
+
+    entity1_id.
+
+
+    b2Body_GetContactData
+
+  vec2 dp = entity1.position - entity2.position;
   float dist_squared = dot(dp, dp);
-  const vec2 other_bonding_box = get_bounding_box(motion1) / 2.f;
+  const vec2 other_bonding_box = get_bounding_box(entity1) / 2.f;
   const float other_r_squared = dot(other_bonding_box, other_bonding_box);
-  const vec2 my_bonding_box = get_bounding_box(motion2) / 2.f;
+  const vec2 my_bonding_box = get_bounding_box(entity2) / 2.f;
   const float my_r_squared = dot(my_bonding_box, my_bonding_box);
   const float r_squared = max(other_r_squared, my_r_squared);
   if (dist_squared < r_squared)
     return true;
   return false;
+
+  // WIP BOX2D CODE:
+/*
+* b2ContactEvents contactEvents = b2World_GetContactEvents(worldId);
+
+for (int i = 0; i < contactEvents.beginCount; i++) {
+    b2ContactBeginTouchEvent event = contactEvents.beginEvents[i];
+    b2BodyId collisionBody_A = b2Shape_GetBody(event.shapeIdA);
+    b2BodyId collisionBody_B = b2Shape_GetBody(event.shapeIdB);
+
+    std::cout << "TEST XXXXXXXXXXXXXXXXXXXXXXXX" << b2Body_GetUserData(collisionBody_A) << std::endl;
+}
+*/
 }
 
 // Advances physics simulation
@@ -301,8 +358,8 @@ void PhysicsSystem::step(float elapsed_ms)
   // std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";
 
   // COLLISION HANDLING
-  // Ran out of time, will use A1 for now, figure out collision callbacks later.
-  // check for collisions between all moving entities
+  // This just iterates over all motion entities to check. 
+  // The collision check is handled by collides() helper function.
   ComponentContainer<Motion> &motion_container = registry.motions;
   for (uint i = 0; i < motion_container.components.size(); i++)
   {
@@ -313,26 +370,21 @@ void PhysicsSystem::step(float elapsed_ms)
     for (uint j = i + 1; j < motion_container.components.size(); j++)
     {
       Motion &motion_j = motion_container.components[j];
-      if (collides(motion_i, motion_j))
-      {
-        Entity entity_j = motion_container.entities[j];
-        // Create a collisions event
-        // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
-        // CK: why the duplication, except to allow searching by entity_id
-        registry.collisions.emplace_with_duplicates(entity_i, entity_j);
+      Entity entity_j = motion_container.entities[j];
+      // We really only want to check collisions if both of these are either players or enemies.
+      if ((registry.players.has(entity_i) || registry.enemies.has(entity_i)) && // entity i is either a player or an enemy
+          (registry.players.has(entity_j) || registry.enemies.has(entity_j)) // entity j is either a player or an enemy
+          ) {
+          if (collides(entity_i, entity_j))
+          {
+              // Create a collisions event
+              // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
+              // CK: why the duplication, except to allow searching by entity_id
+              registry.collisions.emplace_with_duplicates(entity_i, entity_j);
+          }
       }
+      
     }
   }
-  // WIP BOX2D CODE:
-  /*
-  * b2ContactEvents contactEvents = b2World_GetContactEvents(worldId);
 
-  for (int i = 0; i < contactEvents.beginCount; i++) {
-      b2ContactBeginTouchEvent event = contactEvents.beginEvents[i];
-      b2BodyId collisionBody_A = b2Shape_GetBody(event.shapeIdA);
-      b2BodyId collisionBody_B = b2Shape_GetBody(event.shapeIdB);
-
-      std::cout << "TEST XXXXXXXXXXXXXXXXXXXXXXXX" << b2Body_GetUserData(collisionBody_A) << std::endl;
-  }
-  */
 }

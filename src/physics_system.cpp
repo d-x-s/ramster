@@ -54,7 +54,7 @@ bool collides(const Entity &entity1, const Entity &entity2)
     b2BodyId entity1_id = registry.physicsBodies.get(entity1).bodyId;
     b2BodyId entity2_id = registry.physicsBodies.get(entity2).bodyId;
     
-    // Figure out the shapes
+    // Figure out the shape IDs
     // Entity 1
     int entity1_numShapes = b2Body_GetShapeCount(entity1_id);
     b2ShapeId* entity1_shapeArray = new b2ShapeId[entity1_numShapes];
@@ -66,44 +66,51 @@ bool collides(const Entity &entity1, const Entity &entity2)
     b2Body_GetShapes(entity2_id, entity2_shapeArray, entity2_numShapes);
     b2ShapeId entity2_shape = entity2_shapeArray[0];
 
-    // get the ball's shape id.
-// The # shapes should always be 1, since the player is initialized as a singular ball shape!
-    int player_num_shapes = b2Body_GetShapeCount(bodyId);
-    b2ShapeId* shapeArray = new b2ShapeId[player_num_shapes];
-    b2Body_GetShapes(bodyId, shapeArray, player_num_shapes);
+    // Get contact data for both entities
+    int entity1_numContacts = b2Body_GetContactCapacity(entity1_id);
+    int entity2_numContacts = b2Body_GetContactCapacity(entity2_id);
+    b2ContactData* entity1_contactData = new b2ContactData[entity1_numContacts];
+    b2ContactData* entity2_contactData = new b2ContactData[entity2_numContacts];
+    b2Body_GetContactData(entity1_id, entity1_contactData, entity1_numContacts);
+    b2Body_GetContactData(entity2_id, entity2_contactData, entity2_numContacts);
 
-
-    // calculate if ball is grounded or not.
-    int num_contacts = b2Body_GetContactCapacity(bodyId);
-    bool& isGroundedRef = registry.playerPhysics.get(playerEntity).isGrounded;
-
-    if (num_contacts == 0) {
-        isGroundedRef = false;
-        return;
+    // Obvious case where if either of these entities have 0 contacts, then it must be the case that they're not colliding.
+    if (entity1_numContacts == 0 || entity2_numContacts == 0) {
+        return false;
     }
 
+    // If they have contacts then it's less obvious. 
+    // Iterate over every contact of either entity (as it should be reciprocal if they touch) and check if it contains the shapeID of the other. 
+    // If they have the other's shapeID then they're definitely colliding.
+    // We'll just check entity 1.
+    for (int i = 0; i < entity1_numContacts; i++) {
+        b2ContactData contact = entity1_contactData[i];
 
-    b2ContactData* contactData = new b2ContactData[num_contacts];
-    b2Body_GetContactData(bodyId, contactData, num_contacts);
+        // if the collision involves the player.
+        if (((contact.shapeIdA.index1 == entity1_shape.index1 || contact.shapeIdB.index1 == entity1_shape.index1)) && // confirm that entity1 is one of the shapes involved
+            ((contact.shapeIdA.index1 == entity2_shape.index1 || contact.shapeIdB.index1 == entity2_shape.index1)) // confirm that entity2 is one of the shapes involved
+            ) 
+        {
+            return true;
+        }
+    }
 
+    // if loop found nothing then no collision.
+    return false;
 
-
-    entity1_id.
-
-
-    b2Body_GetContactData
-
-  vec2 dp = entity1.position - entity2.position;
-  float dist_squared = dot(dp, dp);
-  const vec2 other_bonding_box = get_bounding_box(entity1) / 2.f;
-  const float other_r_squared = dot(other_bonding_box, other_bonding_box);
-  const vec2 my_bonding_box = get_bounding_box(entity2) / 2.f;
-  const float my_r_squared = dot(my_bonding_box, my_bonding_box);
-  const float r_squared = max(other_r_squared, my_r_squared);
-  if (dist_squared < r_squared)
-    return true;
-  return false;
-
+/*
+    LEGACY COLLISION CODE
+    vec2 dp = entity1.position - entity2.position;
+      float dist_squared = dot(dp, dp);
+      const vec2 other_bonding_box = get_bounding_box(entity1) / 2.f;
+      const float other_r_squared = dot(other_bonding_box, other_bonding_box);
+      const vec2 my_bonding_box = get_bounding_box(entity2) / 2.f;
+      const float my_r_squared = dot(my_bonding_box, my_bonding_box);
+      const float r_squared = max(other_r_squared, my_r_squared);
+      if (dist_squared < r_squared)
+        return true;
+      return false;
+*/
   // WIP BOX2D CODE:
 /*
 * b2ContactEvents contactEvents = b2World_GetContactEvents(worldId);

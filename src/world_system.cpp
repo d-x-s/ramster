@@ -408,6 +408,10 @@ void WorldSystem::handle_collisions() {
 				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
 				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
 
+				// TODO NOTE: Shifting collisions to box2D broke this mechanic.
+				// Originally, this triggered BEFORE the collision, which makes it so that we calculated using the player and enemy's original speed.
+				// With Box2D collision detection, this gets triggered AFTER collision, which means the speed calculation as it stands is meaningless...
+				// Will need to adjust how this works in terms of scoring.
 				// For now we'll base everything entirely on speed.
 				// If player speed > enemy speed, then enemy gets killed.
 				if (playerSpeed > enemySpeed) {

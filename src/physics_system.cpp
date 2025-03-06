@@ -44,10 +44,15 @@ vec2 get_bounding_box(const Motion &motion)
   return {abs(motion.scale.x), abs(motion.scale.y)};
 }
 
-// This is a SUPER APPROXIMATE check that puts a circle around the bounding boxes and sees
-// if the center point of either object is inside the other's bounding-box-circle. You can
-// surely implement a more accurate detection
+
 // NOTE THAT THIS SHOULD REALLY ONLY BE CALLED WITH EITHER PLAYER OR ENEMY, AS IT DEPENDS ON ENTITIES HAVING ONE SHAPE!!!
+// TODO NOTE: playtested & found an issue where the player and enemy occasionally phase through each other. Tried replicating by seeing if it triggers by jump, consecutive enemies, 
+// etc, But it occurs seemingly randomly. Also encountered the issue where enemies occasionally phase through the ramp. These two issues could be related...?
+// NOTE 2: Increased scale of both the player and enemy entities. Confirmed that if a collision happens off-center (say, the edges touch), it will not register, 
+// but will if the centers of the 2 bodies are sufficiently close. This suggests that the on-screen geometry is not equal to the collision geometry, causing the phase-through 
+// issue.
+// NOTE 3: Tried decreasing scale of both player and enemy entities so the geometry on-screen is smaller than collision geometry. Confirmed that this remedied the phase-through 
+// issue.
 bool collides(const Entity &entity1, const Entity &entity2)
 {
     // Get body IDs to identify entities in box2D
@@ -86,7 +91,7 @@ bool collides(const Entity &entity1, const Entity &entity2)
     for (int i = 0; i < entity1_numContacts; i++) {
         b2ContactData contact = entity1_contactData[i];
 
-        // if the collision involves the player.
+        // confirming both entities are in the collision
         if (((contact.shapeIdA.index1 == entity1_shape.index1 || contact.shapeIdB.index1 == entity1_shape.index1)) && // confirm that entity1 is one of the shapes involved
             ((contact.shapeIdA.index1 == entity2_shape.index1 || contact.shapeIdB.index1 == entity2_shape.index1)) // confirm that entity2 is one of the shapes involved
             ) 
@@ -100,6 +105,9 @@ bool collides(const Entity &entity1, const Entity &entity2)
 
 /*
     LEGACY COLLISION CODE
+    // This is a SUPER APPROXIMATE check that puts a circle around the bounding boxes and sees
+// if the center point of either object is inside the other's bounding-box-circle. You can
+// surely implement a more accurate detection
     vec2 dp = entity1.position - entity2.position;
       float dist_squared = dot(dp, dp);
       const vec2 other_bonding_box = get_bounding_box(entity1) / 2.f;

@@ -102,35 +102,6 @@ bool collides(const Entity &entity1, const Entity &entity2)
 
     // if loop found nothing then no collision.
     return false;
-
-/*
-    LEGACY COLLISION CODE
-    // This is a SUPER APPROXIMATE check that puts a circle around the bounding boxes and sees
-// if the center point of either object is inside the other's bounding-box-circle. You can
-// surely implement a more accurate detection
-    vec2 dp = entity1.position - entity2.position;
-      float dist_squared = dot(dp, dp);
-      const vec2 other_bonding_box = get_bounding_box(entity1) / 2.f;
-      const float other_r_squared = dot(other_bonding_box, other_bonding_box);
-      const vec2 my_bonding_box = get_bounding_box(entity2) / 2.f;
-      const float my_r_squared = dot(my_bonding_box, my_bonding_box);
-      const float r_squared = max(other_r_squared, my_r_squared);
-      if (dist_squared < r_squared)
-        return true;
-      return false;
-*/
-  // WIP BOX2D CODE:
-/*
-* b2ContactEvents contactEvents = b2World_GetContactEvents(worldId);
-
-for (int i = 0; i < contactEvents.beginCount; i++) {
-    b2ContactBeginTouchEvent event = contactEvents.beginEvents[i];
-    b2BodyId collisionBody_A = b2Shape_GetBody(event.shapeIdA);
-    b2BodyId collisionBody_B = b2Shape_GetBody(event.shapeIdB);
-
-    std::cout << "TEST XXXXXXXXXXXXXXXXXXXXXXXX" << b2Body_GetUserData(collisionBody_A) << std::endl;
-}
-*/
 }
 
 // Advances physics simulation
@@ -157,7 +128,6 @@ void PhysicsSystem::step(float elapsed_ms)
   PhysicsBody &playerComponent_physicsBody = registry.physicsBodies.get(playerEntity_physicsBody);
   b2BodyId playerBodyID = playerComponent_physicsBody.bodyId;
   b2Vec2 playerPosition = b2Body_GetPosition(playerBodyID);
-
   // Update motion component
   Motion &playerComponent_motion = registry.motions.get(playerEntity_physicsBody);
   playerComponent_motion.position = vec2(playerPosition.x, playerPosition.y);
@@ -392,10 +362,33 @@ void PhysicsSystem::step(float elapsed_ms)
           ) {
           if (collides(entity_i, entity_j))
           {
+              // Now that we know the 2 entities are colliding we also want to figure out which entity comes out on top.
+              // Current criteria for "top" is higher speed during collision.
+              
+              // Get body IDs to identify entities in box2D (note that i, j, maps onto 1, 2)
+              b2BodyId entity1_id = registry.physicsBodies.get(entity_i).bodyId;
+              b2BodyId entity2_id = registry.physicsBodies.get(entity_j).bodyId;
+              // Get speeds
+              b2Vec2 entity1_velocity = b2Body_GetLinearVelocity(entity1_id);
+              float entity1_speedFactor = (entity1_velocity.x * entity1_velocity.x) + (entity1_velocity.y * entity1_velocity.y);
+              b2Vec2 entity2_velocity = b2Body_GetLinearVelocity(entity2_id);
+              float entity2_speedFactor = (entity2_velocity.x * entity2_velocity.x) + (entity2_velocity.y * entity2_velocity.y);
+
+              // Figure out the winning entity in this collision
+              // For now it's just the one with higher speed. Eventually we might also want to consider kinetic energy instead to make larger enemies harder to kill.
+              Entity winner; 
+              if (entity1_speedFactor > entity2_speedFactor) {
+                  winner = entity_i;
+              }
+              else {
+                  winner = entity_j;
+              }
+
               // Create a collisions event
               // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
               // CK: why the duplication, except to allow searching by entity_id
-              registry.collisions.emplace_with_duplicates(entity_i, entity_j);
+              Collision& collision = registry.collisions.emplace_with_duplicates(entity_i, entity_j);
+              collision.winner = winner;
           }
       }
       

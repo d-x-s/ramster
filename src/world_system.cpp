@@ -395,70 +395,70 @@ void WorldSystem::handle_collisions() {
 			if (registry.enemies.has(entity)) {
 
 				// Figure out the position, velocity characteristics of player and enemy
+				// Note: this computation would've been shifted over to box2D collision detection and is now no longer needed...?
+				/*
+				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
+				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
+				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
+				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
+				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
+				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
+				*/
 				Entity enemyEntity = entity;
 				Entity playerEntity = other;
 				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
 				b2BodyId enemyBodyId = enemyPhys.bodyId;
-				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
-				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
-				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
 				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
 				b2BodyId playerBodyId = playerPhys.bodyId;
-				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
-				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
-				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
 
-				// TODO NOTE: Shifting collisions to box2D broke this mechanic.
-				// Originally, this triggered BEFORE the collision, which makes it so that we calculated using the player and enemy's original speed.
-				// With Box2D collision detection, this gets triggered AFTER collision, which means the speed calculation as it stands is meaningless...
-				// Will need to adjust how this works in terms of scoring.
 				// For now we'll base everything entirely on speed.
-				// If player speed > enemy speed, then enemy gets killed.
-				if (playerSpeed > enemySpeed) {
+				// Handling based on whether player comes out on top in this collision
+				if (collision.player_wins_collision) {
 					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(entity);
+					registry.remove_all_components_of(enemyEntity);
 					Mix_PlayChannel(-1, chicken_dead_sound, 0);
 					points++;
 				}
 				// Otherwise player takes dmg (just loses pts for now) and we remove enemy.
 				else {
 					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(entity);
+					registry.remove_all_components_of(enemyEntity);
 					Mix_PlayChannel(-1, chicken_eat_sound, 0);
-					points -= 5; //bigger penalty
+					points -= 3; //bigger penalty
 				}
 
 			}
 			else { 
 				
 				// Figure out the position, velocity characteristics of player and enemy
+				/* Legacy code
+				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
+				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
+				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
+				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
+				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
+				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
+				*/
 				Entity enemyEntity = other;
 				Entity playerEntity = entity;
 				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
 				b2BodyId enemyBodyId = enemyPhys.bodyId;
-				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
-				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
-				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
 				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
 				b2BodyId playerBodyId = playerPhys.bodyId;
-				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
-				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
-				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
 
-				// For now we'll base everything entirely on speed.
-				// If player speed > enemy speed, then enemy gets killed.
-				if (playerSpeed > enemySpeed) {
+				// Handling based on whether player comes out on top in this collision
+				if (collision.player_wins_collision) {
 					b2DestroyBody(enemyBodyId);
 					registry.remove_all_components_of(other);
 					Mix_PlayChannel(-1, chicken_dead_sound, 0);
 					points++;
 				}
-				// Otherwise player takes dmg (for now it just applies vignette effect)
+				// Otherwise player takes dmg (just loses pts for now) and we remove enemy.
 				else {
 					b2DestroyBody(enemyBodyId);
 					registry.remove_all_components_of(other);
 					Mix_PlayChannel(-1, chicken_eat_sound, 0);
-					points-=5;
+					points -= 3; //bigger penalty
 				}
 
 			}

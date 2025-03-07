@@ -101,7 +101,7 @@ const float ENEMY_JUMP_IMPULSE = 2000.0f; // kg·cm/s (dynes·s)
 const float ENEMY_RADIUS = 20.0;
 const float ENEMY_DENSITY = 0.01f; // kg/cm² (kilograms per square centimeter); lower number = less affected by gravity 
 const float ENEMY_FRICTION = 0.1f; //enemy friction. for now we're setting it low so it's less affected by gravity & spins less
-const float ENEMY_RESTITUTION = 0.5f; //enemy bounciness... increase this number to make things more chaotic.
+const float ENEMY_RESTITUTION = 0.0f; //enemy bounciness... increase this number to make things more chaotic.
 
 // TERRAIN PHYSICS
 const float TERRAIN_DEFAULT_FRICTION = 0.2f;

@@ -370,25 +370,47 @@ void PhysicsSystem::step(float elapsed_ms)
               b2BodyId entity2_id = registry.physicsBodies.get(entity_j).bodyId;
               // Get speeds
               b2Vec2 entity1_velocity = b2Body_GetLinearVelocity(entity1_id);
-              float entity1_speedFactor = (entity1_velocity.x * entity1_velocity.x) + (entity1_velocity.y * entity1_velocity.y);
+              float entity1_speedFactor = ((entity1_velocity.x * entity1_velocity.x) + (entity1_velocity.y * entity1_velocity.y))/100000;
               b2Vec2 entity2_velocity = b2Body_GetLinearVelocity(entity2_id);
-              float entity2_speedFactor = (entity2_velocity.x * entity2_velocity.x) + (entity2_velocity.y * entity2_velocity.y);
+              float entity2_speedFactor = ((entity2_velocity.x * entity2_velocity.x) + (entity2_velocity.y * entity2_velocity.y))/100000;
 
-              // Figure out the winning entity in this collision
-              // For now it's just the one with higher speed. Eventually we might also want to consider kinetic energy instead to make larger enemies harder to kill.
-              Entity winner; 
-              if (entity1_speedFactor > entity2_speedFactor) {
-                  winner = entity_i;
+              // ID the player
+              Entity playerEntity;
+              float playerSpeed;
+              if (registry.players.has(entity_i)) {
+                playerSpeed = entity1_speedFactor;
+                playerEntity = entity_i;
               }
               else {
-                  winner = entity_j;
+                playerSpeed = entity2_speedFactor;
+                playerEntity = entity_j;
               }
+
+              // To determine if the player "won" in that collision, what we ultimately want to find out is whether the player was moving fast enough.
+              // So, at a high enough speed, the player should be relatively resistant to damage. The goal of the enemy would then be to absorb as much of
+              // the player's speed as possible. 
+              // Since the player is bouncy and our enemies are not very fast (at least not fast enough to make the player surpass the required speed to "win"),
+              // we can figure out if the player is fast enough by just checking on how much speed they retain after the collision.
+              // For additional realism, we could also alter the required-speed-to-win based on enemy mass, where higher mass = higher speed. 
+              // This would be a mechanic to be implemented after the addition of more enemy types.
+              // Anyhow, the REQUIRED_SPEED_TO_WIN is the number that determines what collisions the player comes out on top of, and will need some fine-tuning.
+              float REQUIRED_SPEED_TO_WIN = 3.0f; // this'll need to be fine-tuned.
+              bool player_wins_collision = false;
+
+              if (playerSpeed > REQUIRED_SPEED_TO_WIN) {
+                  player_wins_collision = true;
+              }
+
+              // DEBUG
+              std::cout << "ENTITY 1 SPEED: " << entity1_speedFactor << std::endl;
+              std::cout << "ENTITY 2 SPEED: " << entity2_speedFactor << std::endl;
+              std::cout << "PLAYER SPEED: " << playerSpeed << std::endl;
 
               // Create a collisions event
               // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
               // CK: why the duplication, except to allow searching by entity_id
               Collision& collision = registry.collisions.emplace_with_duplicates(entity_i, entity_j);
-              collision.winner = winner;
+              collision.player_wins_collision = player_wins_collision;
           }
       }
       

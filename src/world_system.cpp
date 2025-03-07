@@ -209,10 +209,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
 		}
 
-		if (grappleActive) {
-			updateGrappleLines();
-		}
-
 	}
 
 	return game_active;
@@ -674,22 +670,4 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 		return;
 	}
 }
-
-void WorldSystem::updateGrappleLines() {
-    for (Entity grappleEntity : registry.grapples.entities) {
-        Grapple& grapple = registry.grapples.get(grappleEntity);
-
-        // Get current positions
-        b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
-        b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
-
-        // Update line entity positions
-        if (registry.lines.has(grapple.lineEntity)) {
-            Line& line = registry.lines.get(grapple.lineEntity);
-            line.start_pos = vec2(ballPos.x, ballPos.y);
-            line.end_pos = vec2(grapplePos.x, grapplePos.y);
-        }
-    }
-}
-
 

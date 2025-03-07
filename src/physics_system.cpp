@@ -335,4 +335,25 @@ void PhysicsSystem::step(float elapsed_ms)
       std::cout << "TEST XXXXXXXXXXXXXXXXXXXXXXXX" << b2Body_GetUserData(collisionBody_A) << std::endl;
   }
   */
+
+ 	if (grappleActive) {
+		updateGrappleLines();
+  }
+}
+
+void PhysicsSystem::updateGrappleLines() {
+    for (Entity grappleEntity : registry.grapples.entities) {
+        Grapple& grapple = registry.grapples.get(grappleEntity);
+
+        // Get current positions
+        b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
+        b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
+
+        // Update line entity positions
+        if (registry.lines.has(grapple.lineEntity)) {
+            Line& line = registry.lines.get(grapple.lineEntity);
+            line.start_pos = vec2(ballPos.x, ballPos.y);
+            line.end_pos = vec2(grapplePos.x, grapplePos.y);
+        }
+    }
 }

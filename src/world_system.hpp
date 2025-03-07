@@ -118,7 +118,4 @@ private:
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
 
-	// update grapple hook line
-	void updateGrappleLines();
-
 };

@@ -37,3 +37,4 @@ out/*
 .vs/*
 build/*
 /ext
+/src/world_system.cpp

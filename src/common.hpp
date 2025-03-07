@@ -82,9 +82,12 @@ const float GROUNDED_MOVEMENT_FORCE = 300.0f;
 const float AIR_STRAFE_FORCE_MULTIPLIER = 0.5f;
 const float JUMP_IMPULSE = 80.0f;
 
-// WARNING: don't mess with the density, if you do all the forces have to be re-tuned.
-const float BALL_DENSTIY = 1.0f;
-const float BALL_FRICTION = 0.3f;
+// A ball of radius 32cm has area ~3200cm².
+// We should pick a value that yields a reasonable weight-to-area ratio like a density of 0.01.
+// Thus our 32cm ball would have a weight of only 32kg.
+const float BALL_RADIUS = 32.0;
+const float BALL_DENSTIY = 0.01f; // kg/cm² (kilograms per square centimeter)
+const float BALL_FRICTION = 0.1f;
 const float BALL_RESTITUTION = 0.3f;
 const float BALL_ANGULAR_DAMPING = 75.0f;
 

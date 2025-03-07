@@ -29,19 +29,20 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 | Reporting | Bug List | See `docs` |
 | Reporting | Demo Video | See Canvas |
 
-## M1 Creative Elements
-**[3 | Graphics]**: Complex geometry
-- Rendering curved terrain
-- Advanced camera mechanics with lock-on delay, view borders, and grapple support
-
+## M1 Creative Elements (for grading)
 **[11 | Physics]**: Complex physical interactions with the environment
-- Accurate ball physics including angular velocity, rotation, and friction
-- Collision support for curved terrain
-- Working grapple implemented with joints
+- (Basic) Accurate ball physics including angular velocity, rotation, and friction
+- (Basic) Collision support for curved terrain
+- (Advanced) Working grapple implemented with joints
 
 **[20 | Software Engineering]**: External integration
-- Box2D Library
-- Used in ball, enemies, grapple, slope, and world system
+- (Basic) Box2D Library used in ball, enemies, grapple, slope, and world system
+
+
+## M1 Extra Creative Elements (save for later)
+**[3 | Graphics]**: Complex geometry
+- Rendering curved terrain; specifically translate, scale, and rotate line segments into place to form a curve
+- Advanced camera mechanics with lock-on delay, view borders, and grapple support; specifically the upgraded camera projection matrix and logic for conditional camera movement based on player physics like the Sonic franchise of games
 
 ## M1 Interpolation Implementation
 Linear interpolation is implemented whenever the camera performs movement not centered on the player. The `lerp()` function provided in the grading rubric is utilized. As an example, whenever the player grapples to a grapple point, the camera will go center on it. To calculate the in-between camera frames, the `lerp()` function is used in first the `x` direction, then the `y` direction. The `t` parameter is represented with a shift variable starting at `0` and incrementing by `0.02` up to `1`.

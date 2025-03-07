@@ -16,15 +16,17 @@
 
 using Clock = std::chrono::high_resolution_clock;
 
-// Entry point
 int main()
 {
-	// Setup Box2D v3 world
+	// IMPORTANT! Our change our physics engine to use centimeters.
+	// The default unit for Box2D is meters (1.0f). 
+	// By applying a 100x scaling factor, 
+	// a value of "9.8" is interpreted as 9.8cm rather than 9.8m. 
+	// Keep this context in mind when working with any values.
 	float lengthUnitsPerMeter = 100.0f;
 	b2SetLengthUnitsPerMeter(lengthUnitsPerMeter);
 
 	b2WorldDef worldDef = b2DefaultWorldDef();
-	worldDef.gravity.y = -9.8f;
 	b2WorldId worldId = b2CreateWorld(&worldDef);
 
 	b2Vec2 gravity_vector;
@@ -36,7 +38,7 @@ int main()
 	// Room dimensions
 	const float roomWidth = WINDOW_WIDTH_PX * 3.0;
 	const float roomHeight = WINDOW_HEIGHT_PX;
-	const float wallThickness = 20.0f; // half-width for SetAsBox
+	const float wallThickness = 0.5f; // half-width for SetAsBox
 
 	auto create_wall = [&](float x, float y, float halfWidth, float halfHeight) {
 		b2BodyDef bodyDef = b2DefaultBodyDef();
@@ -46,19 +48,18 @@ int main()
 
 		b2Polygon polygon = b2MakeBox(halfWidth, halfHeight);
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
+		shapeDef.friction = 0.1f;
 		b2CreatePolygonShape(bodyId, &shapeDef, &polygon);
 
-		shapeDef.friction = 0.1f;
-
-    // for debugging purposes, draw the walls of the room
-		// vec2 topLeft = { x - halfWidth, y + halfHeight };
-		// vec2 topRight = { x + halfWidth, y + halfHeight };
-		// vec2 bottomRight = { x + halfWidth, y - halfHeight };
-		// vec2 bottomLeft = { x - halfWidth, y - halfHeight };
-		// Entity topEdge = createLine(topLeft, topRight);
-		// Entity rightEdge = createLine(topRight, bottomRight);
-		// Entity bottomEdge = createLine(bottomRight, bottomLeft);
-		// Entity leftEdge = createLine(bottomLeft, topLeft);
+		// Draw the walls of the room
+		vec2 topLeft = { x - halfWidth, y + halfHeight };
+		vec2 topRight = { x + halfWidth, y + halfHeight };
+		vec2 bottomRight = { x + halfWidth, y - halfHeight };
+		vec2 bottomLeft = { x - halfWidth, y - halfHeight };
+		Entity topEdge = createLine(topLeft, topRight);
+		Entity rightEdge = createLine(topRight, bottomRight);
+		Entity bottomEdge = createLine(bottomRight, bottomLeft);
+		Entity leftEdge = createLine(bottomLeft, topLeft);
 
 		return bodyId;
 	};

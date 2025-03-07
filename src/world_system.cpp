@@ -538,8 +538,8 @@ void WorldSystem::handle_movement() {
 
 	b2Vec2 nonjump_movement_force = { 0, 0 };
 	b2Vec2 jump_impulse   = { 0, 0 };
-	const float forceMagnitude = GROUNDED_MOVEMENT_FORCE;
-	const float jumpImpulseMagnitude = JUMP_IMPULSE;
+	const float forceMagnitude = BALL_GROUNDED_MOVEMENT_FORCE;
+	const float jumpImpulseMagnitude = BALL_JUMP_IMPULSE;
 
 	// Determine impulse direction based on key pressed
 	if (keyStates[GLFW_KEY_W]) {
@@ -582,7 +582,7 @@ void WorldSystem::handle_movement() {
 					float multiplier = 1.0f;
 
 					if (!isGrounded) {
-						multiplier = AIR_STRAFE_FORCE_MULTIPLIER;
+						multiplier = BALL_AIR_STRAFE_FORCE_MULTIPLIER;
 					}
 
 					// apply force slightly above center of mass to make ball spin.

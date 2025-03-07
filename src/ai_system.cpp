@@ -25,8 +25,8 @@ void AISystem::step(float elapsed_ms)
 	// Box2D physics
 	b2Vec2 nonjump_movement_force = { 0, 0 };
 	b2Vec2 jump_impulse = { 0, 0 }; // not needed for now, here for future use
-	const float forceMagnitude = GROUNDED_MOVEMENT_FORCE; // might want to separate player vs enemy movement force....?
-	const float jumpImpulseMagnitude = JUMP_IMPULSE; // not needed for now, here for future use
+	const float forceMagnitude = ENEMY_GROUNDED_MOVEMENT_FORCE; // might want to separate player vs enemy movement force....?
+	const float jumpImpulseMagnitude = ENEMY_JUMP_IMPULSE; // not needed for now, here for future use
 
 	// Get player and figure out player coords
 	auto& player_registry = registry.players;
@@ -51,7 +51,6 @@ void AISystem::step(float elapsed_ms)
 		// Enemy position
 		float enemy_posX = enemyMotion.position[0];
 		float enemy_posY = enemyMotion.position[1]; // we wouldn't need this for now, here for future use.
-
 
 		// Decision tree. Simple for now, can expand into some monstrosity later.
 		// Player is to the right.

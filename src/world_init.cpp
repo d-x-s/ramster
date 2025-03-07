@@ -17,28 +17,19 @@ Entity createBall(b2WorldId worldId)
 	// Define a dynamic body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
-	bodyDef.position = b2Vec2{ 110.0f, 300.0f };
+	bodyDef.position = b2Vec2{ BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y };
 	bodyDef.fixedRotation = false; // Allow rolling
-	bodyDef.isBullet = true; // Prevent tunneling at high speeds
-
-	// Use `b2CreateBody()` instead of `world.CreateBody()`
 	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
-	std::cout << "Dynamic body created at position ("
-		<< bodyDef.position.x << ", " << bodyDef.position.y << ")\n";
 
-	// Define shape properties using Box2D v3 functions
+	// Associate the body with a shape
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
 	shapeDef.density = BALL_DENSTIY;
 	shapeDef.friction = BALL_FRICTION;
-	shapeDef.restitution = BALL_RESTITUTION; // Higher restitution makes it bouncy
-
-	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
+	shapeDef.restitution = BALL_RESTITUTION;
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = 0.5f;
+	circle.radius = BALL_RADIUS;
 	b2CreateCircleShape(bodyId, &shapeDef, &circle);
-	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.3, restitution=0.8 (bouncy).\n";
-
 	ball.bodyId = bodyId;
 
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
@@ -46,25 +37,23 @@ Entity createBall(b2WorldId worldId)
 	// Add motion & render request for ECS synchronization
 	auto& motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
-	motion.position = vec2(100.0f, 100.0f);
+	motion.position = vec2(BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y);
 
-	float scale = circle.radius * 75.0f;
-	motion.scale = vec2(scale, scale);
-	std::cout << "world_init.cpp: createBall: Added motion component to ball.\n";
+	// The sprite is 64x64 pixels, and 1cm = 1pixel
+	motion.scale = vec2(2 * circle.radius, 2 * circle.radius);
 
 	// Associate player with camera
 	auto& camera = registry.cameras.emplace(entity);
-	camera.position = vec2(100.0f, 100.0f);
+	camera.position = vec2(BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y);
 
 	registry.renderRequests.insert(
 		entity,
 		{
-			TEXTURE_ASSET_ID::PROJECTILE,
+			TEXTURE_ASSET_ID::RAMSTER_1,
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE
 		}
 	);
-	std::cout << "Inserted render request.\n";
 
 	return entity;
 }
@@ -90,8 +79,6 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 
 	// Use `b2CreateBody()` instead of `world.CreateBody()`
 	b2BodyId bodyId = b2CreateBody(worldID, &bodyDef);
-	std::cout << "Dynamic body ENEMY created at position ("
-		<< bodyDef.position.x << ", " << bodyDef.position.y << ")\n";
 
 	// Define shape properties using Box2D v3 functions
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
@@ -103,9 +90,8 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 	// We'll update the enemy hitbox later.
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = 0.5f;
+	circle.radius = ENEMY_RADIUS;
 	b2CreateCircleShape(bodyId, &shapeDef, &circle);
-	std::cout << "Dynamic fixture added with radius 0.5, density=1.0, friction=0.1, restitution=0.1 (bouncy).\n";
 
 	enemyBody.bodyId = bodyId;
 
@@ -116,12 +102,10 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 	motion.angle = 0.f;
 	motion.position = pos;
 
-	float scale = circle.radius * 100.f;
+	float scale = circle.radius * 2;
 	motion.scale = vec2(scale, scale);
-	std::cout << "world_init.cpp: createEnemy: Added motion component to enemy.\n";
 
-  std::vector<TEXTURE_ASSET_ID> frames = { TEXTURE_ASSET_ID::FLOATER_1, TEXTURE_ASSET_ID::FLOATER_2, TEXTURE_ASSET_ID::FLOATER_3 };
-
+	std::vector<TEXTURE_ASSET_ID> frames = { TEXTURE_ASSET_ID::FLOATER_1, TEXTURE_ASSET_ID::FLOATER_2, TEXTURE_ASSET_ID::FLOATER_3 };
 	registry.renderRequests.insert(
 		entity,
 		{
@@ -164,11 +148,12 @@ Entity createGrapplePoint(b2WorldId worldId){
 
 	auto& motion = registry.motions.emplace(entity);
 	motion.position = vec2(1200.0f, 300.0f);
+	motion.scale = vec2(64.0f, 64.0f);
 
 	registry.renderRequests.insert(
 		entity,
 		{
-			TEXTURE_ASSET_ID::PROJECTILE,
+			TEXTURE_ASSET_ID::GRAPPLE_POINT,
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE
 		}
@@ -462,7 +447,7 @@ Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
 	registry.renderRequests.insert(
 		entity,
 		{
-			TEXTURE_ASSET_ID::PROJECTILE,
+			TEXTURE_ASSET_ID::RAMSTER_1,
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE
 		}

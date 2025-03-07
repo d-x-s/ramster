@@ -235,7 +235,7 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	transform.translate(motion.position);
 
 	// SCALE (TODO, remove the arbitrary scale up)
-	transform.scale(motion.scale + 5.0f);
+	transform.scale(motion.scale);
 
 	// ROTATE: Apply Box2D rotation to sprite
 	transform.rotate(glm::radians(motion.angle));

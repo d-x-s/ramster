@@ -44,10 +44,10 @@ const int GRID_CELL_WIDTH_PX = 60;
 const int GRID_CELL_HEIGHT_PX = 60;
 const int GRID_LINE_WIDTH_PX = 2;
 
-const int TOWER_TIMER_MS = 1000;	// number of milliseconds between tower shots
+const int TOWER_TIMER_MS = 1000;
 const int MAX_TOWERS_START = 5;
 
-const int ENEMY_SPAWN_RATE_MS = 3 * 1000;
+const int ENEMY_SPAWN_RATE_MS = 15 * 1000;
 
 const int INVADER_VELOCITY_GREY = 80;
 const int INVADER_VELOCITY_RED = 70;
@@ -71,25 +71,37 @@ const std::vector<int> PLAYER_CONTROL_KEYS = {
     GLFW_KEY_SPACE
 };
 
+// WORLD PHYSICS
+const float GRAVITY = -980; // cm/s² (centimeters per second squared)
+
 // PLAYER 2DBODY
 // PLAYER PHYSICS
-const float GRAVITY = -980; // should be implemented as a force, not an impulse.
+const float BALL_INITIAL_POSITION_X = 100.0;
+const float BALL_INITIAL_POSITION_Y = 500.0;
 
-const float GROUNDED_MOVEMENT_FORCE = 300.0f;
-const float AIR_STRAFE_FORCE_MULTIPLIER = 0.5f;
-const float JUMP_IMPULSE = 80.0f;
+// Player input related physics
+const float BALL_GROUNDED_MOVEMENT_FORCE = 25000.0f; // kg·cm/s² (dynes)
+const float BALL_AIR_STRAFE_FORCE_MULTIPLIER = 0.5f;
+const float BALL_JUMP_IMPULSE = 4000.0f; // kg·cm/s (dynes·s)
 
-// WARNING: don't mess with the density, if you do all the forces have to be re-tuned.
-const float BALL_DENSTIY = 0.50f;
-const float BALL_FRICTION = 0.01f;
+// A ball of radius 32cm has area ~3200cm².
+// We should pick a value that yields a reasonable weight-to-area ratio like a density of 0.01.
+// Thus our 32cm ball would have a weight of only 32kg.
+const float BALL_RADIUS = 32.0;
+const float BALL_DENSTIY = 0.01f; // kg/cm² (kilograms per square centimeter)
+const float BALL_FRICTION = 0.1f;
 const float BALL_RESTITUTION = 0.3f;
-const float BALL_ANGULAR_DAMPING = 75.0f;
+const float BALL_ANGULAR_DAMPING = 0.75f; // 1/s (inverse seconds)
 
 // ENEMY 2DBODY
 // Shares most of player 2D body but different density, friction, restitution, etc.
-const float ENEMY_DENSITY = 0.5f; // lower number = less affected by gravity 
-const float ENEMY_FRICTION = 0.02f; //enemy friction. for now we're setting it low so it's less affected by gravity & spins less
-const float ENEMY_RESTITUTION = 0.4f; //enemy bounciness... increase this number to make things more chaotic.
+const float ENEMY_GROUNDED_MOVEMENT_FORCE = 12500.0f; // kg·cm/s² (dynes)
+const float ENEMY_JUMP_IMPULSE = 2000.0f; // kg·cm/s (dynes·s)
+
+const float ENEMY_RADIUS = 20.0;
+const float ENEMY_DENSITY = 0.01f; // kg/cm² (kilograms per square centimeter); lower number = less affected by gravity 
+const float ENEMY_FRICTION = 0.1f; //enemy friction. for now we're setting it low so it's less affected by gravity & spins less
+const float ENEMY_RESTITUTION = 0.5f; //enemy bounciness... increase this number to make things more chaotic.
 
 // TERRAIN PHYSICS
 const float TERRAIN_DEFAULT_FRICTION = 0.2f;

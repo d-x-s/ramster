@@ -62,6 +62,13 @@ const int INVADER_HEALTH_BLUE = 120;
 const int PROJECTILE_VELOCITY = -100;
 const int PROJECTILE_DAMAGE = 10;
 
+// enemy types that we will be supporting.
+const enum ENEMY_TYPES {
+    COMMON = 1,
+    OBSTACLE = COMMON + 1,
+    SWARM = OBSTACLE + 1
+};
+
 // KEY STATES
 const std::vector<int> PLAYER_CONTROL_KEYS = {
     GLFW_KEY_W,

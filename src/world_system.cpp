@@ -394,6 +394,8 @@ void WorldSystem::handle_collisions() {
 			(registry.enemies.has(other) && registry.players.has(entity))) {
 			if (registry.enemies.has(entity)) {
 
+				// TODO: support unkillable obstacle enemy types
+
 				// Figure out the position, velocity characteristics of player and enemy
 				// Note: this computation would've been shifted over to box2D collision detection and is now no longer needed...?
 				/*
@@ -421,8 +423,8 @@ void WorldSystem::handle_collisions() {
 				}
 				// Otherwise player takes dmg (just loses pts for now) and we remove enemy.
 				else {
-					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(enemyEntity);
+					//b2DestroyBody(enemyBodyId);
+					//registry.remove_all_components_of(enemyEntity);
 					Mix_PlayChannel(-1, chicken_eat_sound, 0);
 					points -= 3; //bigger penalty
 				}
@@ -455,8 +457,8 @@ void WorldSystem::handle_collisions() {
 				}
 				// Otherwise player takes dmg (just loses pts for now) and we remove enemy.
 				else {
-					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(other);
+					//b2DestroyBody(enemyBodyId);
+					//registry.remove_all_components_of(other);
 					Mix_PlayChannel(-1, chicken_eat_sound, 0);
 					points -= 3; //bigger penalty
 				}

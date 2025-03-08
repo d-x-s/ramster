@@ -13,7 +13,10 @@ struct Player
 // Enemy component
 struct Enemy
 {
-
+	// This'll be the type of enemy
+	ENEMY_TYPES enemyType;
+	// Because we are making obstacle types, we'll also have a "destructability" trait
+	bool destructable;
 };
 
 // Tower

@@ -135,6 +135,10 @@ Entity createGrapplePoint(b2WorldId worldId){
 
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
 
+	//Disable collisions
+	shapeDef.filter.maskBits = 0x0000;
+	shapeDef.isSensor = true; 
+
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
     circle.radius = 0.2f;
@@ -172,6 +176,7 @@ Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBod
     djd.length = distance;
     djd.collideConnected = false;
     djd.maxLength = 280.0f;
+	djd.minLength = 100.0f;
 
     b2JointId jointId = b2CreateDistanceJoint(worldId, &djd);
 

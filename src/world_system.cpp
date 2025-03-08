@@ -540,6 +540,15 @@ void WorldSystem::handle_movement() {
 	// Determine impulse direction based on key pressed
 	if (keyStates[GLFW_KEY_W]) {
 		// nonjump_movement_force = { 0, forceMagnitude };
+		if (grappleActive) {
+			for (Entity grappleEntity : registry.grapples.entities) {
+        		Grapple& grapple = registry.grapples.get(grappleEntity);
+				float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
+				if (curLen >= 50.0f) {
+					b2DistanceJoint_SetLength(grapple.jointId , curLen - 5.0f);
+				}
+			}
+		}
 	}
 	else if (keyStates[GLFW_KEY_A]) {
 		nonjump_movement_force = { -forceMagnitude, 0 };
@@ -621,34 +630,6 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 	if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
 		debugging.in_debug_mode = !debugging.in_debug_mode;
 	}
-
-	if (action == GLFW_PRESS) {
-		if (key == GLFW_KEY_LEFT_SHIFT ) {
-			Entity ballEntity = registry.physicsBodies.entities[0];  
-    		Entity grapplePointEntity = registry.physicsBodies.entities[1];  
-
-    		PhysicsBody& ballBody = registry.physicsBodies.get(ballEntity);
-    		PhysicsBody& grappleBody = registry.physicsBodies.get(grapplePointEntity);
-
-    		b2BodyId ballBodyId = ballBody.bodyId;
-    		b2BodyId grappleBodyId = grappleBody.bodyId;
-
-			b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
-    		b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
-
-    		// Compute the distance between the two points
-    		float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
-                           			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
-
-			if (distance <= 280.0f && !grappleActive) {
-				createGrapple(worldId, ballBodyId, grappleBodyId, distance);
-				grappleActive = true;
-			} else if (grappleActive) {
-				removeGrapple();
-				grappleActive = false;
-			}
-		}
-	}
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
@@ -656,7 +637,7 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 	// record the current mouse position
 	mouse_pos_x = mouse_position.x;
 	mouse_pos_y = mouse_position.y;
-	std::cout << "mouse coordinate position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
+	//std::cout << "mouse coordinate position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
 }
 
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
@@ -669,5 +650,84 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 	if (!game_active) {
 		return;
 	}
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        // Get the raw mouse position (top-left origin).
+        vec2 mouseScreenPos = { mouse_pos_x, mouse_pos_y };
+
+        // Convert to world coordinates.
+        vec2 worldMousePos = screenToWorld(mouseScreenPos);
+        std::cout << "Mouse clicked at world position: ("
+                  << worldMousePos.x << ", " << worldMousePos.y << ")" << std::endl;
+
+		Entity ballEntity = registry.physicsBodies.entities[0]; 
+		PhysicsBody& ballBody = registry.physicsBodies.get(ballEntity); 
+		b2BodyId ballBodyId = ballBody.bodyId;
+		b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+
+		float dist = length(vec2(1200, 300) - worldMousePos);
+
+		if (dist < 50 && !grappleActive) {
+			attachGrapple();
+		} else {
+			removeGrapple();
+			grappleActive = false;
+		}
+    }
 }
+
+vec2 WorldSystem::screenToWorld(vec2 mouse_position) {
+	for (Entity cameraEntity : registry.cameras.entities) {
+		Camera& camera = registry.cameras.get(cameraEntity);
+		// Calculate the screen center.
+		float centerX = WINDOW_WIDTH_PX / 2.0f;
+		float centerY = WINDOW_HEIGHT_PX / 2.0f;
+
+		// Flip the Y coordinate: if the screen's Y=0 is at the top,
+		// convert it so Y increases upward. This example assumes that
+		// your world-space Y increases upward.
+		float flippedY = WINDOW_HEIGHT_PX - mouse_position.y;
+
+		// Offset the mouse position relative to the screen center.
+		float offsetX = mouse_position.x - centerX;
+		float offsetY = flippedY - centerY;
+
+		// Now add the camera's world position.
+		// camera.position is the world-space coordinate at the screen center.
+		vec2 worldPos;
+		worldPos.x = offsetX + camera.position.x;
+		worldPos.y = offsetY + camera.position.y;
+		std::cout << "mouse coordinate position: " << worldPos.x<< ", " << worldPos.y << std::endl;
+		return worldPos;
+	}
+}
+
+void WorldSystem:: attachGrapple() {
+		Entity ballEntity = registry.physicsBodies.entities[0];  
+    	Entity grapplePointEntity = registry.physicsBodies.entities[1];  
+
+    	PhysicsBody& ballBody = registry.physicsBodies.get(ballEntity);
+    	PhysicsBody& grappleBody = registry.physicsBodies.get(grapplePointEntity);
+
+		b2BodyId ballBodyId = ballBody.bodyId;    		
+		b2BodyId grappleBodyId = grappleBody.bodyId;
+
+		b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+    	b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
+
+    	// Compute the distance between the two points
+    	float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
+                       			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
+
+		if (distance <= 280.0f) {
+			createGrapple(worldId, ballBodyId, grappleBodyId, distance);
+			grappleActive = true;
+		}
+}
+
+// void WorldSystem:: checkGrappleGrounded() {
+// 	if (grappleActive) {
+// 		while (isGrou)
+// 	}
+// }
 

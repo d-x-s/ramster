@@ -59,24 +59,32 @@ Entity createBall(b2WorldId worldId)
 }
 
 // This will create an enemy entity and place it on a random position in the map.
-Entity createEnemy(b2WorldId worldID, vec2 pos) {
+// INPUTS:
+// - pos (x, y): position to spawn enemy
+// - ENEMY_TYPES: type of enemy to spawn.
+// - MOVEMENT AREA (min_x, max_x): activity radius of the enemy. set to (-1, -1) if you want enemy to move anywhere on the map.
+Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_area) {
 
+	// Enemy entity
 	Entity entity = Entity();
 
-	// Add physics and enemy components
+	// Add physics to enemy body
 	PhysicsBody& enemyBody = registry.physicsBodies.emplace(entity);
 	EnemyPhysics& enemy_physics = registry.enemyPhysics.emplace(entity);
 	enemy_physics.isGrounded = false;
 
+	// Add enemy component
 	auto& enemy_registry = registry.enemies;
 	Enemy& enemy = registry.enemies.emplace(entity);
+	enemy.enemyType = enemy_type;
+	enemy.movement_area = movement_area;
+	enemy.destructable = enemy_type == OBSTACLE ? false : true; // If the enemy is an obstacle then they will not be destructable. Can expand w/ more indestructable enemies.
 
-	// Define a dynamic body
+	// Define a box2D body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
 	bodyDef.position = b2Vec2{ pos[0], pos[1]};
-	// commenting this out should disable rolling...?  bodyDef.fixedRotation = false; // Allow rolling
-
+	bodyDef.fixedRotation = true; // Fixed Rotation: true = no rolling, false = rolling.
 	// Use `b2CreateBody()` instead of `world.CreateBody()`
 	b2BodyId bodyId = b2CreateBody(worldID, &bodyDef);
 
@@ -90,8 +98,8 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 	// We'll update the enemy hitbox later.
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = ENEMY_RADIUS;
-	b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	circle.radius = ENEMY_RADIUS * (int) enemy_type; // Simple way to change size of enemies based on their type. Adjust int multiplier in ENEMY_TYPES to change this.
+	b2CreateCircleShape(bodyId, &shapeDef, &circle); // this is the hitbox
 
 	enemyBody.bodyId = bodyId;
 
@@ -109,6 +117,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 	registry.renderRequests.insert(
 		entity,
 		{
+			// TODO: Apply different textures to different enemy types.
 			frames[0],                    // base apperance is just the first frame
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE,
@@ -120,10 +129,12 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 			0                             // current frame index
 		}
 	);
-	std::cout << "Inserted render request for enemy.\n";
+	// DEBUG std::cout << "Inserted render request for enemy.\n";
 
 	return entity;
 }
+
+
 Entity createGrapplePoint(b2WorldId worldId){
 	Entity entity = Entity();
 

@@ -206,7 +206,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			float pos_y = max_y;  // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
 
 			// create enemy at random position
-			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+			//setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+			//createEnemy(worldId, vec2(pos_x, pos_y + 50), COMMON, vec2(-1, -1)); 
+			createEnemy(worldId, vec2(pos_x, pos_y + 50), OBSTACLE, vec2(-1, -1));
+			//createEnemy(worldId, vec2(pos_x, pos_y + 50), SWARM, vec2(-1, -1));
 		}
 
 		if (grappleActive) {

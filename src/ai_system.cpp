@@ -7,25 +7,45 @@ void AISystem::step(float elapsed_ms)
 
 	// ENEMY AI
 	/*
-	For now, because these gooners lack the sheer steeze of our hamster, they'll be flightless.
-	They do, however, have impeccable spidey senses and will be able to spot the hamster at all times.
+	DECISION TREE:
 
-	This means that they can only move horizontally and will always react, giving a pretty simple algo:
-	
-	IF HAMSTER IS LEFT:
-	- MOVE LEFT
-	IF HAMSTER IS RIGHT:
-	- MOVE RIGHT
-	ELSE:
-	- DON'T MOVE
-	
-	This should be sufficient to have the enemies react to and move towards the hamster. 
+		1. Based on enemy type:
+			
+			1_a. OBSTACLE enemies: **NOTE: these enemies will not die or freeze after a collision.
+			
+				1a_a. Do not pursue the player. Based on movement area: **NOTE: if obstacle ends up outside of movement area, logic still applies so they'll end up inside again.
+					
+					1aa_a. If too close to left-hand-side, change direction to right-hand-side. 
+
+					1aa_b. If too close to right-hand-side, change direction to left-hand-side.
+					
+					1aa_c. Keep moving in current direction.
+
+			1_b. NON-OBSTACLE enemies:
+
+				2b_a. COMMON enemies:
+
+					2ba_a. If freeze-timer is above 0, DON'T MOVE.
+
+					2ba_b. If player is to the left, move left.
+
+					2ba_c. If player is to the right, move right.
+
+				2b_b. SWARMING enemies:
+
+					2bb_a. If freeze-timer is above 0, DON'T MOVE.
+
+					2bb_b. IF TOO CLOSE TO THE GROUND, PULL UP!
+
+					2bb_c. IF TOO CLOSE TO ANOTHER SWARMING ENEMY, move away from that enemy.
+
+					2bb_d. Pursue the player. 
 	*/
 
 	// Box2D physics
 	b2Vec2 nonjump_movement_force = { 0, 0 };
 	b2Vec2 jump_impulse = { 0, 0 }; // not needed for now, here for future use
-	const float forceMagnitude = ENEMY_GROUNDED_MOVEMENT_FORCE; // might want to separate player vs enemy movement force....?
+	const float forceMagnitude = ENEMY_GROUNDED_MOVEMENT_FORCE; 
 	const float jumpImpulseMagnitude = ENEMY_JUMP_IMPULSE; // not needed for now, here for future use
 
 	// Get player and figure out player coords
@@ -40,6 +60,9 @@ void AISystem::step(float elapsed_ms)
 
 	// Get enemy entities
 	auto& enemy_registry = registry.enemies; //list of enemy entities stored in here
+
+
+
 
 	// Iterate over each enemy and implement basic logic as commented above.
 	for (int i = 0; i < enemy_registry.entities.size(); i++) {

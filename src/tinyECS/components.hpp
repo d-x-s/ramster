@@ -17,6 +17,10 @@ struct Enemy
 	ENEMY_TYPES enemyType;
 	// Because we are making obstacle types, we'll also have a "destructability" trait
 	bool destructable;
+	// We apply the freeze time to destructable enemies upon collision so they stop pursuing the player momentarily after a collision.
+	float freeze_time;
+	// Movement area of the enemy (min x, max x). Set to (-1, -1) for enemy to move anywhere on the map.
+	vec2 movement_area;
 };
 
 // Tower

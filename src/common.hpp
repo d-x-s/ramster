@@ -62,11 +62,14 @@ const int INVADER_HEALTH_BLUE = 120;
 const int PROJECTILE_VELOCITY = -100;
 const int PROJECTILE_DAMAGE = 10;
 
+// Amount of time to stop an enemy after colliding (if player loses collision)
+const float ENEMY_FREEZE_TIME_MS = 1500;
+
 // enemy types that we will be supporting.
 const enum ENEMY_TYPES {
-    COMMON = 1,
-    OBSTACLE = COMMON + 1,
-    SWARM = OBSTACLE + 1
+    SWARM = 1,
+    COMMON = SWARM + 1,
+    OBSTACLE = COMMON + 1
 };
 
 // KEY STATES

@@ -40,9 +40,9 @@ inline std::string mesh_path(const std::string& name) {return data_path() + "/me
 const int WINDOW_WIDTH_PX = 840;
 const int WINDOW_HEIGHT_PX = 600;
 
-const int GRID_CELL_WIDTH_PX = 60;
-const int GRID_CELL_HEIGHT_PX = 60;
-const int GRID_LINE_WIDTH_PX = 2;
+const int GRID_CELL_WIDTH_PX = 128;
+const int GRID_CELL_HEIGHT_PX = 128;
+const int GRID_LINE_WIDTH_PX = 1;
 
 const int TOWER_TIMER_MS = 1000;
 const int MAX_TOWERS_START = 5;
@@ -106,6 +106,7 @@ const float ENEMY_RESTITUTION = 0.5f; //enemy bounciness... increase this number
 // TERRAIN PHYSICS
 const float TERRAIN_DEFAULT_FRICTION = 0.2f;
 const float TERRAIN_DEFAULT_RESTITUTION = 0.5f;
+const float WALL_DEFAULT_THICKNESS = 4.0f;
 
 // These are hard coded to the dimensions of the entity's texture
 // invaders are 64x64 px, but cells are 60x60

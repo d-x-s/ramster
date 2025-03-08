@@ -1,0 +1,9 @@
+#pragma once
+
+#include <box2d/box2d.h>
+#include <iostream>
+
+b2BodyId create_vertical_wall(b2WorldId worldId, float x, float y, float height);
+b2BodyId create_horizontal_wall(b2WorldId worldId, float x, float y, float width);
+b2BodyId create_block(b2WorldId worldId, vec2 position, TEXTURE_ASSET_ID textureId);
+b2BodyId create_curve(b2WorldId worldId, vec2 position, TEXTURE_ASSET_ID textureId);

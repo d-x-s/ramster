@@ -7,7 +7,9 @@
 #include <sstream>
 #include <iostream>
 
+// internal
 #include "physics_system.hpp"
+#include "terrain.hpp"
 
 // Global Variables
 bool grappleActive = false;
@@ -334,13 +336,6 @@ void WorldSystem::restart_game() {
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	int grid_line_width = GRID_LINE_WIDTH_PX;
 
-	// render room lines
-
-	// Room dimensions in Box2D world coordinates
-	const float roomWidth = 20.0f;
-	const float roomHeight = 15.0f;
-	const float halfWidth = roomWidth / 2.0f;
-
 	// create grid lines if they do not already exist
 	if (grid_lines.size() == 0) {
 		// vertical lines
@@ -358,8 +353,29 @@ void WorldSystem::restart_game() {
 		}
 	}
 
+	// Room dimensions
+	const float roomWidth = WINDOW_WIDTH_PX * 3.0;
+	const float roomHeight = WINDOW_HEIGHT_PX;
+	const float wallThickness = 0.5f; // half-width for SetAsBox
+
+	// Create room boundaries
+	b2BodyId floorId = create_horizontal_wall(worldId, roomWidth / 2, 0.0f, roomWidth);			  // Floor
+	b2BodyId ceilingId = create_horizontal_wall(worldId, roomWidth / 2, roomHeight, roomWidth);   // Ceiling
+	b2BodyId leftWallId = create_vertical_wall(worldId, 0.0f, roomHeight / 2, roomHeight);        // Left Wall
+	b2BodyId rightWallId = create_vertical_wall(worldId, roomWidth, roomHeight / 2, roomHeight);  // Right Wall
+
+	// tiles
+	create_block(worldId, vec2(0, 0), (TEXTURE_ASSET_ID)1.0);
+	create_block(worldId, vec2(1, 0), (TEXTURE_ASSET_ID)1.0);
+	create_block(worldId, vec2(2, 0), (TEXTURE_ASSET_ID)1.0);
+	create_block(worldId, vec2(3, 0), (TEXTURE_ASSET_ID)1.0);
+	create_block(worldId, vec2(4, 0), (TEXTURE_ASSET_ID)1.0);
+	create_block(worldId, vec2(5, 0), (TEXTURE_ASSET_ID)1.0);
+
+	create_curve(worldId, vec2(5, 1), (TEXTURE_ASSET_ID)1.0);
+
 	// generate the vertices for the terrain formed by the chain and render it
-	generateTestTerrain();
+	// generateTestTerrain();
 
 	//create grapple point
 	createGrapplePoint(worldId);
@@ -656,18 +672,16 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
-
 	// record the current mouse position
 	mouse_pos_x = mouse_position.x;
 	mouse_pos_y = mouse_position.y;
-	std::cout << "mouse coordinate position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
 }
 
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// {{{ OK }}} TODO A1: Handle mouse clicking for invader and tower placement.
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	int tile_x = (int)(mouse_pos_x / GRID_CELL_WIDTH_PX);
+	int tile_y = (int)(mouse_pos_y / GRID_CELL_HEIGHT_PX);
+	std::cout << "mouse position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
+	std::cout << "mouse tile position: " << tile_x << ", " << tile_y << std::endl;
 
 	// ignore mouse input if game is over
 	if (!game_active) {

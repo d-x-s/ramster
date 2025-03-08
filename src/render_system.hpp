@@ -43,13 +43,19 @@ class RenderSystem {
 		textures_path("invaders/grey_3.png"),
 		textures_path("towers/tower01.png"),
 		textures_path("projectiles/gold_bubble.png"),
-    textures_path("projectiles/grapple_point.png"),
+		textures_path("projectiles/grapple_point.png"),
 		textures_path("effects/explosion1.png"),
 		textures_path("effects/explosion2.png"),
 		textures_path("effects/explosion3.png"),
-    textures_path("invaders/floater_1.png"),
-    textures_path("invaders/floater_2.png"),
-    textures_path("invaders/floater_3.png"),
+		textures_path("invaders/floater_1.png"),
+		textures_path("invaders/floater_2.png"),
+		textures_path("invaders/floater_3.png"),
+
+		// tiles
+		textures_path("tiles/curve_left.png"),
+		textures_path("tiles/curve_right.png"),
+		textures_path("tiles/floor_1.png"),
+
 	};
 
 	std::array<GLuint, effect_count> effects;

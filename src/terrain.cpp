@@ -122,7 +122,7 @@ b2BodyId create_block(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID te
     //////////////////////////////////////////////////////////////
     // USE A CHAIN SHAPE FOR THE PHYSICS BODY
     //////////////////////////////////////////////////////////////
-    std::vector<b2Vec2> objectSpaceVertices = TILE_GEOMETRY[TEXTURE_ASSET_ID::FLOOR_1];
+    std::vector<b2Vec2> objectSpaceVertices = TILE_GEOMETRY[textureId];
 
     // Translate vertices from object space to world space
     std::vector<b2Vec2> translatedVertices;
@@ -164,7 +164,7 @@ b2BodyId create_block(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID te
     registry.renderRequests.insert(
         entity,
         {
-            TEXTURE_ASSET_ID::FLOOR_1,
+            textureId,
             EFFECT_ASSET_ID::TEXTURED,
             GEOMETRY_BUFFER_ID::SPRITE
         }
@@ -185,7 +185,7 @@ b2BodyId create_curve(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID te
     //////////////////////////////////////////////////////////////
     // USE A CHAIN SHAPE FOR THE PHYSICS BODY
     //////////////////////////////////////////////////////////////
-    std::vector<b2Vec2> objectSpaceVertices = TILE_GEOMETRY[TEXTURE_ASSET_ID::CURVE_RIGHT];
+    std::vector<b2Vec2> objectSpaceVertices = TILE_GEOMETRY[textureId];
 
     // Translate vertices from object space to world space
     std::vector<b2Vec2> translatedVertices;
@@ -227,7 +227,7 @@ b2BodyId create_curve(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID te
     registry.renderRequests.insert(
         entity,
         {
-            TEXTURE_ASSET_ID::CURVE_RIGHT,
+            textureId,
             EFFECT_ASSET_ID::TEXTURED,
             GEOMETRY_BUFFER_ID::SPRITE
         }

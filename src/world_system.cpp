@@ -365,14 +365,14 @@ void WorldSystem::restart_game() {
 	b2BodyId rightWallId = create_vertical_wall(worldId, roomWidth, roomHeight / 2, roomHeight);  // Right Wall
 
 	// tiles
-	create_block(worldId, vec2(0, 0), (TEXTURE_ASSET_ID)1.0);
-	create_block(worldId, vec2(1, 0), (TEXTURE_ASSET_ID)1.0);
-	create_block(worldId, vec2(2, 0), (TEXTURE_ASSET_ID)1.0);
-	create_block(worldId, vec2(3, 0), (TEXTURE_ASSET_ID)1.0);
-	create_block(worldId, vec2(4, 0), (TEXTURE_ASSET_ID)1.0);
-	create_block(worldId, vec2(5, 0), (TEXTURE_ASSET_ID)1.0);
+	create_block(worldId, vec2(0, 0), TEXTURE_ASSET_ID::FLOOR_1);
+	create_block(worldId, vec2(1, 0), TEXTURE_ASSET_ID::FLOOR_1);
+	create_block(worldId, vec2(2, 0), TEXTURE_ASSET_ID::FLOOR_1);
+	create_block(worldId, vec2(3, 0), TEXTURE_ASSET_ID::FLOOR_1);
+	create_block(worldId, vec2(4, 0), TEXTURE_ASSET_ID::FLOOR_1);
+	create_block(worldId, vec2(5, 0), TEXTURE_ASSET_ID::FLOOR_1);
 
-	create_curve(worldId, vec2(5, 1), (TEXTURE_ASSET_ID)1.0);
+	create_curve(worldId, vec2(5, 1), TEXTURE_ASSET_ID::CURVE_RIGHT);
 
 	// generate the vertices for the terrain formed by the chain and render it
 	// generateTestTerrain();

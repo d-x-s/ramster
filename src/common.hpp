@@ -107,7 +107,7 @@ const float BALL_JUMP_IMPULSE = 4000.0f; // kg·cm/s (dynes·s)
 const float BALL_RADIUS = 32.0;
 const float BALL_DENSTIY = 0.01f; // kg/cm² (kilograms per square centimeter)
 const float BALL_FRICTION = 0.1f;
-const float BALL_RESTITUTION = 0.3f;
+const float BALL_RESTITUTION = 0.1f;
 const float BALL_ANGULAR_DAMPING = 0.75f; // 1/s (inverse seconds)
 
 // ENEMY 2DBODY
@@ -131,7 +131,7 @@ const float CURVED_RAMP_RESTITUTION = 0.01f;
 const float WALL_DEFAULT_THICKNESS = 4.0f;
 
 // GRAPPLE PHYSICS
-const float GRAPPLE_ATTACHABLE_RADIUS = 280.0f;
+const float GRAPPLE_ATTACHABLE_RADIUS = 256.0f;
 
 // These are hard coded to the dimensions of the entity's texture
 // invaders are 64x64 px, but cells are 60x60

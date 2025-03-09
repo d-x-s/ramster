@@ -379,18 +379,18 @@ void WorldSystem::restart_game()
   {
     // vertical lines
     int cell_width = GRID_CELL_WIDTH_PX;
-    for (int col = 0; col < 42 + 1; col++)
+    for (int col = 0; col < 40 + 1; col++)
     {
       // width of 2 to make the grid easier to see
-      grid_lines.push_back(createGridLine(vec2(col * cell_width, 0), vec2(grid_line_width, WINDOW_HEIGHT_PX)));
+      grid_lines.push_back(createGridLine(vec2(col * cell_width, 0), vec2(grid_line_width, WORLD_HEIGHT_PX)));
     }
 
     // horizontal lines
     int cell_height = GRID_CELL_HEIGHT_PX;
-    for (int col = 0; col < 10 + 1; col++)
+    for (int row = 0; row < 15 + 1; row++)
     {
       // width of 2 to make the grid easier to see
-      grid_lines.push_back(createGridLine(vec2(0, col * cell_height), vec2(WINDOW_WIDTH_PX * 3.0, grid_line_width)));
+      grid_lines.push_back(createGridLine(vec2(0, row * cell_height), vec2(WORLD_WIDTH_PX, grid_line_width)));
     }
   }
 
@@ -419,7 +419,9 @@ void WorldSystem::restart_game()
 
   create_block(worldId, vec2(7, 0), vec2(9, 3));
 
-  create_grapple_tile(worldId, vec2(12, 3), TEXTURE_ASSET_ID::TEXTURE_COUNT);
+  create_block(worldId, vec2(10, 0), vec2(14, 1));
+  create_grapple_tile(worldId, vec2(12, 4), TEXTURE_ASSET_ID::TEXTURE_COUNT);
+  create_block(worldId, vec2(15, 0), vec2(18, 3));
 
   // generate the vertices for the terrain formed by the chain and render it
   // generateTestTerrain();

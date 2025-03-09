@@ -214,7 +214,7 @@ b2BodyId create_grapple_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSE
     Entity entity_grapple_outline = Entity();
     auto& grapple_outline_motion = registry.motions.emplace(entity_grapple_outline);
     grapple_outline_motion.position = vec2(position.x, position.y);
-    grapple_outline_motion.scale = vec2(GRAPPLE_ATTACHABLE_RADIUS, GRAPPLE_ATTACHABLE_RADIUS);
+    grapple_outline_motion.scale = vec2(GRAPPLE_ATTACHABLE_RADIUS * 2, GRAPPLE_ATTACHABLE_RADIUS * 2);
     registry.renderRequests.insert(
         entity_grapple_outline,
         {

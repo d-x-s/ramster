@@ -406,16 +406,16 @@ void WorldSystem::restart_game()
   b2BodyId rightWallId = create_vertical_wall(worldId, roomWidth, roomHeight / 2, roomHeight); // Right Wall
 
   // tiles
-  // create_single_tile(worldId, vec2(0, 0), TEXTURE_ASSET_ID::FLOOR_0);
-  // create_single_tile(worldId, vec2(1, 0), TEXTURE_ASSET_ID::FLOOR_0);
-  // create_single_tile(worldId, vec2(2, 0), TEXTURE_ASSET_ID::FLOOR_0);
-  // create_single_tile(worldId, vec2(3, 0), TEXTURE_ASSET_ID::FLOOR_0);
-  // create_single_tile(worldId, vec2(4, 0), TEXTURE_ASSET_ID::FLOOR_0);
-  // create_single_tile(worldId, vec2(5, 0), TEXTURE_ASSET_ID::FLOOR_0);
+  // create_single_tile(worldId, vec2(0, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
+  // create_single_tile(worldId, vec2(1, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
+  // create_single_tile(worldId, vec2(2, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
+  // create_single_tile(worldId, vec2(3, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
+  // create_single_tile(worldId, vec2(4, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
+  // create_single_tile(worldId, vec2(5, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
 
   create_block(worldId, vec2(0, 0), vec2(5, 1));
   create_block(worldId, vec2(6, 0), vec2(6, 2));
-  create_curve(worldId, vec2(5, 2), TEXTURE_ASSET_ID::CURVE_RIGHT);
+  create_curve(worldId, vec2(5, 2), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
 
   create_block(worldId, vec2(7, 0), vec2(9, 3));
 

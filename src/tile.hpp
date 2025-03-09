@@ -5,12 +5,17 @@
 
 static inline std::map<TEXTURE_ASSET_ID, std::vector<b2Vec2>> TILE_GEOMETRY =
     {
-        {TEXTURE_ASSET_ID::FLOOR_0,
+        {TEXTURE_ASSET_ID::SQUARE_TILE_1,
          {{0.0f, 0.0f},
           {127.0f, 0.0f},
           {127.0f, 127.0f},
           {0.0f, 127.0f}}},
-        {TEXTURE_ASSET_ID::CURVE_RIGHT,
+        {TEXTURE_ASSET_ID::SQUARE_TILE_2,
+         {{0.0f, 0.0f},
+          {127.0f, 0.0f},
+          {127.0f, 127.0f},
+          {0.0f, 127.0f}}},
+        {TEXTURE_ASSET_ID::SMOOTH_RAMP_BR,
          {
              {0.0f, 0.0f},
              {119.0f, 0.0f},

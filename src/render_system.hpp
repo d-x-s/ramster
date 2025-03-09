@@ -54,11 +54,32 @@ class RenderSystem
       textures_path("invaders/floater_3.png"),
 
       // tiles
-      textures_path("tiles/curve_left.png"),
-      textures_path("tiles/curve_right.png"),
-      textures_path("tiles/floor_0.png"),
-      textures_path("tiles/floor_2.png"),
-
+    textures_path("tiles/half-ramp-bl.png"),
+    textures_path("tiles/half-ramp-br.png"),
+    textures_path("tiles/half-ramp-tl.png"),
+    textures_path("tiles/half-ramp-tr.png"),
+    textures_path("tiles/half-square-2-bottom.png"),
+    textures_path("tiles/half-square-2-left.png"),
+    textures_path("tiles/half-square-2-right.png"),
+    textures_path("tiles/half-square-2-top.png"),
+    textures_path("tiles/half-square-bottom.png"),
+    textures_path("tiles/half-square-left.png"),
+    textures_path("tiles/half-square-right.png"),
+    textures_path("tiles/half-square-top.png"),
+    textures_path("tiles/smooth-ramp-bl.png"),
+    textures_path("tiles/smooth-ramp-br.png"),
+    textures_path("tiles/smooth-ramp-tl.png"),
+    textures_path("tiles/smooth-ramp-tr.png"),
+    textures_path("tiles/square-tile-1.png"),
+    textures_path("tiles/square-tile-2.png"),
+    textures_path("tiles/tall-ramp-bl.png"),
+    textures_path("tiles/tall-ramp-br.png"),
+    textures_path("tiles/tall-ramp-tl.png"),
+    textures_path("tiles/tall-ramp-tr.png"),
+    textures_path("tiles/tesla-trap-1-bottom.png"),
+    textures_path("tiles/tesla-trap-1-left.png"),
+    textures_path("tiles/tesla-trap-1-right.png"),
+    textures_path("tiles/tesla-trap-1-top.png"),
   };
 
   std::array<GLuint, effect_count> effects;

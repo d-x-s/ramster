@@ -344,13 +344,13 @@ b2BodyId create_block(b2WorldId worldId, vec2 start_tile, vec2 end_tile) {
             if (row == (minY + heightTiles - 1)) {
                 registry.renderRequests.insert(
                     entity,
-                    { TEXTURE_ASSET_ID::FLOOR_2, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE }
+                    { TEXTURE_ASSET_ID::SQUARE_TILE_2, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE }
                 );
             }
             else {
                 registry.renderRequests.insert(
                     entity,
-                    { TEXTURE_ASSET_ID::FLOOR_0, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE }
+                    { TEXTURE_ASSET_ID::SQUARE_TILE_1, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE }
                 );
             }
         }

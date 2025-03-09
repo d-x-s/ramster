@@ -257,8 +257,8 @@ b2BodyId create_curve(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID te
     chainDef.points = translatedVertices.data();
 
     chainDef.isLoop = true;
-    chainDef.friction = TERRAIN_DEFAULT_FRICTION;
-    chainDef.restitution = TERRAIN_DEFAULT_RESTITUTION;
+    chainDef.friction = CURVED_RAMP_FRICTION;
+    chainDef.restitution = CURVED_RAMP_RESTITUTION;
 
     b2BodyDef bodyDef = b2DefaultBodyDef();
     b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
@@ -290,7 +290,7 @@ b2BodyId create_curve(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID te
     return bodyId;
 }
 
-b2BodyId create_block(b2WorldId worldId, vec2 start_tile, vec2 end_tile, TEXTURE_ASSET_ID textureId) {
+b2BodyId create_block(b2WorldId worldId, vec2 start_tile, vec2 end_tile) {
     // Calculate the minimum and maximum grid coordinates.
     float minX = std::min(start_tile.x, end_tile.x);
     float minY = std::min(start_tile.y, end_tile.y);
@@ -341,10 +341,18 @@ b2BodyId create_block(b2WorldId worldId, vec2 start_tile, vec2 end_tile, TEXTURE
             motion.position = cellCenter;
             motion.scale = vec2(GRID_CELL_WIDTH_PX, GRID_CELL_HEIGHT_PX);
 
-            registry.renderRequests.insert(
-                entity,
-                { textureId, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE }
-            );
+            if (row == (minY + heightTiles - 1)) {
+                registry.renderRequests.insert(
+                    entity,
+                    { TEXTURE_ASSET_ID::FLOOR_2, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE }
+                );
+            }
+            else {
+                registry.renderRequests.insert(
+                    entity,
+                    { TEXTURE_ASSET_ID::FLOOR_0, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE }
+                );
+            }
         }
     }
 

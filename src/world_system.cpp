@@ -251,27 +251,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	return game_active;
 }
 
-      // figure out x and y coordinates
-      float max_x = WINDOW_WIDTH_PX * 3.0;  // this is also the room width
-      float max_y = WINDOW_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
-
-      // random x and y coordinates on the map to spawn enemy
-      float pos_x = uniform_dist(rng) * max_x;
-      float pos_y = max_y; // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
-
-      // create enemy at random position
-      // createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
-    }
-
-    if (grappleActive)
-    {
-      updateGrappleLines();
-    }
-  }
-
-  return game_active;
-}
-
 void WorldSystem::stop_game()
 {
   // disable player input (except 'R' for restart), see on_key
@@ -416,8 +395,8 @@ void WorldSystem::restart_game()
   }
 
   // Room dimensions
-  const float roomWidth = WINDOW_WIDTH_PX * 3.0;
-  const float roomHeight = WINDOW_HEIGHT_PX;
+  const float roomWidth = WINDOW_WIDTH_PX * 5.0;
+  const float roomHeight = WINDOW_HEIGHT_PX * 3.0;
   const float wallThickness = 0.5f; // half-width for SetAsBox
 
   // Create room boundaries
@@ -434,12 +413,13 @@ void WorldSystem::restart_game()
   // create_single_tile(worldId, vec2(4, 0), TEXTURE_ASSET_ID::FLOOR_0);
   // create_single_tile(worldId, vec2(5, 0), TEXTURE_ASSET_ID::FLOOR_0);
 
-  // create_curve(worldId, vec2(5, 1), TEXTURE_ASSET_ID::CURVE_RIGHT);
+  create_block(worldId, vec2(0, 0), vec2(5, 1));
+  create_block(worldId, vec2(6, 0), vec2(6, 2));
+  create_curve(worldId, vec2(5, 2), TEXTURE_ASSET_ID::CURVE_RIGHT);
 
-  create_block(worldId, vec2(0, 0), vec2(6, 0), TEXTURE_ASSET_ID::FLOOR_0);
-  create_block(worldId, vec2(6, 1), vec2(6, 3), TEXTURE_ASSET_ID::FLOOR_0);
+  create_block(worldId, vec2(7, 0), vec2(9, 3));
 
-  create_grapple_tile(worldId, vec2(4, 2), TEXTURE_ASSET_ID::TEXTURE_COUNT);
+  create_grapple_tile(worldId, vec2(12, 3), TEXTURE_ASSET_ID::TEXTURE_COUNT);
 
   // generate the vertices for the terrain formed by the chain and render it
   // generateTestTerrain();

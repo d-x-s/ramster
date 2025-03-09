@@ -57,6 +57,7 @@ class RenderSystem
       textures_path("tiles/curve_left.png"),
       textures_path("tiles/curve_right.png"),
       textures_path("tiles/floor_0.png"),
+      textures_path("tiles/floor_2.png"),
 
   };
 

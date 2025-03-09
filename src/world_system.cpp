@@ -15,695 +15,765 @@
 bool grappleActive = false;
 
 // create the world
-WorldSystem::WorldSystem(b2WorldId worldId) :
-	points(0),
-	max_towers(MAX_TOWERS_START),
-	next_enemy_spawn(0),
-	enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
-	worldId(worldId)
+WorldSystem::WorldSystem(b2WorldId worldId) : points(0),
+                                              max_towers(MAX_TOWERS_START),
+                                              next_enemy_spawn(0),
+                                              enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
+                                              worldId(worldId)
 {
-	// seeding rng with random device
-	rng = std::default_random_engine(std::random_device()());
+  // seeding rng with random device
+  rng = std::default_random_engine(std::random_device()());
 
-	// initialize key states with needed keys.
-	for (int i = 0; i < PLAYER_CONTROL_KEYS.size(); i++) {
-		keyStates[PLAYER_CONTROL_KEYS[i]] = false;
-	}
+  // initialize key states with needed keys.
+  for (int i = 0; i < PLAYER_CONTROL_KEYS.size(); i++)
+  {
+    keyStates[PLAYER_CONTROL_KEYS[i]] = false;
+  }
 }
 
-WorldSystem::~WorldSystem() {
-	// Destroy music components
-	if (background_music != nullptr)
-		Mix_FreeMusic(background_music);
-	if (chicken_dead_sound != nullptr)
-		Mix_FreeChunk(chicken_dead_sound);
-	if (chicken_eat_sound != nullptr)
-		Mix_FreeChunk(chicken_eat_sound);
-	Mix_CloseAudio();
+WorldSystem::~WorldSystem()
+{
+  // Destroy music components
+  if (background_music != nullptr)
+    Mix_FreeMusic(background_music);
+  if (chicken_dead_sound != nullptr)
+    Mix_FreeChunk(chicken_dead_sound);
+  if (chicken_eat_sound != nullptr)
+    Mix_FreeChunk(chicken_eat_sound);
+  Mix_CloseAudio();
 
-	// Destroy all created components
-	registry.clear_all_components();
+  // Destroy all created components
+  registry.clear_all_components();
 
-	// Close the window
-	glfwDestroyWindow(window);
+  // Close the window
+  glfwDestroyWindow(window);
 }
 
 // Debugging
-namespace {
-	void glfw_err_cb(int error, const char* desc) {
-		std::cerr << error << ": " << desc << std::endl;
-	}
+namespace
+{
+  void glfw_err_cb(int error, const char *desc)
+  {
+    std::cerr << error << ": " << desc << std::endl;
+  }
 }
 
 // call to close the window, wrapper around GLFW commands
-void WorldSystem::close_window() {
-	glfwSetWindowShouldClose(window, GLFW_TRUE);
+void WorldSystem::close_window()
+{
+  glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 // World initialization
 // Note, this has a lot of OpenGL specific things, could be moved to the renderer
-GLFWwindow* WorldSystem::create_window() {
+GLFWwindow *WorldSystem::create_window()
+{
 
-	///////////////////////////////////////
-	// Initialize GLFW
-	glfwSetErrorCallback(glfw_err_cb);
-	if (!glfwInit()) {
-		std::cerr << "ERROR: Failed to initialize GLFW in world_system.cpp" << std::endl;
-		return nullptr;
-	}
+  ///////////////////////////////////////
+  // Initialize GLFW
+  glfwSetErrorCallback(glfw_err_cb);
+  if (!glfwInit())
+  {
+    std::cerr << "ERROR: Failed to initialize GLFW in world_system.cpp" << std::endl;
+    return nullptr;
+  }
 
-	//-------------------------------------------------------------------------
-	// If you are on Linux or Windows, you can change these 2 numbers to 4 and 3 and
-	// enable the glDebugMessageCallback to have OpenGL catch your mistakes for you.
-	// GLFW / OGL Initialization
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+  //-------------------------------------------------------------------------
+  // If you are on Linux or Windows, you can change these 2 numbers to 4 and 3 and
+  // enable the glDebugMessageCallback to have OpenGL catch your mistakes for you.
+  // GLFW / OGL Initialization
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #if __APPLE__
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
-	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-	// CK: setting GLFW_SCALE_TO_MONITOR to true will rescale window but then you must handle different scalings
-	// glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);		// GLFW 3.3+
-	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_FALSE);		// GLFW 3.3+
+  glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+  // CK: setting GLFW_SCALE_TO_MONITOR to true will rescale window but then you must handle different scalings
+  // glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);		// GLFW 3.3+
+  glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_FALSE); // GLFW 3.3+
 
-	// Create the main window (for rendering, keyboard, and mouse input)
-	window = glfwCreateWindow(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX, "Towers vs Invaders Assignment", nullptr, nullptr);
-	if (window == nullptr) {
-		std::cerr << "ERROR: Failed to glfwCreateWindow in world_system.cpp" << std::endl;
-		return nullptr;
-	}
+  // Create the main window (for rendering, keyboard, and mouse input)
+  window = glfwCreateWindow(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX, "Towers vs Invaders Assignment", nullptr, nullptr);
+  if (window == nullptr)
+  {
+    std::cerr << "ERROR: Failed to glfwCreateWindow in world_system.cpp" << std::endl;
+    return nullptr;
+  }
 
-	// Setting callbacks to member functions (that's why the redirect is needed)
-	// Input is handled using GLFW, for more info see
-	// http://www.glfw.org/docs/latest/input_guide.html
-	glfwSetWindowUserPointer(window, this);
-	auto key_redirect = [](GLFWwindow* wnd, int _0, int _1, int _2, int _3) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_key(_0, _1, _2, _3); };
-	auto cursor_pos_redirect = [](GLFWwindow* wnd, double _0, double _1) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_move({ _0, _1 }); };
-	auto mouse_button_pressed_redirect = [](GLFWwindow* wnd, int _button, int _action, int _mods) { ((WorldSystem*)glfwGetWindowUserPointer(wnd))->on_mouse_button_pressed(_button, _action, _mods); };
+  // Setting callbacks to member functions (that's why the redirect is needed)
+  // Input is handled using GLFW, for more info see
+  // http://www.glfw.org/docs/latest/input_guide.html
+  glfwSetWindowUserPointer(window, this);
+  auto key_redirect = [](GLFWwindow *wnd, int _0, int _1, int _2, int _3)
+  { ((WorldSystem *)glfwGetWindowUserPointer(wnd))->on_key(_0, _1, _2, _3); };
+  auto cursor_pos_redirect = [](GLFWwindow *wnd, double _0, double _1)
+  { ((WorldSystem *)glfwGetWindowUserPointer(wnd))->on_mouse_move({_0, _1}); };
+  auto mouse_button_pressed_redirect = [](GLFWwindow *wnd, int _button, int _action, int _mods)
+  { ((WorldSystem *)glfwGetWindowUserPointer(wnd))->on_mouse_button_pressed(_button, _action, _mods); };
 
-	glfwSetKeyCallback(window, key_redirect);
-	glfwSetCursorPosCallback(window, cursor_pos_redirect);
-	glfwSetMouseButtonCallback(window, mouse_button_pressed_redirect);
+  glfwSetKeyCallback(window, key_redirect);
+  glfwSetCursorPosCallback(window, cursor_pos_redirect);
+  glfwSetMouseButtonCallback(window, mouse_button_pressed_redirect);
 
-	return window;
+  return window;
 }
 
-bool WorldSystem::start_and_load_sounds() {
+bool WorldSystem::start_and_load_sounds()
+{
 
-	//////////////////////////////////////
-	// Loading music and sounds with SDL
-	if (SDL_Init(SDL_INIT_AUDIO) < 0) {
-		fprintf(stderr, "Failed to initialize SDL Audio");
-		return false;
-	}
+  //////////////////////////////////////
+  // Loading music and sounds with SDL
+  if (SDL_Init(SDL_INIT_AUDIO) < 0)
+  {
+    fprintf(stderr, "Failed to initialize SDL Audio");
+    return false;
+  }
 
-	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) == -1) {
-		fprintf(stderr, "Failed to open audio device");
-		return false;
-	}
+  if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) == -1)
+  {
+    fprintf(stderr, "Failed to open audio device");
+    return false;
+  }
 
-	background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
-	chicken_dead_sound = Mix_LoadWAV(audio_path("chicken_dead.wav").c_str());
-	chicken_eat_sound = Mix_LoadWAV(audio_path("chicken_eat.wav").c_str());
+  background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
+  chicken_dead_sound = Mix_LoadWAV(audio_path("chicken_dead.wav").c_str());
+  chicken_eat_sound = Mix_LoadWAV(audio_path("chicken_eat.wav").c_str());
 
-	if (background_music == nullptr || chicken_dead_sound == nullptr || chicken_eat_sound == nullptr) {
-		fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
-			audio_path("music.wav").c_str(),
-			audio_path("chicken_dead.wav").c_str(),
-			audio_path("chicken_eat.wav").c_str());
-		return false;
-	}
+  if (background_music == nullptr || chicken_dead_sound == nullptr || chicken_eat_sound == nullptr)
+  {
+    fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
+            audio_path("music.wav").c_str(),
+            audio_path("chicken_dead.wav").c_str(),
+            audio_path("chicken_eat.wav").c_str());
+    return false;
+  }
 
-	return true;
+  return true;
 }
 
-void WorldSystem::init(RenderSystem* renderer_arg) {
+void WorldSystem::init(RenderSystem *renderer_arg)
+{
 
-	this->renderer = renderer_arg;
+  this->renderer = renderer_arg;
 
-	// start playing background music indefinitely
-	std::cout << "Starting music..." << std::endl;
-	Mix_PlayMusic(background_music, -1);
+  // start playing background music indefinitely
+  std::cout << "Starting music..." << std::endl;
+  Mix_PlayMusic(background_music, -1);
 
-	// Set all states to default
-	restart_game();
-	createBall(worldId);
+  // Set all states to default
+  restart_game();
+  createBall(worldId);
 }
 
 // Update our game world
-bool WorldSystem::step(float elapsed_ms_since_last_update) {
+bool WorldSystem::step(float elapsed_ms_since_last_update)
+{
 
-	// Updating window title with points (and remaining towers)
-	std::stringstream title_ss;
-	title_ss << "Ramster | Points: " << points;
-	glfwSetWindowTitle(window, title_ss.str().c_str());
+  // Updating window title with points (and remaining towers)
+  std::stringstream title_ss;
+  title_ss << "Ramster | Points: " << points;
+  glfwSetWindowTitle(window, title_ss.str().c_str());
 
-	// Remove debug info from the last step
-	while (registry.debugComponents.entities.size() > 0)
-		registry.remove_all_components_of(registry.debugComponents.entities.back());
+  // Remove debug info from the last step
+  while (registry.debugComponents.entities.size() > 0)
+    registry.remove_all_components_of(registry.debugComponents.entities.back());
 
-	if (game_active) {
-		update_isGrounded();
-		handle_movement();
+  if (game_active)
+  {
+    update_isGrounded();
+    handle_movement();
 
-		// Removing out of screen entities
-		auto& motions_registry = registry.motions;
+    // Removing out of screen entities
+    auto &motions_registry = registry.motions;
 
-		/* Given that stuff bounce off map walls we will not need this.. 
-		// {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
-		// Remove entities that leave the screen on the left side
-		// Iterate backwards to be able to remove without interfering with the next object to visit
-		// (the containers exchange the last element with the current)
-		for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
-			Motion& motion = motions_registry.components[i];
+    /* Given that stuff bounce off map walls we will not need this..
+    // {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
+    // Remove entities that leave the screen on the left side
+    // Iterate backwards to be able to remove without interfering with the next object to visit
+    // (the containers exchange the last element with the current)
+    for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
+      Motion& motion = motions_registry.components[i];
 
-			float right_edge = motion.position.x + abs(motion.scale.x);  // Rightmost x-coordinate
-			float left_edge = motion.position.x - motion.scale.x * 0.5f; // Leftmost x-coordinate
+      float right_edge = motion.position.x + abs(motion.scale.x);  // Rightmost x-coordinate
+      float left_edge = motion.position.x - motion.scale.x * 0.5f; // Leftmost x-coordinate
 
-			if (right_edge < 0.f || left_edge > WINDOW_WIDTH_PX) {
-				if (!registry.players.has(motions_registry.entities[i])) { // don't remove the player (outdated?)
-					// if it is an invader that has exited the screen, trigger game over
-					if (registry.invaders.has(motions_registry.entities[i])) { stop_game(); };
-					registry.remove_all_components_of(motions_registry.entities[i]);
-				}
-			}
-		}
-		*/
+      if (right_edge < 0.f || left_edge > WINDOW_WIDTH_PX) {
+        if (!registry.players.has(motions_registry.entities[i])) { // don't remove the player (outdated?)
+          // if it is an invader that has exited the screen, trigger game over
+          if (registry.invaders.has(motions_registry.entities[i])) { stop_game(); };
+          registry.remove_all_components_of(motions_registry.entities[i]);
+        }
+      }
+    }
+    */
 
-		// Spawns new enemies. borrows code from invader spawning.
-		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-		if (next_enemy_spawn <= 0.f) {
+    // Spawns new enemies. borrows code from invader spawning.
+    next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+    if (next_enemy_spawn <= 0.f)
+    {
 
-			// reset timer
-			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+      // reset timer
+      next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
 
-			//figure out x and y coordinates
-			float max_x = WINDOW_WIDTH_PX * 3.0; //this is also the room width
-			float max_y = WINDOW_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
+      // figure out x and y coordinates
+      float max_x = WINDOW_WIDTH_PX * 3.0;  // this is also the room width
+      float max_y = WINDOW_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
 
-			// random x and y coordinates on the map to spawn enemy
-			float pos_x = uniform_dist(rng) * max_x; 
-			float pos_y = max_y;  // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
+      // random x and y coordinates on the map to spawn enemy
+      float pos_x = uniform_dist(rng) * max_x;
+      float pos_y = max_y; // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
 
-			// create enemy at random position
-			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
-		}
+      // create enemy at random position
+      // createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+    }
 
-		if (grappleActive) {
-			updateGrappleLines();
-		}
+    if (grappleActive)
+    {
+      updateGrappleLines();
+    }
+  }
 
-	}
-
-	return game_active;
+  return game_active;
 }
 
-void WorldSystem::stop_game() {
-	// disable player input (except 'R' for restart), see on_key
-	game_active = false;
+void WorldSystem::stop_game()
+{
+  // disable player input (except 'R' for restart), see on_key
+  game_active = false;
 
-	// trigger gray fadeout
-	registry.screenStates.components[0].darken_screen_factor = 0.5f;
-	registry.screenStates.components[0].fadeout = 1.0f;
+  // trigger gray fadeout
+  registry.screenStates.components[0].darken_screen_factor = 0.5f;
+  registry.screenStates.components[0].fadeout = 1.0f;
 
-	// stop background music
-	if (Mix_PlayingMusic()) {
-		Mix_PauseMusic();
-	}
+  // stop background music
+  if (Mix_PlayingMusic())
+  {
+    Mix_PauseMusic();
+  }
 
-	// freeze all entity motion by setting velocities to zero
-	auto& motions_registry = registry.motions;
-	for (Motion& motion : motions_registry.components) {
-		motion.velocity = { 0.0f, 0.0f };
-	}
+  // freeze all entity motion by setting velocities to zero
+  auto &motions_registry = registry.motions;
+  for (Motion &motion : motions_registry.components)
+  {
+    motion.velocity = {0.0f, 0.0f};
+  }
 }
 
-void WorldSystem::generateTestTerrain() {
-	if (lines.empty()) {
-		std::vector<b2Vec2> testPoints = generateTestPoints();
+void WorldSystem::generateTestTerrain()
+{
+  if (lines.empty())
+  {
+    std::vector<b2Vec2> testPoints = generateTestPoints();
 
-		// reverse vertices for counter-clockwise winding order
-		std::reverse(testPoints.begin(), testPoints.end());
+    // reverse vertices for counter-clockwise winding order
+    std::reverse(testPoints.begin(), testPoints.end());
 
-		// render the line segments between points
-		int count = testPoints.size();
-		for (int i = 0; i < count - 1; ++i) {
-			lines.push_back(
-				createLine(
-					glm::vec2(testPoints[i].x, testPoints[i].y), 
-					glm::vec2(testPoints[i + 1].x, testPoints[i + 1].y)));
-		}
+    // render the line segments between points
+    int count = testPoints.size();
+    for (int i = 0; i < count - 1; ++i)
+    {
+      lines.push_back(
+          createLine(
+              glm::vec2(testPoints[i].x, testPoints[i].y),
+              glm::vec2(testPoints[i + 1].x, testPoints[i + 1].y)));
+    }
 
-		b2ChainDef chainDef = b2DefaultChainDef();
-		chainDef.count = count;
-		chainDef.points = testPoints.data();
-		chainDef.isLoop = true;
-		chainDef.friction = TERRAIN_DEFAULT_FRICTION;
-		chainDef.restitution = TERRAIN_DEFAULT_RESTITUTION;
+    b2ChainDef chainDef = b2DefaultChainDef();
+    chainDef.count = count;
+    chainDef.points = testPoints.data();
+    chainDef.isLoop = true;
+    chainDef.friction = TERRAIN_DEFAULT_FRICTION;
+    chainDef.restitution = TERRAIN_DEFAULT_RESTITUTION;
 
-		b2BodyDef bodyDef = b2DefaultBodyDef();
-		b2BodyId _ = b2CreateBody(worldId, &bodyDef);
-		b2CreateChain(_, &chainDef);
-	}
+    b2BodyDef bodyDef = b2DefaultBodyDef();
+    b2BodyId _ = b2CreateBody(worldId, &bodyDef);
+    b2CreateChain(_, &chainDef);
+  }
 }
 
-std::vector<b2Vec2> WorldSystem::generateTestPoints() {	
-	// hardcoded points that make up a ramp
-	return {
-		{ 0.0f, 288.0f },
-		{ 16.67f, 288.0f },
-		{ 33.33f, 288.0f },
-		{ 50.0f, 288.0f },
-		{ 66.67f, 288.0f },
-		{ 83.33f, 288.0f },
-		{ 100.0f, 288.0f },
-		{ 116.67f, 258.67f },
-		{ 133.33f, 229.33f },
-		{ 150.0f, 200.0f },
-		{ 166.67f, 176.0f },
-		{ 183.33f, 152.0f },
-		{ 200.0f, 128.0f },
-		{ 216.67f, 109.33f },
-		{ 233.33f, 90.67f },
-		{ 250.0f, 72.0f },
-		{ 266.67f, 58.67f },
-		{ 283.33f, 45.33f },
-		{ 300.0f, 32.0f },
-		{ 316.67f, 24.0f },
-		{ 333.33f, 16.0f },
-		{ 350.0f, 8.0f },
-		{ 366.67f, 5.33f },
-		{ 383.33f, 2.67f },
-		{ 400.0f, 0.0f },
-		{ 266.67f, 0.0f },
-		{ 133.33f, 0.0f },
-		{ 0.0f, 0.0f },
-		{ 0.0f, 96.0f },
-		{ 0.0f, 192.0f },
-		{ 0.0f, 288.0f }
-	};
+std::vector<b2Vec2> WorldSystem::generateTestPoints()
+{
+  // hardcoded points that make up a ramp
+  return {
+      {0.0f, 288.0f},
+      {16.67f, 288.0f},
+      {33.33f, 288.0f},
+      {50.0f, 288.0f},
+      {66.67f, 288.0f},
+      {83.33f, 288.0f},
+      {100.0f, 288.0f},
+      {116.67f, 258.67f},
+      {133.33f, 229.33f},
+      {150.0f, 200.0f},
+      {166.67f, 176.0f},
+      {183.33f, 152.0f},
+      {200.0f, 128.0f},
+      {216.67f, 109.33f},
+      {233.33f, 90.67f},
+      {250.0f, 72.0f},
+      {266.67f, 58.67f},
+      {283.33f, 45.33f},
+      {300.0f, 32.0f},
+      {316.67f, 24.0f},
+      {333.33f, 16.0f},
+      {350.0f, 8.0f},
+      {366.67f, 5.33f},
+      {383.33f, 2.67f},
+      {400.0f, 0.0f},
+      {266.67f, 0.0f},
+      {133.33f, 0.0f},
+      {0.0f, 0.0f},
+      {0.0f, 96.0f},
+      {0.0f, 192.0f},
+      {0.0f, 288.0f}};
 }
 
 // Reset the world state to its initial state
-void WorldSystem::restart_game() {
+void WorldSystem::restart_game()
+{
 
-	std::cout << "Restarting..." << std::endl;
+  std::cout << "Restarting..." << std::endl;
 
-	// Debugging for memory/component leaks
-	registry.list_all_components();
+  // Debugging for memory/component leaks
+  registry.list_all_components();
 
-	// Reset the game speed
-	current_speed = 1.f;
+  // Reset the game speed
+  current_speed = 1.f;
 
-	points = 0;
-	max_towers = MAX_TOWERS_START;
-	next_enemy_spawn = 0;
-	enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
-	grappleActive = false;
+  points = 0;
+  max_towers = MAX_TOWERS_START;
+  next_enemy_spawn = 0;
+  enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+  grappleActive = false;
 
-	// Remove all entities that we created
-	// All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
-	while (registry.motions.entities.size() > 0)
-		registry.remove_all_components_of(registry.motions.entities.back());
+  // Remove all entities that we created
+  // All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
+  while (registry.motions.entities.size() > 0)
+    registry.remove_all_components_of(registry.motions.entities.back());
 
-	// debugging for memory/component leaks
-	registry.list_all_components();
+  // debugging for memory/component leaks
+  registry.list_all_components();
 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// {{{ OK }}} TODO A1: create grid lines
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	int grid_line_width = GRID_LINE_WIDTH_PX;
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // {{{ OK }}} TODO A1: create grid lines
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  int grid_line_width = GRID_LINE_WIDTH_PX;
 
-	// create grid lines if they do not already exist
-	if (grid_lines.size() == 0) {
-		// vertical lines
-		int cell_width = GRID_CELL_WIDTH_PX;
-		for (int col = 0; col < 42 + 1; col++) {
-			// width of 2 to make the grid easier to see
-			grid_lines.push_back(createGridLine(vec2(col * cell_width, 0), vec2(grid_line_width, WINDOW_HEIGHT_PX)));
-		}
+  // create grid lines if they do not already exist
+  if (grid_lines.size() == 0)
+  {
+    // vertical lines
+    int cell_width = GRID_CELL_WIDTH_PX;
+    for (int col = 0; col < 42 + 1; col++)
+    {
+      // width of 2 to make the grid easier to see
+      grid_lines.push_back(createGridLine(vec2(col * cell_width, 0), vec2(grid_line_width, WINDOW_HEIGHT_PX)));
+    }
 
-		// horizontal lines
-		int cell_height = GRID_CELL_HEIGHT_PX;
-		for (int col = 0; col < 10 + 1; col++) {
-			// width of 2 to make the grid easier to see
-			grid_lines.push_back(createGridLine(vec2(0, col * cell_height), vec2(WINDOW_WIDTH_PX * 3.0, grid_line_width)));
-		}
-	}
+    // horizontal lines
+    int cell_height = GRID_CELL_HEIGHT_PX;
+    for (int col = 0; col < 10 + 1; col++)
+    {
+      // width of 2 to make the grid easier to see
+      grid_lines.push_back(createGridLine(vec2(0, col * cell_height), vec2(WINDOW_WIDTH_PX * 3.0, grid_line_width)));
+    }
+  }
 
-	// Room dimensions
-	const float roomWidth = WINDOW_WIDTH_PX * 3.0;
-	const float roomHeight = WINDOW_HEIGHT_PX;
-	const float wallThickness = 0.5f; // half-width for SetAsBox
+  // Room dimensions
+  const float roomWidth = WINDOW_WIDTH_PX * 3.0;
+  const float roomHeight = WINDOW_HEIGHT_PX;
+  const float wallThickness = 0.5f; // half-width for SetAsBox
 
-	// Create room boundaries
-	b2BodyId floorId = create_horizontal_wall(worldId, roomWidth / 2, 0.0f, roomWidth);			  // Floor
-	b2BodyId ceilingId = create_horizontal_wall(worldId, roomWidth / 2, roomHeight, roomWidth);   // Ceiling
-	b2BodyId leftWallId = create_vertical_wall(worldId, 0.0f, roomHeight / 2, roomHeight);        // Left Wall
-	b2BodyId rightWallId = create_vertical_wall(worldId, roomWidth, roomHeight / 2, roomHeight);  // Right Wall
+  // Create room boundaries
+  b2BodyId floorId = create_horizontal_wall(worldId, roomWidth / 2, 0.0f, roomWidth);          // Floor
+  b2BodyId ceilingId = create_horizontal_wall(worldId, roomWidth / 2, roomHeight, roomWidth);  // Ceiling
+  b2BodyId leftWallId = create_vertical_wall(worldId, 0.0f, roomHeight / 2, roomHeight);       // Left Wall
+  b2BodyId rightWallId = create_vertical_wall(worldId, roomWidth, roomHeight / 2, roomHeight); // Right Wall
 
-	// tiles
-	create_block(worldId, vec2(0, 0), TEXTURE_ASSET_ID::FLOOR_1);
-	create_block(worldId, vec2(1, 0), TEXTURE_ASSET_ID::FLOOR_1);
-	create_block(worldId, vec2(2, 0), TEXTURE_ASSET_ID::FLOOR_1);
-	create_block(worldId, vec2(3, 0), TEXTURE_ASSET_ID::FLOOR_1);
-	create_block(worldId, vec2(4, 0), TEXTURE_ASSET_ID::FLOOR_1);
-	create_block(worldId, vec2(5, 0), TEXTURE_ASSET_ID::FLOOR_1);
+  // tiles
+  // create_single_tile(worldId, vec2(0, 0), TEXTURE_ASSET_ID::FLOOR_0);
+  // create_single_tile(worldId, vec2(1, 0), TEXTURE_ASSET_ID::FLOOR_0);
+  // create_single_tile(worldId, vec2(2, 0), TEXTURE_ASSET_ID::FLOOR_0);
+  // create_single_tile(worldId, vec2(3, 0), TEXTURE_ASSET_ID::FLOOR_0);
+  // create_single_tile(worldId, vec2(4, 0), TEXTURE_ASSET_ID::FLOOR_0);
+  // create_single_tile(worldId, vec2(5, 0), TEXTURE_ASSET_ID::FLOOR_0);
 
-	create_curve(worldId, vec2(5, 1), TEXTURE_ASSET_ID::CURVE_RIGHT);
+  // create_curve(worldId, vec2(5, 1), TEXTURE_ASSET_ID::CURVE_RIGHT);
 
-	// generate the vertices for the terrain formed by the chain and render it
-	// generateTestTerrain();
+  create_block(worldId, vec2(0, 0), vec2(6, 0), TEXTURE_ASSET_ID::FLOOR_0);
+  create_block(worldId, vec2(6, 1), vec2(6, 3), TEXTURE_ASSET_ID::FLOOR_0);
 
-	//create grapple point
-	createGrapplePoint(worldId);
+  create_grapple_tile(worldId, vec2(4, 2), TEXTURE_ASSET_ID::TEXTURE_COUNT);
 
-	// turn off trigger for fadeout shader
-	registry.screenStates.components[0].fadeout = 0.0f;
+  // generate the vertices for the terrain formed by the chain and render it
+  // generateTestTerrain();
 
-	// turn the tunes back on
-	if (Mix_PausedMusic()) {
-		Mix_ResumeMusic();
-	}
-	else {
-		Mix_PlayMusic(background_music, -1);
-	}
+  // turn off trigger for fadeout shader
+  registry.screenStates.components[0].fadeout = 0.0f;
 
-	// reactivate the game
-	game_active = true;
+  // turn the tunes back on
+  if (Mix_PausedMusic())
+  {
+    Mix_ResumeMusic();
+  }
+  else
+  {
+    Mix_PlayMusic(background_music, -1);
+  }
+
+  // reactivate the game
+  game_active = true;
 }
 
 // Compute collisions between entities
-void WorldSystem::handle_collisions() {
+void WorldSystem::handle_collisions()
+{
 
-	// This is mostly a repurposing of collision handling implementation from A1
-	ComponentContainer<Collision>& collision_container = registry.collisions;
-	for (uint i = 0; i < collision_container.components.size(); i++) {
-		Entity entity = collision_container.entities[i];
-		Collision& collision = collision_container.components[i];
-		Entity other = collision.other; // the other entity in the collision
+  // This is mostly a repurposing of collision handling implementation from A1
+  ComponentContainer<Collision> &collision_container = registry.collisions;
+  for (uint i = 0; i < collision_container.components.size(); i++)
+  {
+    Entity entity = collision_container.entities[i];
+    Collision &collision = collision_container.components[i];
+    Entity other = collision.other; // the other entity in the collision
 
-		// Player - Enemy Collision
-		if ((registry.enemies.has(entity) && registry.players.has(other)) ||
-			(registry.enemies.has(other) && registry.players.has(entity))) {
-			if (registry.enemies.has(entity)) {
+    // Player - Enemy Collision
+    if ((registry.enemies.has(entity) && registry.players.has(other)) ||
+        (registry.enemies.has(other) && registry.players.has(entity)))
+    {
+      if (registry.enemies.has(entity))
+      {
 
-				// Figure out the position, velocity characteristics of player and enemy
-				Entity enemyEntity = entity;
-				Entity playerEntity = other;
-				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
-				b2BodyId enemyBodyId = enemyPhys.bodyId;
-				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
-				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
-				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
-				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
-				b2BodyId playerBodyId = playerPhys.bodyId;
-				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
-				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
-				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
+        // Figure out the position, velocity characteristics of player and enemy
+        Entity enemyEntity = entity;
+        Entity playerEntity = other;
+        PhysicsBody &enemyPhys = registry.physicsBodies.get(enemyEntity);
+        b2BodyId enemyBodyId = enemyPhys.bodyId;
+        b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
+        b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
+        float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); // pythagorean to get speed from velocity
+        PhysicsBody &playerPhys = registry.physicsBodies.get(playerEntity);
+        b2BodyId playerBodyId = playerPhys.bodyId;
+        b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
+        b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
+        float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); // pythagorean to get speed from velocity
 
-				// For now we'll base everything entirely on speed.
-				// If player speed > enemy speed, then enemy gets killed.
-				if (playerSpeed > enemySpeed) {
-					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(entity);
-					Mix_PlayChannel(-1, chicken_dead_sound, 0);
-					points++;
-				}
-				// Otherwise player takes dmg (just loses pts for now) and we remove enemy.
-				else {
-					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(entity);
-					Mix_PlayChannel(-1, chicken_eat_sound, 0);
-					points -= 5; //bigger penalty
-				}
+        // For now we'll base everything entirely on speed.
+        // If player speed > enemy speed, then enemy gets killed.
+        if (playerSpeed > enemySpeed)
+        {
+          b2DestroyBody(enemyBodyId);
+          registry.remove_all_components_of(entity);
+          Mix_PlayChannel(-1, chicken_dead_sound, 0);
+          points++;
+        }
+        // Otherwise player takes dmg (just loses pts for now) and we remove enemy.
+        else
+        {
+          b2DestroyBody(enemyBodyId);
+          registry.remove_all_components_of(entity);
+          Mix_PlayChannel(-1, chicken_eat_sound, 0);
+          points -= 5; // bigger penalty
+        }
+      }
+      else
+      {
 
-			}
-			else { 
-				
-				// Figure out the position, velocity characteristics of player and enemy
-				Entity enemyEntity = other;
-				Entity playerEntity = entity;
-				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
-				b2BodyId enemyBodyId = enemyPhys.bodyId;
-				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
-				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
-				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
-				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
-				b2BodyId playerBodyId = playerPhys.bodyId;
-				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
-				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
-				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
+        // Figure out the position, velocity characteristics of player and enemy
+        Entity enemyEntity = other;
+        Entity playerEntity = entity;
+        PhysicsBody &enemyPhys = registry.physicsBodies.get(enemyEntity);
+        b2BodyId enemyBodyId = enemyPhys.bodyId;
+        b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
+        b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
+        float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); // pythagorean to get speed from velocity
+        PhysicsBody &playerPhys = registry.physicsBodies.get(playerEntity);
+        b2BodyId playerBodyId = playerPhys.bodyId;
+        b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
+        b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
+        float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); // pythagorean to get speed from velocity
 
-				// For now we'll base everything entirely on speed.
-				// If player speed > enemy speed, then enemy gets killed.
-				if (playerSpeed > enemySpeed) {
-					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(other);
-					Mix_PlayChannel(-1, chicken_dead_sound, 0);
-					points++;
-				}
-				// Otherwise player takes dmg (for now it just applies vignette effect)
-				else {
-					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(other);
-					Mix_PlayChannel(-1, chicken_eat_sound, 0);
-					points-=5;
-				}
+        // For now we'll base everything entirely on speed.
+        // If player speed > enemy speed, then enemy gets killed.
+        if (playerSpeed > enemySpeed)
+        {
+          b2DestroyBody(enemyBodyId);
+          registry.remove_all_components_of(other);
+          Mix_PlayChannel(-1, chicken_dead_sound, 0);
+          points++;
+        }
+        // Otherwise player takes dmg (for now it just applies vignette effect)
+        else
+        {
+          b2DestroyBody(enemyBodyId);
+          registry.remove_all_components_of(other);
+          Mix_PlayChannel(-1, chicken_eat_sound, 0);
+          points -= 5;
+        }
+      }
+    }
+  }
 
-			}
-		}
-	}
-
-	// Remove all collisions from this simulation step
-	registry.collisions.clear();
+  // Remove all collisions from this simulation step
+  registry.collisions.clear();
 }
 
 // Should the game be over ?
-bool WorldSystem::is_over() const {
-	return bool(glfwWindowShouldClose(window));
+bool WorldSystem::is_over() const
+{
+  return bool(glfwWindowShouldClose(window));
 }
 
-void WorldSystem::update_isGrounded() {
-	Entity playerEntity = registry.players.entities[0];
-	PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
-	b2BodyId bodyId = phys.bodyId;
+void WorldSystem::update_isGrounded()
+{
+  Entity playerEntity = registry.players.entities[0];
+  PhysicsBody &phys = registry.physicsBodies.get(playerEntity);
+  b2BodyId bodyId = phys.bodyId;
 
-	// calculate if ball is grounded or not.
-	int num_contacts = b2Body_GetContactCapacity(bodyId);
-	bool& isGroundedRef = registry.playerPhysics.get(playerEntity).isGrounded;
+  // calculate if ball is grounded or not.
+  int num_contacts = b2Body_GetContactCapacity(bodyId);
+  bool &isGroundedRef = registry.playerPhysics.get(playerEntity).isGrounded;
 
-	if (num_contacts == 0) {
-		isGroundedRef = false;
-		return;
-	}
+  if (num_contacts == 0)
+  {
+    isGroundedRef = false;
+    return;
+  }
 
+  b2ContactData *contactData = new b2ContactData[num_contacts];
+  b2Body_GetContactData(bodyId, contactData, num_contacts);
 
-	b2ContactData * contactData = new b2ContactData[num_contacts];
-	b2Body_GetContactData(bodyId, contactData, num_contacts);
+  // get the ball's shape id.
+  // The # shapes should always be 1, since the player is initialized as a singular ball shape!
+  int player_num_shapes = b2Body_GetShapeCount(bodyId);
+  b2ShapeId *shapeArray = new b2ShapeId[player_num_shapes];
+  b2Body_GetShapes(bodyId, shapeArray, player_num_shapes);
 
-	// get the ball's shape id.
-	// The # shapes should always be 1, since the player is initialized as a singular ball shape!
-	int player_num_shapes = b2Body_GetShapeCount(bodyId);
-	b2ShapeId* shapeArray = new b2ShapeId[player_num_shapes];
-	b2Body_GetShapes(bodyId, shapeArray, player_num_shapes);
+  b2ShapeId player_shape = shapeArray[0];
 
-	b2ShapeId player_shape = shapeArray[0];
+  for (int i = 0; i < num_contacts; i++)
+  {
+    b2ContactData contact = contactData[i];
 
-	for (int i = 0; i < num_contacts; i++) {
-		b2ContactData contact = contactData[i];
-		
-		// if the collision involves the player.
-		if ((contact.shapeIdA.index1 == player_shape.index1 || contact.shapeIdB.index1 == player_shape.index1)) {
-			b2Manifold manifold = contact.manifold;
-			b2Vec2 normal = manifold.normal;
+    // if the collision involves the player.
+    if ((contact.shapeIdA.index1 == player_shape.index1 || contact.shapeIdB.index1 == player_shape.index1))
+    {
+      b2Manifold manifold = contact.manifold;
+      b2Vec2 normal = manifold.normal;
 
-			if (normal.y >= 0.15f) {
-				isGroundedRef = true;
-				delete[] contactData;
-				return;
-			}
-		}
-	}
+      if (normal.y >= 0.15f)
+      {
+        isGroundedRef = true;
+        delete[] contactData;
+        return;
+      }
+    }
+  }
 
-	isGroundedRef = false;
-	delete[] contactData;
+  isGroundedRef = false;
+  delete[] contactData;
 }
 
 // call inside step() function for the most precise and responsive movement handling.
-void WorldSystem::handle_movement() {
+void WorldSystem::handle_movement()
+{
 
-	// first, update states.
-	int state = glfwGetKey(window, GLFW_KEY_E);
+  // first, update states.
+  int state = glfwGetKey(window, GLFW_KEY_E);
 
-	for (int i = 0; i < PLAYER_CONTROL_KEYS.size(); i++) {
-		int key = PLAYER_CONTROL_KEYS[i];
-		int action = glfwGetKey(window, key);
+  for (int i = 0; i < PLAYER_CONTROL_KEYS.size(); i++)
+  {
+    int key = PLAYER_CONTROL_KEYS[i];
+    int action = glfwGetKey(window, key);
 
-		// set the keyState
-		if (action == GLFW_PRESS) {
-			keyStates[key] = true;
-		}
-		else if (action == GLFW_RELEASE) {
-			keyStates[key] = false;
-		}
+    // set the keyState
+    if (action == GLFW_PRESS)
+    {
+      keyStates[key] = true;
+    }
+    else if (action == GLFW_RELEASE)
+    {
+      keyStates[key] = false;
+    }
+  }
 
-	}
+  b2Vec2 nonjump_movement_force = {0, 0};
+  b2Vec2 jump_impulse = {0, 0};
+  const float forceMagnitude = BALL_GROUNDED_MOVEMENT_FORCE;
+  const float jumpImpulseMagnitude = BALL_JUMP_IMPULSE;
 
-	b2Vec2 nonjump_movement_force = { 0, 0 };
-	b2Vec2 jump_impulse   = { 0, 0 };
-	const float forceMagnitude = BALL_GROUNDED_MOVEMENT_FORCE;
-	const float jumpImpulseMagnitude = BALL_JUMP_IMPULSE;
+  // Determine impulse direction based on key pressed
+  if (keyStates[GLFW_KEY_W])
+  {
+    // nonjump_movement_force = { 0, forceMagnitude };
+  }
+  else if (keyStates[GLFW_KEY_A])
+  {
+    nonjump_movement_force = {-forceMagnitude, 0};
+  }
+  else if (keyStates[GLFW_KEY_S])
+  {
+    // nonjump_movement_force = { 0, -forceMagnitude };
+  }
+  else if (keyStates[GLFW_KEY_D])
+  {
+    nonjump_movement_force = {forceMagnitude, 0};
+  }
 
-	// Determine impulse direction based on key pressed
-	if (keyStates[GLFW_KEY_W]) {
-		// nonjump_movement_force = { 0, forceMagnitude };
-	}
-	else if (keyStates[GLFW_KEY_A]) {
-		nonjump_movement_force = { -forceMagnitude, 0 };
-	}
-	else if (keyStates[GLFW_KEY_S]) {
-		// nonjump_movement_force = { 0, -forceMagnitude };
-	}
-	else if (keyStates[GLFW_KEY_D]) {
-		nonjump_movement_force = { forceMagnitude, 0 };
-	}
+  // jump is set seperately, since it can be used in conjunction with the movement keys.
+  if (keyStates[GLFW_KEY_SPACE])
+  {
+    // Jump: apply a strong upward impulse
+    jump_impulse = {0, jumpImpulseMagnitude};
+  }
 
-	// jump is set seperately, since it can be used in conjunction with the movement keys.
-	if (keyStates[GLFW_KEY_SPACE]) {
-		// Jump: apply a strong upward impulse
-		jump_impulse = { 0, jumpImpulseMagnitude };
-	}
+  // Apply impulse if non-zero.
+  if (nonjump_movement_force != b2Vec2_zero || jump_impulse != b2Vec2_zero)
+  {
+    // Assuming registry.players.entities[0] holds the player entity.
+    if (!registry.players.entities.empty())
+    {
+      Entity playerEntity = registry.players.entities[0];
 
-	// Apply impulse if non-zero.
-	if (nonjump_movement_force != b2Vec2_zero || jump_impulse != b2Vec2_zero) {
-		// Assuming registry.players.entities[0] holds the player entity.
-		if (!registry.players.entities.empty()) {
-			Entity playerEntity = registry.players.entities[0];
+      if (registry.physicsBodies.has(playerEntity))
+      {
+        PhysicsBody &phys = registry.physicsBodies.get(playerEntity);
+        b2BodyId bodyId = phys.bodyId;
 
-			if (registry.physicsBodies.has(playerEntity)) {
-				PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
-				b2BodyId bodyId = phys.bodyId;
+        // make sure player is grounded.
+        bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
 
-				// make sure player is grounded.
-				bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
+        // if jump is registered, it should override any other force being applied.
+        if (jump_impulse != b2Vec2_zero && isGrounded)
+        {
+          b2Body_ApplyLinearImpulseToCenter(bodyId, jump_impulse, true);
+        }
+        else if (nonjump_movement_force != b2Vec2_zero)
+        {
+          float multiplier = 1.0f;
 
-				// if jump is registered, it should override any other force being applied.
-				if (jump_impulse != b2Vec2_zero && isGrounded) {
-					b2Body_ApplyLinearImpulseToCenter(bodyId, jump_impulse, true);
-				}
-				else if (nonjump_movement_force != b2Vec2_zero) {
-					float multiplier = 1.0f;
+          if (!isGrounded)
+          {
+            multiplier = BALL_AIR_STRAFE_FORCE_MULTIPLIER;
+          }
 
-					if (!isGrounded) {
-						multiplier = BALL_AIR_STRAFE_FORCE_MULTIPLIER;
-					}
-
-					// apply force slightly above center of mass to make ball spin.
-					// don't get the reference of the position, we don't want to alter the value.
-					b2Vec2 bodyPosition = b2Body_GetPosition(bodyId);
-					bodyPosition.y += 2.f;
-					b2Body_ApplyForce(bodyId, nonjump_movement_force * multiplier, bodyPosition, true);
-				}
-			}
-		}
-	}
-
-
-
+          // apply force slightly above center of mass to make ball spin.
+          // don't get the reference of the position, we don't want to alter the value.
+          b2Vec2 bodyPosition = b2Body_GetPosition(bodyId);
+          bodyPosition.y += 2.f;
+          b2Body_ApplyForce(bodyId, nonjump_movement_force * multiplier, bodyPosition, true);
+        }
+      }
+    }
+  }
 }
 
 // on key callback
-void WorldSystem::on_key(int key, int scancode, int action, int mod) {
+void WorldSystem::on_key(int key, int scancode, int action, int mod)
+{
 
-	if (!game_active) {
-		if (key == GLFW_KEY_R && action == GLFW_RELEASE) {
-			restart_game();
-		}
-		return; // ignore all other inputs when game is inactive
-	}
-
-	// Exit game with ESC
-	if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE) {
-		close_window();
-	}
-
-	// Reset game when R is released
-	if (action == GLFW_RELEASE && key == GLFW_KEY_R) {
-		int w, h;
-		glfwGetWindowSize(window, &w, &h);
-		restart_game();
-	}
-
-	// Debug toggle with D
-	if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
-		debugging.in_debug_mode = !debugging.in_debug_mode;
-	}
-
-	if (action == GLFW_PRESS) {
-		if (key == GLFW_KEY_LEFT_SHIFT ) {
-			Entity ballEntity = registry.physicsBodies.entities[0];  
-    		Entity grapplePointEntity = registry.physicsBodies.entities[1];  
-
-    		PhysicsBody& ballBody = registry.physicsBodies.get(ballEntity);
-    		PhysicsBody& grappleBody = registry.physicsBodies.get(grapplePointEntity);
-
-    		b2BodyId ballBodyId = ballBody.bodyId;
-    		b2BodyId grappleBodyId = grappleBody.bodyId;
-
-			b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
-    		b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
-
-    		// Compute the distance between the two points
-    		float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
-                           			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
-
-			if (distance <= 280.0f && !grappleActive) {
-				createGrapple(worldId, ballBodyId, grappleBodyId, distance);
-				grappleActive = true;
-			} else if (grappleActive) {
-				removeGrapple();
-				grappleActive = false;
-			}
-		}
-	}
-}
-
-void WorldSystem::on_mouse_move(vec2 mouse_position) {
-	// record the current mouse position
-	mouse_pos_x = mouse_position.x;
-	mouse_pos_y = mouse_position.y;
-}
-
-void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
-	int tile_x = (int)(mouse_pos_x / GRID_CELL_WIDTH_PX);
-	int tile_y = (int)(mouse_pos_y / GRID_CELL_HEIGHT_PX);
-	std::cout << "mouse position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
-	std::cout << "mouse tile position: " << tile_x << ", " << tile_y << std::endl;
-
-	// ignore mouse input if game is over
-	if (!game_active) {
-		return;
-	}
-}
-
-void WorldSystem::updateGrappleLines() {
-    for (Entity grappleEntity : registry.grapples.entities) {
-        Grapple& grapple = registry.grapples.get(grappleEntity);
-
-        // Get current positions
-        b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
-        b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
-
-        // Update line entity positions
-        if (registry.lines.has(grapple.lineEntity)) {
-            Line& line = registry.lines.get(grapple.lineEntity);
-            line.start_pos = vec2(ballPos.x, ballPos.y);
-            line.end_pos = vec2(grapplePos.x, grapplePos.y);
-        }
+  if (!game_active)
+  {
+    if (key == GLFW_KEY_R && action == GLFW_RELEASE)
+    {
+      restart_game();
     }
+    return; // ignore all other inputs when game is inactive
+  }
+
+  // Exit game with ESC
+  if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
+  {
+    close_window();
+  }
+
+  // Reset game when R is released
+  if (action == GLFW_RELEASE && key == GLFW_KEY_R)
+  {
+    int w, h;
+    glfwGetWindowSize(window, &w, &h);
+    restart_game();
+  }
+
+  // Debug toggle with D
+  if (key == GLFW_KEY_P && action == GLFW_RELEASE)
+  {
+    debugging.in_debug_mode = !debugging.in_debug_mode;
+  }
+
+  if (action == GLFW_PRESS)
+  {
+    if (key == GLFW_KEY_LEFT_SHIFT)
+    {
+      Entity ballEntity = registry.physicsBodies.entities[0];
+      Entity grapplePointEntity = registry.physicsBodies.entities[1];
+
+      PhysicsBody &ballBody = registry.physicsBodies.get(ballEntity);
+      PhysicsBody &grappleBody = registry.physicsBodies.get(grapplePointEntity);
+
+      b2BodyId ballBodyId = ballBody.bodyId;
+      b2BodyId grappleBodyId = grappleBody.bodyId;
+
+      b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+      b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
+
+      // Compute the distance between the two points
+      float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
+                             (grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
+
+      if (distance <= GRAPPLE_ATTACHABLE_RADIUS && !grappleActive)
+      {
+        createGrapple(worldId, ballBodyId, grappleBodyId, distance);
+        grappleActive = true;
+      }
+      else if (grappleActive)
+      {
+        removeGrapple();
+        grappleActive = false;
+      }
+    }
+  }
 }
 
+void WorldSystem::on_mouse_move(vec2 mouse_position)
+{
+  // record the current mouse position
+  mouse_pos_x = mouse_position.x;
+  mouse_pos_y = mouse_position.y;
+}
 
+void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
+{
+  int tile_x = (int)(mouse_pos_x / GRID_CELL_WIDTH_PX);
+  int tile_y = (int)(mouse_pos_y / GRID_CELL_HEIGHT_PX);
+  std::cout << "mouse position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
+  std::cout << "mouse tile position: " << tile_x << ", " << tile_y << std::endl;
+
+  // ignore mouse input if game is over
+  if (!game_active)
+  {
+    return;
+  }
+}
+
+void WorldSystem::updateGrappleLines()
+{
+  for (Entity grappleEntity : registry.grapples.entities)
+  {
+    Grapple &grapple = registry.grapples.get(grappleEntity);
+
+    // Get current positions
+    b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
+    b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
+
+    // Update line entity positions
+    if (registry.lines.has(grapple.lineEntity))
+    {
+      Line &line = registry.lines.get(grapple.lineEntity);
+      line.start_pos = vec2(ballPos.x, ballPos.y);
+      line.end_pos = vec2(grapplePos.x, grapplePos.y);
+    }
+  }
+}

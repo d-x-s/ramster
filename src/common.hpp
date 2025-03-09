@@ -37,8 +37,8 @@ inline std::string mesh_path(const std::string& name) {return data_path() + "/me
 //
 // game constants
 //
-const int WINDOW_WIDTH_PX = 840;
-const int WINDOW_HEIGHT_PX = 600;
+const int WINDOW_WIDTH_PX = 1024;
+const int WINDOW_HEIGHT_PX = 640;
 
 const int GRID_CELL_WIDTH_PX = 128;
 const int GRID_CELL_HEIGHT_PX = 128;
@@ -82,7 +82,7 @@ const float BALL_INITIAL_POSITION_Y = 500.0;
 // Player input related physics
 const float BALL_GROUNDED_MOVEMENT_FORCE = 25000.0f; // kg·cm/s² (dynes)
 const float BALL_AIR_STRAFE_FORCE_MULTIPLIER = 0.5f;
-const float BALL_JUMP_IMPULSE = 4000.0f; // kg·cm/s (dynes·s)
+const float BALL_JUMP_IMPULSE = 8000.0f; // kg·cm/s (dynes·s)
 
 // A ball of radius 32cm has area ~3200cm².
 // We should pick a value that yields a reasonable weight-to-area ratio like a density of 0.01.
@@ -107,6 +107,9 @@ const float ENEMY_RESTITUTION = 0.5f; //enemy bounciness... increase this number
 const float TERRAIN_DEFAULT_FRICTION = 0.2f;
 const float TERRAIN_DEFAULT_RESTITUTION = 0.5f;
 const float WALL_DEFAULT_THICKNESS = 4.0f;
+
+// GRAPPLE PHYSICS
+const float GRAPPLE_ATTACHABLE_RADIUS = 280.0f;
 
 // These are hard coded to the dimensions of the entity's texture
 // invaders are 64x64 px, but cells are 60x60

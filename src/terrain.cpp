@@ -85,7 +85,7 @@ b2BodyId create_horizontal_wall(b2WorldId worldId, float x, float y, float width
  * @param textureId The ID of the texture to be used (currently unused).
  * @return b2BodyId The ID of the created Box2D body.
  */
-b2BodyId create_block(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID textureId) {
+b2BodyId create_single_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID textureId) {
     float halfWidth = GRID_CELL_WIDTH_PX / 2.0f;
     float halfHeight = GRID_CELL_HEIGHT_PX / 2.0f;
 
@@ -173,6 +173,60 @@ b2BodyId create_block(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID te
     return bodyId;
 }
 
+b2BodyId create_grapple_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID textureId) {
+    float centerX = (grid_position.x * GRID_CELL_WIDTH_PX) + (GRID_CELL_WIDTH_PX / 2.0f);
+    float centerY = (grid_position.y * GRID_CELL_HEIGHT_PX) + (GRID_CELL_HEIGHT_PX / 2.0f);
+    vec2 position = { centerX, centerY };
+
+    Entity entity = Entity();
+    b2BodyDef bodyDef = b2DefaultBodyDef();
+    bodyDef.type = b2_staticBody;
+    bodyDef.position = b2Vec2{ position.x, position.y };
+
+    b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+
+    b2ShapeDef shapeDef = b2DefaultShapeDef();
+
+    b2Circle circle;
+    circle.center = b2Vec2{ 0.0f, 0.0f };
+    circle.radius = 0.2f;
+
+    b2CreateCircleShape(bodyId, &shapeDef, &circle);
+
+    PhysicsBody& grappleBody = registry.physicsBodies.emplace(entity);
+    grappleBody.bodyId = bodyId;
+
+    GrapplePoint& grapplePoint = registry.grapplePoints.emplace(entity);
+
+    auto& motion = registry.motions.emplace(entity);
+    motion.position = vec2(position.x, position.y);
+    motion.scale = vec2(64.0f, 64.0f);
+
+    registry.renderRequests.insert(
+        entity,
+        {
+            TEXTURE_ASSET_ID::GRAPPLE_POINT,
+            EFFECT_ASSET_ID::TEXTURED,
+            GEOMETRY_BUFFER_ID::SPRITE
+        }
+    );
+
+    Entity entity_grapple_outline = Entity();
+    auto& grapple_outline_motion = registry.motions.emplace(entity_grapple_outline);
+    grapple_outline_motion.position = vec2(position.x, position.y);
+    grapple_outline_motion.scale = vec2(GRAPPLE_ATTACHABLE_RADIUS, GRAPPLE_ATTACHABLE_RADIUS);
+    registry.renderRequests.insert(
+        entity_grapple_outline,
+        {
+            TEXTURE_ASSET_ID::GRAPPLE_OUTLINE,
+            EFFECT_ASSET_ID::TEXTURED,
+            GEOMETRY_BUFFER_ID::SPRITE
+        }
+    );
+
+    return bodyId;
+}
+
 b2BodyId create_curve(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID textureId) {
     float halfWidth = GRID_CELL_WIDTH_PX / 2.0f;
     float halfHeight = GRID_CELL_HEIGHT_PX / 2.0f;
@@ -235,4 +289,67 @@ b2BodyId create_curve(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID te
 
     return bodyId;
 }
+
+b2BodyId create_block(b2WorldId worldId, vec2 start_tile, vec2 end_tile, TEXTURE_ASSET_ID textureId) {
+    // Calculate the minimum and maximum grid coordinates.
+    float minX = std::min(start_tile.x, end_tile.x);
+    float minY = std::min(start_tile.y, end_tile.y);
+    float maxX = std::max(start_tile.x, end_tile.x);
+    float maxY = std::max(start_tile.y, end_tile.y);
+
+    // Compute the dimensions in tiles. We add 1 because a single tile wall (same x or y) should cover one cell.
+    int widthTiles = static_cast<int>(maxX - minX) + 1;
+    int heightTiles = static_cast<int>(maxY - minY) + 1;
+
+    // Convert grid positions into world space boundaries.
+    float worldStartX = minX * GRID_CELL_WIDTH_PX;
+    float worldStartY = minY * GRID_CELL_HEIGHT_PX;
+    float worldEndX = (minX + widthTiles) * GRID_CELL_WIDTH_PX;
+    float worldEndY = (minY + heightTiles) * GRID_CELL_HEIGHT_PX;
+
+    // Define the four vertices (clockwise order) for the chain shape.
+    std::vector<b2Vec2> vertices;
+    vertices.push_back(b2Vec2{ worldStartX, worldStartY }); // Bottom-left
+    vertices.push_back(b2Vec2{ worldEndX,   worldStartY }); // Bottom-right
+    vertices.push_back(b2Vec2{ worldEndX,   worldEndY });   // Top-right
+    vertices.push_back(b2Vec2{ worldStartX, worldEndY });   // Top-left
+
+    // Create a Box2D chain shape that loops (i.e. is closed)
+    b2ChainDef chainDef = b2DefaultChainDef();
+    chainDef.count = vertices.size();
+    chainDef.points = vertices.data();
+    chainDef.isLoop = true;
+    chainDef.friction = TERRAIN_DEFAULT_FRICTION;
+    chainDef.restitution = TERRAIN_DEFAULT_RESTITUTION;
+
+    b2BodyDef bodyDef = b2DefaultBodyDef();
+    b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+    b2CreateChain(bodyId, &chainDef);
+
+    // For each grid cell inside the rectangle, calculate its center in world coordinates
+    // and submit a render request with the specified texture.
+    for (int row = static_cast<int>(minY); row < static_cast<int>(minY) + heightTiles; ++row) {
+        for (int col = static_cast<int>(minX); col < static_cast<int>(minX) + widthTiles; ++col) {
+            float centerX = (col * GRID_CELL_WIDTH_PX) + (GRID_CELL_WIDTH_PX / 2.0f);
+            float centerY = (row * GRID_CELL_HEIGHT_PX) + (GRID_CELL_HEIGHT_PX / 2.0f);
+            vec2 cellCenter = { centerX, centerY };
+
+            Entity entity = Entity();
+            auto& motion = registry.motions.emplace(entity);
+            motion.angle = 0.f;
+            motion.velocity = { 0, 0 };
+            motion.position = cellCenter;
+            motion.scale = vec2(GRID_CELL_WIDTH_PX, GRID_CELL_HEIGHT_PX);
+
+            registry.renderRequests.insert(
+                entity,
+                { textureId, EFFECT_ASSET_ID::TEXTURED, GEOMETRY_BUFFER_ID::SPRITE }
+            );
+        }
+    }
+
+    return bodyId;
+}
+
+
 

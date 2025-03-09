@@ -9,4 +9,8 @@ class AISystem
 {
 public:
 	void step(float elapsed_ms);
+
+private:
+	bool tooCloseToSwarm(Entity swarmEnemy);
+
 };

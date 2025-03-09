@@ -23,23 +23,21 @@ void AISystem::step(float elapsed_ms)
 
 			1_b. NON-OBSTACLE enemies:
 
-				2b_a. COMMON enemies:
+				1b_a. If freeze-timer is above 0, decrement timer by elapsed time and exit.
 
-					2ba_a. If freeze-timer is above 0, DON'T MOVE.
+					1ba_a. COMMON enemies:
 
-					2ba_b. If player is to the left, move left.
+						1baa_a. If player is to the left, move left.
 
-					2ba_c. If player is to the right, move right.
+						2baa_b. If player is to the right, move right.
 
-				2b_b. SWARMING enemies:
+					1ba_b. SWARMING enemies:
 
-					2bb_a. If freeze-timer is above 0, DON'T MOVE.
+						[Excluded. This condition is effectively covered by 1bab_b.] 1bab_a. IF TOO CLOSE TO THE GROUND, PULL UP!
 
-					2bb_b. IF TOO CLOSE TO THE GROUND, PULL UP!
+						1bab_b. IF TOO CLOSE TO ANOTHER ENTITY THAT IS NOT THE PLAYER, move away from that entity.
 
-					2bb_c. IF TOO CLOSE TO ANOTHER SWARMING ENEMY, move away from that enemy.
-
-					2bb_d. Pursue the player. 
+						1bab_c. Pursue the player. 
 	*/
 
 	// Box2D physics
@@ -67,24 +65,75 @@ void AISystem::step(float elapsed_ms)
 	// Iterate over each enemy and implement basic logic as commented above.
 	for (int i = 0; i < enemy_registry.entities.size(); i++) {
 
-		// Figure out the entity and position
+		// Figure out enemy details
 		Entity enemyEntity = enemy_registry.entities[i];
 		Motion& enemyMotion = registry.motions.get(enemyEntity);
+		Enemy& enemyComponent = registry.enemies.get(enemyEntity);
 
 		// Enemy position
 		float enemy_posX = enemyMotion.position[0];
 		float enemy_posY = enemyMotion.position[1]; // we wouldn't need this for now, here for future use.
 
-		// Decision tree. Simple for now, can expand into some monstrosity later.
-		// Player is to the right.
-		if (enemy_posX < player_posX) {
-			// accelerate right
-			nonjump_movement_force = { forceMagnitude, 0 };
+
+		// DECISION TREE
+
+		// 1. Figure out enemy type.
+		if (enemyComponent.enemyType == OBSTACLE) {
+			// 1_a.OBSTACLE enemies : **NOTE : these enemies will not die or freeze after a collision.
+
+			if (enemyMotion.position.x <= enemyComponent.movement_area[0] + GRID_CELL_WIDTH_PX/2) {
+				// 1aa_a. If too close to left-hand-side, change direction to right-hand-side.
+
+			}
+			else if (enemyMotion.position.x >= enemyComponent.movement_area[1] - GRID_CELL_WIDTH_PX/2) {
+				// 1aa_b. If too close to right-hand-side, change direction to left-hand-side.
+
+
+			}
+			else {
+				// 1aa_c. Keep moving in current direction.
+
+			}
+
 		}
-		// Player is to the left.
-		else if (player_posX < enemy_posX) {
-			// accelerate left
-			nonjump_movement_force = { -forceMagnitude, 0 };
+		else {
+			// 1_b. NON-OBSTACLE enemies:
+			if (enemyComponent.freeze_time > 0) {
+				// 1b_a. If freeze-timer is above 0, decrement timer by elapsed time and exit.
+
+			}
+			else {
+				if (enemyComponent.enemyType == COMMON) {
+					// 1ba_a.COMMON enemies :
+
+					if (player_posX < enemy_posX) {
+						// 1baa_a. If player is to the left, move left.
+
+						// accelerate left
+						nonjump_movement_force = { -forceMagnitude, 0 };
+					}
+					else if (enemy_posX < player_posX) {
+						// 2baa_b. If player is to the right, move right.
+
+						// accelerate right
+						nonjump_movement_force = { forceMagnitude, 0 };
+					}
+					
+				}
+				else if (enemyComponent.enemyType == SWARM) {
+					// 1ba_b. SWARMING enemies:
+
+					if (tooCloseToSwarm(enemyEntity)) {
+						// 1bab_b. IF TOO CLOSE TO ANOTHER SWARMING ENTITY THAT IS NOT THE PLAYER, move away from that entity.
+
+					}
+					else {
+						// 1bab_c. Pursue the player.
+
+					}
+
+				}
+			}
 		}
 
 		// Apply whatever decision made to box2D
@@ -100,3 +149,11 @@ void AISystem::step(float elapsed_ms)
 	}
 
 }
+
+// Helper function that will determine if a swarm enemy is too close to another entity (that is not the player).
+bool AISystem::tooCloseToSwarm(Entity swarmEnemy)
+{
+	return false;
+}
+
+

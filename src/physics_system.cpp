@@ -44,21 +44,64 @@ vec2 get_bounding_box(const Motion &motion)
   return {abs(motion.scale.x), abs(motion.scale.y)};
 }
 
-// This is a SUPER APPROXIMATE check that puts a circle around the bounding boxes and sees
-// if the center point of either object is inside the other's bounding-box-circle. You can
-// surely implement a more accurate detection
-bool collides(const Motion &motion1, const Motion &motion2)
+
+// NOTE THAT THIS SHOULD REALLY ONLY BE CALLED WITH EITHER PLAYER OR ENEMY, AS IT DEPENDS ON ENTITIES HAVING ONE SHAPE!!!
+// TODO NOTE: playtested & found an issue where the player and enemy occasionally phase through each other. Tried replicating by seeing if it triggers by jump, consecutive enemies, 
+// etc, But it occurs seemingly randomly. Also encountered the issue where enemies occasionally phase through the ramp. These two issues could be related...?
+// NOTE 2: Increased scale of both the player and enemy entities. Confirmed that if a collision happens off-center (say, the edges touch), it will not register, 
+// but will if the centers of the 2 bodies are sufficiently close. This suggests that the on-screen geometry is not equal to the collision geometry, causing the phase-through 
+// issue.
+// NOTE 3: Tried decreasing scale of both player and enemy entities so the geometry on-screen is smaller than collision geometry. Confirmed that this remedied the phase-through 
+// issue.
+bool collides(const Entity &entity1, const Entity &entity2)
 {
-  vec2 dp = motion1.position - motion2.position;
-  float dist_squared = dot(dp, dp);
-  const vec2 other_bonding_box = get_bounding_box(motion1) / 2.f;
-  const float other_r_squared = dot(other_bonding_box, other_bonding_box);
-  const vec2 my_bonding_box = get_bounding_box(motion2) / 2.f;
-  const float my_r_squared = dot(my_bonding_box, my_bonding_box);
-  const float r_squared = max(other_r_squared, my_r_squared);
-  if (dist_squared < r_squared)
-    return true;
-  return false;
+    // Get body IDs to identify entities in box2D
+    b2BodyId entity1_id = registry.physicsBodies.get(entity1).bodyId;
+    b2BodyId entity2_id = registry.physicsBodies.get(entity2).bodyId;
+    
+    // Figure out the shape IDs
+    // Entity 1
+    int entity1_numShapes = b2Body_GetShapeCount(entity1_id);
+    b2ShapeId* entity1_shapeArray = new b2ShapeId[entity1_numShapes];
+    b2Body_GetShapes(entity1_id, entity1_shapeArray, entity1_numShapes);
+    b2ShapeId entity1_shape = entity1_shapeArray[0]; 
+    // Entity 2
+    int entity2_numShapes = b2Body_GetShapeCount(entity2_id);
+    b2ShapeId* entity2_shapeArray = new b2ShapeId[entity2_numShapes];
+    b2Body_GetShapes(entity2_id, entity2_shapeArray, entity2_numShapes);
+    b2ShapeId entity2_shape = entity2_shapeArray[0];
+
+    // Get contact data for both entities
+    int entity1_numContacts = b2Body_GetContactCapacity(entity1_id);
+    int entity2_numContacts = b2Body_GetContactCapacity(entity2_id);
+    b2ContactData* entity1_contactData = new b2ContactData[entity1_numContacts];
+    b2ContactData* entity2_contactData = new b2ContactData[entity2_numContacts];
+    b2Body_GetContactData(entity1_id, entity1_contactData, entity1_numContacts);
+    b2Body_GetContactData(entity2_id, entity2_contactData, entity2_numContacts);
+
+    // Obvious case where if either of these entities have 0 contacts, then it must be the case that they're not colliding.
+    if (entity1_numContacts == 0 || entity2_numContacts == 0) {
+        return false;
+    }
+
+    // If they have contacts then it's less obvious. 
+    // Iterate over every contact of either entity (as it should be reciprocal if they touch) and check if it contains the shapeID of the other. 
+    // If they have the other's shapeID then they're definitely colliding.
+    // We'll just check entity 1.
+    for (int i = 0; i < entity1_numContacts; i++) {
+        b2ContactData contact = entity1_contactData[i];
+
+        // confirming both entities are in the collision
+        if (((contact.shapeIdA.index1 == entity1_shape.index1 || contact.shapeIdB.index1 == entity1_shape.index1)) && // confirm that entity1 is one of the shapes involved
+            ((contact.shapeIdA.index1 == entity2_shape.index1 || contact.shapeIdB.index1 == entity2_shape.index1)) // confirm that entity2 is one of the shapes involved
+            ) 
+        {
+            return true;
+        }
+    }
+
+    // if loop found nothing then no collision.
+    return false;
 }
 
 // Advances physics simulation
@@ -85,7 +128,6 @@ void PhysicsSystem::step(float elapsed_ms)
   PhysicsBody &playerComponent_physicsBody = registry.physicsBodies.get(playerEntity_physicsBody);
   b2BodyId playerBodyID = playerComponent_physicsBody.bodyId;
   b2Vec2 playerPosition = b2Body_GetPosition(playerBodyID);
-
   // Update motion component
   Motion &playerComponent_motion = registry.motions.get(playerEntity_physicsBody);
   playerComponent_motion.position = vec2(playerPosition.x, playerPosition.y);
@@ -301,8 +343,8 @@ void PhysicsSystem::step(float elapsed_ms)
   // std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";
 
   // COLLISION HANDLING
-  // Ran out of time, will use A1 for now, figure out collision callbacks later.
-  // check for collisions between all moving entities
+  // This just iterates over all motion entities to check. 
+  // The collision check is handled by collides() helper function.
   ComponentContainer<Motion> &motion_container = registry.motions;
   for (uint i = 0; i < motion_container.components.size(); i++)
   {
@@ -313,26 +355,63 @@ void PhysicsSystem::step(float elapsed_ms)
     for (uint j = i + 1; j < motion_container.components.size(); j++)
     {
       Motion &motion_j = motion_container.components[j];
-      if (collides(motion_i, motion_j))
-      {
-        Entity entity_j = motion_container.entities[j];
-        // Create a collisions event
-        // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
-        // CK: why the duplication, except to allow searching by entity_id
-        registry.collisions.emplace_with_duplicates(entity_i, entity_j);
+      Entity entity_j = motion_container.entities[j];
+      // We really only want to check collisions if both of these are either players or enemies.
+      if ((registry.players.has(entity_i) || registry.enemies.has(entity_i)) && // entity i is either a player or an enemy
+          (registry.players.has(entity_j) || registry.enemies.has(entity_j)) // entity j is either a player or an enemy
+          ) {
+          if (collides(entity_i, entity_j))
+          {
+              // Now that we know the 2 entities are colliding we also want to figure out which entity comes out on top.
+              // Current criteria for "top" is higher speed during collision.
+              
+              // Get body IDs to identify entities in box2D (note that i, j, maps onto 1, 2)
+              b2BodyId entity1_id = registry.physicsBodies.get(entity_i).bodyId;
+              b2BodyId entity2_id = registry.physicsBodies.get(entity_j).bodyId;
+              // Get speeds
+              b2Vec2 entity1_velocity = b2Body_GetLinearVelocity(entity1_id);
+              float entity1_speedFactor = ((entity1_velocity.x * entity1_velocity.x) + (entity1_velocity.y * entity1_velocity.y))/100000;
+              b2Vec2 entity2_velocity = b2Body_GetLinearVelocity(entity2_id);
+              float entity2_speedFactor = ((entity2_velocity.x * entity2_velocity.x) + (entity2_velocity.y * entity2_velocity.y))/100000;
+
+              // ID the player
+              Entity playerEntity;
+              float playerSpeed;
+              if (registry.players.has(entity_i)) {
+                playerSpeed = entity1_speedFactor;
+                playerEntity = entity_i;
+              }
+              else {
+                playerSpeed = entity2_speedFactor;
+                playerEntity = entity_j;
+              }
+
+              // To determine if the player "won" in that collision, what we ultimately want to find out is whether the player was moving fast enough.
+              // So, at a high enough speed, the player should be relatively resistant to damage. The goal of the enemy would then be to absorb as much of
+              // the player's speed as possible. 
+              // Since the player is bouncy and our enemies are not very fast (at least not fast enough to make the player surpass the required speed to "win"),
+              // we can figure out if the player is fast enough by just checking on how much speed they retain after the collision.
+              // NOTE: this depends on MIN_COLLISION_SPEED, which will need some fine-tuning to find a good speed at which we can hit the enemy.
+              bool player_wins_collision = false;
+
+              if (playerSpeed > MIN_COLLISION_SPEED) {
+                  player_wins_collision = true;
+              }
+
+              // DEBUG
+              std::cout << "ENTITY 1 SPEED: " << entity1_speedFactor << std::endl;
+              std::cout << "ENTITY 2 SPEED: " << entity2_speedFactor << std::endl;
+              std::cout << "PLAYER SPEED: " << playerSpeed << std::endl;
+
+              // Create a collisions event
+              // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
+              // CK: why the duplication, except to allow searching by entity_id
+              Collision& collision = registry.collisions.emplace_with_duplicates(entity_i, entity_j);
+              collision.player_wins_collision = player_wins_collision;
+          }
       }
+      
     }
   }
-  // WIP BOX2D CODE:
-  /*
-  * b2ContactEvents contactEvents = b2World_GetContactEvents(worldId);
 
-  for (int i = 0; i < contactEvents.beginCount; i++) {
-      b2ContactBeginTouchEvent event = contactEvents.beginEvents[i];
-      b2BodyId collisionBody_A = b2Shape_GetBody(event.shapeIdA);
-      b2BodyId collisionBody_B = b2Shape_GetBody(event.shapeIdB);
-
-      std::cout << "TEST XXXXXXXXXXXXXXXXXXXXXXXX" << b2Body_GetUserData(collisionBody_A) << std::endl;
-  }
-  */
 }

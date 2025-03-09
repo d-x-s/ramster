@@ -115,8 +115,24 @@ private:
 	// Number of invaders stopped by the towers, displayed in the window title
 	int points;
 
+	// Frames per second
+	int fps = 0; // 0 is default val
+	// Do an FPS cooldown to prevent flickering
+	float fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
+
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
+
+	// use this to handle enemy spawning.
+	/*
+	INPUTS
+	- predicate: condition on which to spawn the enemies.
+	- enemy_type: type of enemy to spawn.
+	- quantity: number of enemies to spawn.
+	- position: where to spawn the enemy.
+	- movement_area: this applies to OBSTACLE enemies only. Dictates the upper and lower bounds for x-coordinates on which it can move.
+	*/
+	void handleEnemySpawning(bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 position, vec2 movement_area);
 
 	// update grapple hook line
 	void updateGrappleLines();

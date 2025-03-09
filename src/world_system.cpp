@@ -149,8 +149,9 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	restart_game();
 	createBall(worldId);
 
-	// Create obstacles here so they don't keep spawning.
-	// Like this: createEnemy(worldId, vec2(750, 200 + 50), OBSTACLE, vec2(800, 1500));
+	// TODO DAVIS - Create obstacles here so they don't keep spawning.
+	// Like this:
+	// handleEnemySpawning(true, OBSTACLE, 1, vec2(750, 200 + 50), vec2(800, 1500));
 }
 
 // Update our game world
@@ -220,12 +221,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 			// create enemy at random position
 			//setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
-			//createEnemy(worldId, vec2(pos_x, pos_y + 50), COMMON, vec2(-1, -1)); 
-			createEnemy(worldId, vec2(pos_x, pos_y + 50), SWARM, vec2(-1, -1));
-			createEnemy(worldId, vec2(pos_x + 1, pos_y + 50), SWARM, vec2(-1, -1));
-			createEnemy(worldId, vec2(pos_x + 2, pos_y + 50), SWARM, vec2(-1, -1));
-			createEnemy(worldId, vec2(pos_x + 3, pos_y + 50), SWARM, vec2(-1, -1));
-			createEnemy(worldId, vec2(pos_x + 4, pos_y + 50), SWARM, vec2(-1, -1));
+			handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+			handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
 		}
 
 		if (grappleActive) {
@@ -711,4 +708,15 @@ void WorldSystem::updateGrappleLines() {
     }
 }
 
+void WorldSystem::handleEnemySpawning(bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 position, vec2 movement_area) {
+	
+	// only create if predicate is true
+	if (predicate) {
+		// Create specified number of enemies by iterating
+		for (int i = 0; i < quantity; i++) {
+			// enemy created here
+			createEnemy(worldId, position, enemy_type, movement_area);
+		}
+	}
+}
 

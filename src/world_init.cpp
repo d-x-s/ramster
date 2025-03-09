@@ -65,6 +65,39 @@ Entity createBall(b2WorldId worldId)
 // - MOVEMENT AREA (min_x, max_x): activity radius of the enemy. set to (-1, -1) if you want enemy to move anywhere on the map.
 Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_area) {
 
+	// Determine enemy type-based characteristics here.
+	// If the enemy is an obstacle then they will not be destructable. Can expand w/ more indestructable enemies.
+	bool destructability = enemy_type == OBSTACLE ? false : true; 
+	// Size of enemy. ENEMY_RADIUS is the standard size, and we'll change it for non-common enemies.
+	float enemySize = ENEMY_RADIUS;
+	if (enemy_type == OBSTACLE) {
+		enemySize *= 2.5;
+	}
+	else if(enemy_type == SWARM) {
+		enemySize *= 0.5;
+	}
+	// Bounciness of enemy. Maps onto box2D restitution. Common has the standard ENEMY_RESTITUTION.
+	float enemyBounciness = ENEMY_RESTITUTION;
+	if (enemy_type == OBSTACLE) {
+		enemyBounciness = 0;
+	}
+	else if (enemy_type == SWARM) {
+		enemyBounciness *= 2;
+	}
+	// Weight of enemy, based on density. Common has default weight ENEMY_DENSITY
+	float enemyWeight = ENEMY_DENSITY;
+	if (enemy_type == OBSTACLE) {
+		enemyWeight = 0.5;
+	}
+	else if (enemy_type == SWARM) {
+		enemyWeight = 0.001;
+	}
+	// Friction of enemy, which slows it down as it travels along a surface. Common has default friction ENEMY_FRICTION
+	float enemyFriction = ENEMY_FRICTION;
+	if (enemy_type == OBSTACLE) {
+		enemyFriction = 0;
+	}
+	
 	// Enemy entity
 	Entity entity = Entity();
 
@@ -78,7 +111,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	Enemy& enemy = registry.enemies.emplace(entity);
 	enemy.enemyType = enemy_type;
 	enemy.movement_area = movement_area;
-	enemy.destructable = enemy_type == OBSTACLE ? false : true; // If the enemy is an obstacle then they will not be destructable. Can expand w/ more indestructable enemies.
+	enemy.destructable = destructability;
 
 	// Define a box2D body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
@@ -90,15 +123,16 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 
 	// Define shape properties using Box2D v3 functions
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
-	shapeDef.density = ENEMY_DENSITY;
-	shapeDef.friction = ENEMY_FRICTION;
-	shapeDef.restitution = ENEMY_RESTITUTION; 
+	shapeDef.density = enemyWeight;
+	shapeDef.friction = enemyFriction;
+	shapeDef.restitution = enemyBounciness; 
 
+	
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
 	// We'll update the enemy hitbox later.
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = ENEMY_RADIUS * (int) enemy_type; // Simple way to change size of enemies based on their type. Adjust int multiplier in ENEMY_TYPES to change this.
+	circle.radius = enemySize; // Simple way to change size of enemies based on their type. Adjust int multiplier in ENEMY_TYPES to change this.
 	b2CreateCircleShape(bodyId, &shapeDef, &circle); // this is the hitbox
 
 	enemyBody.bodyId = bodyId;

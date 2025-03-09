@@ -6,6 +6,7 @@ void AISystem::step(float elapsed_ms)
 {
 
 	// ENEMY AI
+	// DECISION TREE:
 	/*
 	DECISION TREE:
 
@@ -70,6 +71,10 @@ void AISystem::step(float elapsed_ms)
 		Motion& enemyMotion = registry.motions.get(enemyEntity);
 		Enemy& enemyComponent = registry.enemies.get(enemyEntity);
 
+		// Get Box2D Speed
+		b2BodyId enemy_id = registry.physicsBodies.get(enemyEntity).bodyId;
+		b2Vec2 enemy_velocity = b2Body_GetLinearVelocity(enemy_id);
+
 		// Enemy position
 		float enemy_posX = enemyMotion.position[0];
 		float enemy_posY = enemyMotion.position[1]; // we wouldn't need this for now, here for future use.
@@ -84,15 +89,20 @@ void AISystem::step(float elapsed_ms)
 			if (enemyMotion.position.x <= enemyComponent.movement_area[0] + GRID_CELL_WIDTH_PX/2) {
 				// 1aa_a. If too close to left-hand-side, change direction to right-hand-side.
 
+				// accelerate right
+				nonjump_movement_force = { forceMagnitude * 100, 0 };
 			}
 			else if (enemyMotion.position.x >= enemyComponent.movement_area[1] - GRID_CELL_WIDTH_PX/2) {
 				// 1aa_b. If too close to right-hand-side, change direction to left-hand-side.
 
-
+				// accelerate left
+				nonjump_movement_force = { -forceMagnitude * 100, 0 };
 			}
 			else {
 				// 1aa_c. Keep moving in current direction.
-
+				if (enemy_velocity.x == 0) {
+					nonjump_movement_force = { forceMagnitude * 10000, 0 };
+				}
 			}
 
 		}
@@ -100,6 +110,7 @@ void AISystem::step(float elapsed_ms)
 			// 1_b. NON-OBSTACLE enemies:
 			if (enemyComponent.freeze_time > 0) {
 				// 1b_a. If freeze-timer is above 0, decrement timer by elapsed time and exit.
+				enemyComponent.freeze_time -= elapsed_ms;
 
 			}
 			else {

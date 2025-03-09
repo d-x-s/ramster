@@ -391,13 +391,10 @@ void PhysicsSystem::step(float elapsed_ms)
               // the player's speed as possible. 
               // Since the player is bouncy and our enemies are not very fast (at least not fast enough to make the player surpass the required speed to "win"),
               // we can figure out if the player is fast enough by just checking on how much speed they retain after the collision.
-              // For additional realism, we could also alter the required-speed-to-win based on enemy mass, where higher mass = higher speed. 
-              // This would be a mechanic to be implemented after the addition of more enemy types.
-              // Anyhow, the REQUIRED_SPEED_TO_WIN is the number that determines what collisions the player comes out on top of, and will need some fine-tuning.
-              float REQUIRED_SPEED_TO_WIN = 3.0f; // this'll need to be fine-tuned.
+              // NOTE: this depends on MIN_COLLISION_SPEED, which will need some fine-tuning to find a good speed at which we can hit the enemy.
               bool player_wins_collision = false;
 
-              if (playerSpeed > REQUIRED_SPEED_TO_WIN) {
+              if (playerSpeed > MIN_COLLISION_SPEED) {
                   player_wins_collision = true;
               }
 

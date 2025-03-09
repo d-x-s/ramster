@@ -148,6 +148,9 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	// Set all states to default
 	restart_game();
 	createBall(worldId);
+
+	// Create obstacles here so they don't keep spawning.
+	// Like this: createEnemy(worldId, vec2(750, 200 + 50), OBSTACLE, vec2(800, 1500));
 }
 
 // Update our game world
@@ -207,8 +210,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 			// create enemy at random position
 			//setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
-			//createEnemy(worldId, vec2(pos_x, pos_y + 50), COMMON, vec2(-1, -1)); 
-			createEnemy(worldId, vec2(pos_x, pos_y + 50), OBSTACLE, vec2(-1, -1));
+			createEnemy(worldId, vec2(pos_x, pos_y + 50), COMMON, vec2(-1, -1)); 
 			//createEnemy(worldId, vec2(pos_x, pos_y + 50), SWARM, vec2(-1, -1));
 		}
 
@@ -395,21 +397,12 @@ void WorldSystem::handle_collisions() {
 		// Player - Enemy Collision
 		if ((registry.enemies.has(entity) && registry.players.has(other)) ||
 			(registry.enemies.has(other) && registry.players.has(entity))) {
+
 			if (registry.enemies.has(entity)) {
 
-				// TODO: support unkillable obstacle enemy types
-
 				// Figure out the position, velocity characteristics of player and enemy
-				// Note: this computation would've been shifted over to box2D collision detection and is now no longer needed...?
-				/*
-				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
-				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
-				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
-				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
-				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
-				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
-				*/
 				Entity enemyEntity = entity;
+				Enemy& enemyComponent = registry.enemies.get(enemyEntity);
 				Entity playerEntity = other;
 				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
 				b2BodyId enemyBodyId = enemyPhys.bodyId;
@@ -418,33 +411,26 @@ void WorldSystem::handle_collisions() {
 
 				// For now we'll base everything entirely on speed.
 				// Handling based on whether player comes out on top in this collision
-				if (collision.player_wins_collision) {
+				if (collision.player_wins_collision && enemyComponent.destructable) {
 					b2DestroyBody(enemyBodyId);
 					registry.remove_all_components_of(enemyEntity);
 					Mix_PlayChannel(-1, chicken_dead_sound, 0);
 					points++;
 				}
-				// Otherwise player takes dmg (just loses pts for now) and we remove enemy.
-				else {
-					//b2DestroyBody(enemyBodyId);
-					//registry.remove_all_components_of(enemyEntity);
+				// Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily. 
+				// If the enemy is still frozen, player will not be punished.
+				else if (enemyComponent.freeze_time <= 0) {
+					enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
 					Mix_PlayChannel(-1, chicken_eat_sound, 0);
-					points -= 3; //bigger penalty
+					points -= 3; // small penalty for now
 				}
 
 			}
 			else { 
 				
 				// Figure out the position, velocity characteristics of player and enemy
-				/* Legacy code
-				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
-				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
-				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
-				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
-				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
-				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
-				*/
 				Entity enemyEntity = other;
+				Enemy& enemyComponent = registry.enemies.get(enemyEntity);
 				Entity playerEntity = entity;
 				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
 				b2BodyId enemyBodyId = enemyPhys.bodyId;
@@ -452,21 +438,31 @@ void WorldSystem::handle_collisions() {
 				b2BodyId playerBodyId = playerPhys.bodyId;
 
 				// Handling based on whether player comes out on top in this collision
-				if (collision.player_wins_collision) {
+				if (collision.player_wins_collision && enemyComponent.destructable) {
 					b2DestroyBody(enemyBodyId);
 					registry.remove_all_components_of(other);
 					Mix_PlayChannel(-1, chicken_dead_sound, 0);
 					points++;
 				}
-				// Otherwise player takes dmg (just loses pts for now) and we remove enemy.
-				else {
-					//b2DestroyBody(enemyBodyId);
-					//registry.remove_all_components_of(other);
+				// Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily. 
+				// If the enemy is still frozen, player will not be punished.
+				else if (enemyComponent.freeze_time <= 0) {
+					enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
 					Mix_PlayChannel(-1, chicken_eat_sound, 0);
-					points -= 3; //bigger penalty
+					points -= 3; // small penalty for now
 				}
 
 			}
+
+			// LEGACY CODE (Pre-Box2D Collision Handling)
+			/*
+			b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
+			b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
+			float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
+			b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
+			b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
+			float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
+			*/
 		}
 	}
 

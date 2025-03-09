@@ -158,8 +158,18 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Updating window title with points (and remaining towers)
 	std::stringstream title_ss;
-	title_ss << "Ramster | Points: " << points;
+	title_ss << "Ramster | Points: " << points << " | FPS: " << fps;
 	glfwSetWindowTitle(window, title_ss.str().c_str());
+
+	// FPS counter
+	if (fps_update_cooldown_ms <= 0) {
+		fps = 1 / (elapsed_ms_since_last_update / 1000);
+		fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
+	}
+	else {
+		fps_update_cooldown_ms -= elapsed_ms_since_last_update;
+	}
+	
 
 	// Remove debug info from the last step
 	while (registry.debugComponents.entities.size() > 0)

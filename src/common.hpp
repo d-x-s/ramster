@@ -66,6 +66,9 @@ const int PROJECTILE_DAMAGE = 10;
 const float ENEMY_FREEZE_TIME_MS = 3000;
 const float MIN_COLLISION_SPEED = 2.0;
 
+// Amount of time before refreshing FPS counter. This will eliminate window flickering from too many updates per second.
+const int FPS_UPDATE_COOLDOWN_MS = 250;
+
 // enemy types that we will be supporting.
 const enum ENEMY_TYPES {
     SWARM = 1,

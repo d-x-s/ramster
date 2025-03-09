@@ -115,6 +115,11 @@ private:
 	// Number of invaders stopped by the towers, displayed in the window title
 	int points;
 
+	// Frames per second
+	int fps = 0; // 0 is default val
+	// Do an FPS cooldown to prevent flickering
+	float fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
+
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
 

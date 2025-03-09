@@ -62,6 +62,20 @@ const int INVADER_HEALTH_BLUE = 120;
 const int PROJECTILE_VELOCITY = -100;
 const int PROJECTILE_DAMAGE = 10;
 
+// Amount of time to stop an enemy after colliding (if player loses collision)
+const float ENEMY_FREEZE_TIME_MS = 3000;
+const float MIN_COLLISION_SPEED = 2.0;
+
+// Amount of time before refreshing FPS counter. This will eliminate window flickering from too many updates per second.
+const int FPS_UPDATE_COOLDOWN_MS = 250;
+
+// enemy types that we will be supporting.
+const enum ENEMY_TYPES {
+    SWARM = 1,
+    COMMON = SWARM + 1,
+    OBSTACLE = COMMON + 1
+};
+
 // KEY STATES
 const std::vector<int> PLAYER_CONTROL_KEYS = {
     GLFW_KEY_W,
@@ -98,10 +112,13 @@ const float BALL_ANGULAR_DAMPING = 0.75f; // 1/s (inverse seconds)
 const float ENEMY_GROUNDED_MOVEMENT_FORCE = 12500.0f; // kg·cm/s² (dynes)
 const float ENEMY_JUMP_IMPULSE = 2000.0f; // kg·cm/s (dynes·s)
 
-const float ENEMY_RADIUS = 20.0;
-const float ENEMY_DENSITY = 0.01f; // kg/cm² (kilograms per square centimeter); lower number = less affected by gravity 
-const float ENEMY_FRICTION = 0.1f; //enemy friction. for now we're setting it low so it's less affected by gravity & spins less
-const float ENEMY_RESTITUTION = 0.5f; //enemy bounciness... increase this number to make things more chaotic.
+const float ENEMY_RADIUS = 25.0;
+const float ENEMY_DENSITY = 0.005f; // kg/cm² (kilograms per square centimeter); lower number = less speed lost on collision, less enemy momentum.
+const float ENEMY_FRICTION = 0.1f; //enemy friction. for now we're setting it low so it's less affected by contact with floor slowing it down.
+const float ENEMY_RESTITUTION = 0.25f; //enemy bounciness... increase this number to make things more chaotic.
+
+// SWARM ENEMY PROXIMITY - MAX DELTA X OR DELTA Y FROM SWARM BEFORE REJOINING
+const float SWARM_ENEMY_PROXIMITY = 1.5 * GRID_CELL_WIDTH_PX;
 
 // TERRAIN PHYSICS
 const float TERRAIN_DEFAULT_FRICTION = 0.2f;

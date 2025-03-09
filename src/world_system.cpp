@@ -148,6 +148,10 @@ void WorldSystem::init(RenderSystem* renderer_arg) {
 	// Set all states to default
 	restart_game();
 	createBall(worldId);
+
+	// TODO DAVIS - Create obstacles here so they don't keep spawning.
+	// Like this:
+	// handleEnemySpawning(true, OBSTACLE, 1, vec2(750, 200 + 50), vec2(800, 1500));
 }
 
 // Update our game world
@@ -155,8 +159,18 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 	// Updating window title with points (and remaining towers)
 	std::stringstream title_ss;
-	title_ss << "Ramster | Points: " << points;
+	title_ss << "Ramster | Points: " << points << " | FPS: " << fps;
 	glfwSetWindowTitle(window, title_ss.str().c_str());
+
+	// FPS counter
+	if (fps_update_cooldown_ms <= 0) {
+		fps = 1 / (elapsed_ms_since_last_update / 1000);
+		fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
+	}
+	else {
+		fps_update_cooldown_ms -= elapsed_ms_since_last_update;
+	}
+	
 
 	// Remove debug info from the last step
 	while (registry.debugComponents.entities.size() > 0)
@@ -206,7 +220,9 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			float pos_y = max_y;  // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
 
 			// create enemy at random position
-			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+			//setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+			handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+			handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
 		}
 
 		if (grappleActive) {
@@ -392,36 +408,32 @@ void WorldSystem::handle_collisions() {
 		// Player - Enemy Collision
 		if ((registry.enemies.has(entity) && registry.players.has(other)) ||
 			(registry.enemies.has(other) && registry.players.has(entity))) {
+
 			if (registry.enemies.has(entity)) {
 
 				// Figure out the position, velocity characteristics of player and enemy
 				Entity enemyEntity = entity;
+				Enemy& enemyComponent = registry.enemies.get(enemyEntity);
 				Entity playerEntity = other;
 				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
 				b2BodyId enemyBodyId = enemyPhys.bodyId;
-				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
-				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
-				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
 				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
 				b2BodyId playerBodyId = playerPhys.bodyId;
-				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
-				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
-				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
 
 				// For now we'll base everything entirely on speed.
-				// If player speed > enemy speed, then enemy gets killed.
-				if (playerSpeed > enemySpeed) {
+				// Handling based on whether player comes out on top in this collision
+				if (collision.player_wins_collision && enemyComponent.destructable) {
 					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(entity);
+					registry.remove_all_components_of(enemyEntity);
 					Mix_PlayChannel(-1, chicken_dead_sound, 0);
 					points++;
 				}
-				// Otherwise player takes dmg (just loses pts for now) and we remove enemy.
-				else {
-					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(entity);
+				// Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily. 
+				// If the enemy is still frozen, player will not be punished.
+				else if (enemyComponent.freeze_time <= 0) {
+					enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
 					Mix_PlayChannel(-1, chicken_eat_sound, 0);
-					points -= 5; //bigger penalty
+					points -= 3; // small penalty for now
 				}
 
 			}
@@ -429,35 +441,39 @@ void WorldSystem::handle_collisions() {
 				
 				// Figure out the position, velocity characteristics of player and enemy
 				Entity enemyEntity = other;
+				Enemy& enemyComponent = registry.enemies.get(enemyEntity);
 				Entity playerEntity = entity;
 				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
 				b2BodyId enemyBodyId = enemyPhys.bodyId;
-				b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
-				b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
-				float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
 				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
 				b2BodyId playerBodyId = playerPhys.bodyId;
-				b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
-				b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
-				float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
 
-				// For now we'll base everything entirely on speed.
-				// If player speed > enemy speed, then enemy gets killed.
-				if (playerSpeed > enemySpeed) {
+				// Handling based on whether player comes out on top in this collision
+				if (collision.player_wins_collision && enemyComponent.destructable) {
 					b2DestroyBody(enemyBodyId);
 					registry.remove_all_components_of(other);
 					Mix_PlayChannel(-1, chicken_dead_sound, 0);
 					points++;
 				}
-				// Otherwise player takes dmg (for now it just applies vignette effect)
-				else {
-					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(other);
+				// Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily. 
+				// If the enemy is still frozen, player will not be punished.
+				else if (enemyComponent.freeze_time <= 0) {
+					enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
 					Mix_PlayChannel(-1, chicken_eat_sound, 0);
-					points-=5;
+					points -= 3; // small penalty for now
 				}
 
 			}
+
+			// LEGACY CODE (Pre-Box2D Collision Handling)
+			/*
+			b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
+			b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
+			float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
+			b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
+			b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
+			float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
+			*/
 		}
 	}
 
@@ -692,4 +708,15 @@ void WorldSystem::updateGrappleLines() {
     }
 }
 
+void WorldSystem::handleEnemySpawning(bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 position, vec2 movement_area) {
+	
+	// only create if predicate is true
+	if (predicate) {
+		// Create specified number of enemies by iterating
+		for (int i = 0; i < quantity; i++) {
+			// enemy created here
+			createEnemy(worldId, position, enemy_type, movement_area);
+		}
+	}
+}
 

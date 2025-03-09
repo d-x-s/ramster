@@ -13,7 +13,14 @@ struct Player
 // Enemy component
 struct Enemy
 {
-
+	// This'll be the type of enemy
+	ENEMY_TYPES enemyType;
+	// Because we are making obstacle types, we'll also have a "destructability" trait
+	bool destructable;
+	// We apply the freeze time to destructable enemies upon collision so they stop pursuing the player momentarily after a collision.
+	float freeze_time;
+	// Movement area of the enemy (min x, max x). Set to (-1, -1) for enemy to move anywhere on the map.
+	vec2 movement_area;
 };
 
 // Tower
@@ -58,6 +65,8 @@ struct Collision
 	// Note, the first object is stored in the ECS container.entities
 	Entity other; // the second object involved in the collision
 	Collision(Entity& other) { this->other = other; };
+	// Determine if player comes out on top in this collision
+	bool player_wins_collision;
 };
 
 // Data structure for toggling debug mode

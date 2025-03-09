@@ -29,8 +29,9 @@ Entity createBall(b2WorldId worldId)
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
 	circle.radius = BALL_RADIUS;
-	b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	b2ShapeId shapeId = b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	ball.bodyId = bodyId;
+	ball.shapeId = shapeId;
 
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 
@@ -91,9 +92,10 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
 	circle.radius = ENEMY_RADIUS;
-	b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	b2ShapeId shapeId = b2CreateCircleShape(bodyId, &shapeDef, &circle);
 
 	enemyBody.bodyId = bodyId;
+	enemyBody.shapeId = shapeId;
 
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 
@@ -175,7 +177,7 @@ Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBod
     djd.bodyIdB = grappleBodyId;
     djd.length = distance;
     djd.collideConnected = false;
-    djd.maxLength = 280.0f;
+    djd.maxLength = 450.0f;
 	djd.minLength = 100.0f;
 
     b2JointId jointId = b2CreateDistanceJoint(worldId, &djd);

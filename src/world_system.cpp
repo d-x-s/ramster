@@ -165,6 +165,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (game_active) {
 		update_isGrounded();
 		handle_movement();
+		checkGrappleGrounded();
 
 		// Removing out of screen entities
 		auto& motions_registry = registry.motions;
@@ -206,7 +207,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			float pos_y = max_y;  // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
 
 			// create enemy at random position
-			createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+			//createEnemy(worldId, vec2(pos_x, pos_y + 50)); //setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
 		}
 
 	}
@@ -719,15 +720,42 @@ void WorldSystem:: attachGrapple() {
     	float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
                        			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
 
-		if (distance <= 280.0f) {
+		if (distance <= 450.0f) {
 			createGrapple(worldId, ballBodyId, grappleBodyId, distance);
 			grappleActive = true;
 		}
 }
 
-// void WorldSystem:: checkGrappleGrounded() {
-// 	if (grappleActive) {
-// 		while (isGrou)
-// 	}
-// }
+void WorldSystem:: checkGrappleGrounded() {
+	if (grappleActive) {
+		if (!registry.players.entities.empty()) {
+			Entity playerEntity = registry.players.entities[0];
+
+			if (registry.physicsBodies.has(playerEntity)) {
+				PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
+				b2BodyId bodyId = phys.bodyId;
+
+				// check if the player is grounded
+				bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
+				if (isGrounded) {
+					// if the player is grounded shorten the grapple rope
+					for (Entity grappleEntity : registry.grapples.entities) {
+						Grapple& grapple = registry.grapples.get(grappleEntity);
+						float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
+						// b2Shape_SetFriction(phys.shapeId, BALL_FRICTION * 2);
+						// b2Shape_SetRestitution(phys.shapeId, BALL_RESTITUTION / 2);
+						// b2DistanceJoint_SetSpringHertz(grapple.jointId, 1.0f);
+						// b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, 0.7f);
+						if (curLen >= 50.0f) {
+							b2DistanceJoint_SetLength(grapple.jointId , curLen - 5.0f);
+						}
+					}
+				} else {
+					// b2Shape_SetFriction(phys.shapeId, BALL_FRICTION);
+					// b2Shape_SetRestitution(phys.shapeId, BALL_RESTITUTION);
+				}
+			}
+		}
+	}
+}
 

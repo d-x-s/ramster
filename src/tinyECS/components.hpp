@@ -215,6 +215,7 @@ struct Explosion { };
 
 struct PhysicsBody {
 	b2BodyId bodyId;
+	b2ShapeId shapeId;
 };
 
 struct GrapplePoint {

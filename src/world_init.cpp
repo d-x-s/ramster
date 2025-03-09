@@ -74,7 +74,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 		enemySize *= 2.5;
 	}
 	else if(enemy_type == SWARM) {
-		enemySize *= 0.5;
+		enemySize *= 0.75;
 	}
 	// Bounciness of enemy. Maps onto box2D restitution. Common has the standard ENEMY_RESTITUTION.
 	float enemyBounciness = ENEMY_RESTITUTION;
@@ -82,7 +82,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 		enemyBounciness = 0;
 	}
 	else if (enemy_type == SWARM) {
-		enemyBounciness *= 2;
+		enemyBounciness = 0.75;
 	}
 	// Weight of enemy, based on density. Common has default weight ENEMY_DENSITY
 	float enemyWeight = ENEMY_DENSITY;
@@ -90,7 +90,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 		enemyWeight = 0.5;
 	}
 	else if (enemy_type == SWARM) {
-		enemyWeight = 0.001;
+		enemyWeight = 0.0005;
 	}
 	// Friction of enemy, which slows it down as it travels along a surface. Common has default friction ENEMY_FRICTION
 	float enemyFriction = ENEMY_FRICTION;

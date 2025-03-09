@@ -220,8 +220,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 			// create enemy at random position
 			//setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
-			createEnemy(worldId, vec2(pos_x, pos_y + 50), COMMON, vec2(-1, -1)); 
-			//createEnemy(worldId, vec2(pos_x, pos_y + 50), SWARM, vec2(-1, -1));
+			//createEnemy(worldId, vec2(pos_x, pos_y + 50), COMMON, vec2(-1, -1)); 
+			createEnemy(worldId, vec2(pos_x, pos_y + 50), SWARM, vec2(-1, -1));
+			createEnemy(worldId, vec2(pos_x + 1, pos_y + 50), SWARM, vec2(-1, -1));
+			createEnemy(worldId, vec2(pos_x + 2, pos_y + 50), SWARM, vec2(-1, -1));
+			createEnemy(worldId, vec2(pos_x + 3, pos_y + 50), SWARM, vec2(-1, -1));
+			createEnemy(worldId, vec2(pos_x + 4, pos_y + 50), SWARM, vec2(-1, -1));
 		}
 
 		if (grappleActive) {

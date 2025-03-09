@@ -395,8 +395,8 @@ void WorldSystem::restart_game()
   }
 
   // Room dimensions
-  const float roomWidth = WINDOW_WIDTH_PX * 5.0;
-  const float roomHeight = WINDOW_HEIGHT_PX * 3.0;
+  const float roomWidth = WORLD_WIDTH_PX;
+  const float roomHeight = WORLD_HEIGHT_PX;
   const float wallThickness = 0.5f; // half-width for SetAsBox
 
   // Create room boundaries

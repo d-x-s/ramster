@@ -299,22 +299,22 @@ void PhysicsSystem::step(float elapsed_ms)
 
   // Hard coded for now, will change to be dynamic later
   float LEFT_BOUNDARY = WINDOW_WIDTH_PX / 2.f;
-  float RIGHT_BOUNDARY = WINDOW_WIDTH_PX * 2.5f;
-  float TOP_BOUNDARY = WINDOW_HEIGHT_PX / 2.f;
+  float RIGHT_BOUNDARY = WORLD_WIDTH_PX - (WINDOW_WIDTH_PX / 2.f);
+  float TOP_BOUNDARY = WORLD_HEIGHT_PX - (WINDOW_HEIGHT_PX / 2.f);
 
   // Unlock the camera from the player if they approach the edge of world
   // This happens last because it has the highest priority
   if (camX < LEFT_BOUNDARY)
   {
-      camX = WINDOW_WIDTH_PX / 2.f;
+      camX = LEFT_BOUNDARY;
   }
   if (camX > RIGHT_BOUNDARY)
   {
-      camX = WINDOW_WIDTH_PX * 2.5f;
+      camX = RIGHT_BOUNDARY;
   }
   if (camY > TOP_BOUNDARY)
   {
-      camY = WINDOW_HEIGHT_PX / 2.f;
+      camY = TOP_BOUNDARY;
   }
 
   // If the camera is post-grapple, we need to dynamically move it back 

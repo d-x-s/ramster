@@ -40,6 +40,9 @@ inline std::string mesh_path(const std::string& name) {return data_path() + "/me
 const int WINDOW_WIDTH_PX = 1024;
 const int WINDOW_HEIGHT_PX = 640;
 
+const int WORLD_WIDTH_PX = WINDOW_WIDTH_PX * 5.0;
+const int WORLD_HEIGHT_PX = WINDOW_HEIGHT_PX * 3.0;
+
 const int GRID_CELL_WIDTH_PX = 128;
 const int GRID_CELL_HEIGHT_PX = 128;
 const int GRID_LINE_WIDTH_PX = 1;

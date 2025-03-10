@@ -31,8 +31,7 @@ Entity createBall(b2WorldId worldId)
 	circle.radius = BALL_RADIUS;
 	b2ShapeId shapeId = b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	ball.bodyId = bodyId;
-	ball.shapeId = shapeId;
-
+	
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 
 	// Add motion & render request for ECS synchronization
@@ -60,42 +59,83 @@ Entity createBall(b2WorldId worldId)
 }
 
 // This will create an enemy entity and place it on a random position in the map.
-Entity createEnemy(b2WorldId worldID, vec2 pos) {
+// INPUTS:
+// - pos (x, y): position to spawn enemy
+// - ENEMY_TYPES: type of enemy to spawn.
+// - MOVEMENT AREA (min_x, max_x): activity radius of the enemy. set to (-1, -1) if you want enemy to move anywhere on the map.
+Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_area) {
 
+	// Determine enemy type-based characteristics here.
+	// If the enemy is an obstacle then they will not be destructable. Can expand w/ more indestructable enemies.
+	bool destructability = enemy_type == OBSTACLE ? false : true; 
+	// Size of enemy. ENEMY_RADIUS is the standard size, and we'll change it for non-common enemies.
+	float enemySize = ENEMY_RADIUS;
+	if (enemy_type == OBSTACLE) {
+		enemySize *= 2.5;
+	}
+	else if(enemy_type == SWARM) {
+		enemySize *= 0.75;
+	}
+	// Bounciness of enemy. Maps onto box2D restitution. Common has the standard ENEMY_RESTITUTION.
+	float enemyBounciness = ENEMY_RESTITUTION;
+	if (enemy_type == OBSTACLE) {
+		enemyBounciness = 0;
+	}
+	else if (enemy_type == SWARM) {
+		enemyBounciness = 0.75;
+	}
+	// Weight of enemy, based on density. Common has default weight ENEMY_DENSITY
+	float enemyWeight = ENEMY_DENSITY;
+	if (enemy_type == OBSTACLE) {
+		enemyWeight = 0.5;
+	}
+	else if (enemy_type == SWARM) {
+		enemyWeight = 0.0005;
+	}
+	// Friction of enemy, which slows it down as it travels along a surface. Common has default friction ENEMY_FRICTION
+	float enemyFriction = ENEMY_FRICTION;
+	if (enemy_type == OBSTACLE) {
+		enemyFriction = 0;
+	}
+	
+	// Enemy entity
 	Entity entity = Entity();
 
-	// Add physics and enemy components
+	// Add physics to enemy body
 	PhysicsBody& enemyBody = registry.physicsBodies.emplace(entity);
 	EnemyPhysics& enemy_physics = registry.enemyPhysics.emplace(entity);
 	enemy_physics.isGrounded = false;
 
+	// Add enemy component
 	auto& enemy_registry = registry.enemies;
 	Enemy& enemy = registry.enemies.emplace(entity);
+	enemy.enemyType = enemy_type;
+	enemy.movement_area = movement_area;
+	enemy.destructable = destructability;
 
-	// Define a dynamic body
+	// Define a box2D body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
 	bodyDef.position = b2Vec2{ pos[0], pos[1]};
-	// commenting this out should disable rolling...?  bodyDef.fixedRotation = false; // Allow rolling
-
+	bodyDef.fixedRotation = true; // Fixed Rotation: true = no rolling, false = rolling.
 	// Use `b2CreateBody()` instead of `world.CreateBody()`
 	b2BodyId bodyId = b2CreateBody(worldID, &bodyDef);
 
 	// Define shape properties using Box2D v3 functions
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
-	shapeDef.density = ENEMY_DENSITY;
-	shapeDef.friction = ENEMY_FRICTION;
-	shapeDef.restitution = ENEMY_RESTITUTION; 
+	shapeDef.density = enemyWeight;
+	shapeDef.friction = enemyFriction;
+	shapeDef.restitution = enemyBounciness; 
 
+	
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
 	// We'll update the enemy hitbox later.
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = ENEMY_RADIUS;
-	b2ShapeId shapeId = b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	circle.radius = enemySize; // Simple way to change size of enemies based on their type. Adjust int multiplier in ENEMY_TYPES to change this.
+	b2CreateCircleShape(bodyId, &shapeDef, &circle); // this is the hitbox
 
 	enemyBody.bodyId = bodyId;
-	enemyBody.shapeId = shapeId;
 
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 
@@ -111,6 +151,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 	registry.renderRequests.insert(
 		entity,
 		{
+			// TODO: Apply different textures to different enemy types.
 			frames[0],                    // base apperance is just the first frame
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE,
@@ -122,7 +163,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos) {
 			0                             // current frame index
 		}
 	);
-	std::cout << "Inserted render request for enemy.\n";
+	// DEBUG std::cout << "Inserted render request for enemy.\n";
 
 	return entity;
 }

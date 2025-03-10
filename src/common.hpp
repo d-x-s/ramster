@@ -132,6 +132,17 @@ const float SWARM_ENEMY_PROXIMITY = 1.5 * GRID_CELL_WIDTH_PX;
 const float TERRAIN_DEFAULT_FRICTION = 0.2f;
 const float TERRAIN_DEFAULT_RESTITUTION = 0.5f;
 
+//GRAPPLE PHYSICS
+const float GRAPPLE_DETRACT_GROUNDED =  20.0f;
+const float GRAPPLE_DETRACT_W = 0.5;
+const float GRAPPLE_HERTZ_GROUNDED = 1.0f;
+const float GRAPPLE_DAMPING_GROUNDED = 0.5f;
+const float GRAPPLE_MAX_LENGTH = 450.0f;
+const float GRAPPLE_MIN_LENGTH = 100.0f;
+
+// change this to change the clickable area to attach to a grapple point
+const float GRAPPLE_ATTACH_ZONE = 50.0f;
+
 // These are hard coded to the dimensions of the entity's texture
 // invaders are 64x64 px, but cells are 60x60
 const float INVADER_BB_WIDTH = (float)GRID_CELL_WIDTH_PX;

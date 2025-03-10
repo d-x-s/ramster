@@ -113,8 +113,9 @@ private:
 	// Note: maps don't support ivec2 so we'll need to convert them into vector<int> with x at [0] and y at [1]
 	std::map<std::vector<int>, bool> hasPlayerReachedTile = {
 		// ADD POINTS TO CHECK HERE. 
-		{{ 5, 2 }, false},
-		{{0, 15}, false}
+		{{ 9, 6 }, false},
+		{{0, 17}, false},
+		{{13, 6}, false }
 	};;
 
 	int next_enemy_spawn;

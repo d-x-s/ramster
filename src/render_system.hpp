@@ -80,6 +80,12 @@ class RenderSystem
     textures_path("tiles/tesla-trap-1-left.png"),
     textures_path("tiles/tesla-trap-1-right.png"),
     textures_path("tiles/tesla-trap-1-top.png"),
+
+    // tutorial
+    textures_path("tutorial/space.png"),
+    textures_path("tutorial/move.png"),
+    textures_path("tutorial/grapple.png"),
+    textures_path("tutorial/destroy.png"),
   };
 
   std::array<GLuint, effect_count> effects;

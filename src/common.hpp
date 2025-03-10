@@ -37,8 +37,8 @@ inline std::string mesh_path(const std::string& name) {return data_path() + "/me
 //
 // game constants
 //
-const int WINDOW_WIDTH_PX = 1024;
-const int WINDOW_HEIGHT_PX = 640;
+const int WINDOW_WIDTH_PX = 1920;
+const int WINDOW_HEIGHT_PX = 1080;
 
 const int WORLD_WIDTH_PX = WINDOW_WIDTH_PX * 5.0;
 const int WORLD_HEIGHT_PX = WINDOW_HEIGHT_PX * 3.0;
@@ -94,7 +94,7 @@ const float GRAVITY = -980; // cm/s² (centimeters per second squared)
 // PLAYER 2DBODY
 // PLAYER PHYSICS
 const float BALL_INITIAL_POSITION_X = 100.0;
-const float BALL_INITIAL_POSITION_Y = 500.0;
+const float BALL_INITIAL_POSITION_Y = 800.0;
 
 // Player input related physics
 const float BALL_GROUNDED_MOVEMENT_FORCE = 25000.0f; // kg·cm/s² (dynes)

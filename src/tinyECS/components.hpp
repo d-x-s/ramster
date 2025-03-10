@@ -204,8 +204,14 @@ enum class TEXTURE_ASSET_ID
     TESLA_TRAP_1_LEFT = TESLA_TRAP_1_BOTTOM + 1,
     TESLA_TRAP_1_RIGHT = TESLA_TRAP_1_LEFT + 1,
     TESLA_TRAP_1_TOP = TESLA_TRAP_1_RIGHT + 1,
+    
+    // tutorial
+    TUTORIAL_SPACEBAR = TESLA_TRAP_1_TOP + 1,
+    TUTORIAL_MOVE = TUTORIAL_SPACEBAR + 1,
+    TUTORIAL_GRAPPLE = TUTORIAL_MOVE + 1,
+    TUTORIAL_DESTROY = TUTORIAL_GRAPPLE + 1,
 
-    TEXTURE_COUNT = TESLA_TRAP_1_TOP + 1,
+    TEXTURE_COUNT = TUTORIAL_DESTROY + 1,
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
@@ -300,4 +306,9 @@ struct Line
 struct EnemyPhysics
 {
   bool isGrounded;
+};
+
+struct TutorialTile
+{
+
 };

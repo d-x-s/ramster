@@ -379,6 +379,8 @@ void WorldSystem::restart_game() {
 
 	createGrapplePoint(worldId, vec2(900.0f, 300.0f));
 
+	createGrapplePoint(worldId, vec2(300.0f, 300.0f));
+
 	// turn off trigger for fadeout shader
 	registry.screenStates.components[0].fadeout = 0.0f;
 
@@ -806,7 +808,7 @@ void WorldSystem::attachGrapple() {
                            (grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
 
     // Attach the grapple if within range
-    if (distance <= 450.0f) {
+    if (distance <= GRAPPLE_RANGE) {
         createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
         grappleActive = true;
     }
@@ -833,10 +835,9 @@ void WorldSystem:: checkGrappleGrounded() {
 					b2DistanceJoint_SetSpringHertz(grapple.jointId, 1.0f);
 					b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, 0.5f);
 					if (curLen >= 50.0f) {
-						b2DistanceJoint_SetLength(grapple.jointId , curLen - 5.0f);
+						b2DistanceJoint_SetLength(grapple.jointId , curLen - 20.0f);
 					}
 				} else {
-
 					b2DistanceJoint_EnableSpring(grapple.jointId, false);
 				}
 			}

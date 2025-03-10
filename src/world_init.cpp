@@ -31,8 +31,7 @@ Entity createBall(b2WorldId worldId)
 	circle.radius = BALL_RADIUS;
 	b2ShapeId shapeId = b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	ball.bodyId = bodyId;
-	ball.shapeId = shapeId;
-
+	
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 
 	// Add motion & render request for ECS synchronization
@@ -133,11 +132,10 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	// We'll update the enemy hitbox later.
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = ENEMY_RADIUS;
-	b2ShapeId shapeId = b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	circle.radius = enemySize; // Simple way to change size of enemies based on their type. Adjust int multiplier in ENEMY_TYPES to change this.
+	b2CreateCircleShape(bodyId, &shapeDef, &circle); // this is the hitbox
 
 	enemyBody.bodyId = bodyId;
-	enemyBody.shapeId = shapeId;
 
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 

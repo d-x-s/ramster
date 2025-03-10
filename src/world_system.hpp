@@ -149,6 +149,9 @@ private:
 	bool playerReachedTile(ivec2 grid_coordinate);
 
 	// update grapple hook line
+	vec2 screenToWorld(vec2 mouse_position);
+	void attachGrapple();
+	void checkGrappleGrounded();
 	void updateGrappleLines();
 
 };

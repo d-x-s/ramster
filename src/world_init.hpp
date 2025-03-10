@@ -28,6 +28,9 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos);
 // terrain lines
 Entity createLine(vec2 start_pos, vec2 end_pos);
 
+// grapple point
+Entity createGrapplePoint(b2WorldId worldId, vec2 position);
+
 // grapple hook
 Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBodyId, float distance);
 void removeGrapple();

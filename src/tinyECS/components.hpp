@@ -168,7 +168,8 @@ enum class TEXTURE_ASSET_ID
   GREY_INVADER_3 = GREY_INVADER_2 + 1,
   TOWER = GREY_INVADER_3 + 1,
   RAMSTER_1 = TOWER + 1,
-  GRAPPLE_POINT = RAMSTER_1 + 1,
+  RAMSTER_FLAMMING = RAMSTER_1 + 1,
+  GRAPPLE_POINT = RAMSTER_FLAMMING + 1,
   GRAPPLE_OUTLINE = GRAPPLE_POINT + 1,
   EXPLOSION_1 = GRAPPLE_OUTLINE + 1,
   EXPLOSION_2 = EXPLOSION_1 + 1,
@@ -274,8 +275,10 @@ struct PhysicsBody
   b2BodyId bodyId;
 };
 
-struct GrapplePoint
-{
+struct GrapplePoint {
+	vec2 position;
+	bool active;
+	b2BodyId bodyId;
 };
 
 struct Grapple

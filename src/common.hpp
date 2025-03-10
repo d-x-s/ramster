@@ -67,7 +67,6 @@ const int PROJECTILE_DAMAGE = 10;
 
 // Amount of time to stop an enemy after colliding (if player loses collision)
 const float ENEMY_FREEZE_TIME_MS = 3000;
-const float MIN_COLLISION_SPEED = 2.0;
 
 // Amount of time before refreshing FPS counter. This will eliminate window flickering from too many updates per second.
 const int FPS_UPDATE_COOLDOWN_MS = 250;
@@ -89,7 +88,7 @@ const std::vector<int> PLAYER_CONTROL_KEYS = {
 };
 
 // WORLD PHYSICS
-const float GRAVITY = -980; // cm/s² (centimeters per second squared)
+const float GRAVITY = -720; // cm/sÂ² (centimeters per second squared)
 
 // PLAYER 2DBODY
 // PLAYER PHYSICS
@@ -97,28 +96,37 @@ const float BALL_INITIAL_POSITION_X = 100.0;
 const float BALL_INITIAL_POSITION_Y = 800.0;
 
 // Player input related physics
-const float BALL_GROUNDED_MOVEMENT_FORCE = 25000.0f; // kg·cm/s² (dynes)
+const float BALL_GROUNDED_MOVEMENT_FORCE = 25000.0f; // kgï¿½cm/sï¿½ (dynes)
 const float BALL_AIR_STRAFE_FORCE_MULTIPLIER = 0.5f;
-const float BALL_JUMP_IMPULSE = 4000.0f; // kg·cm/s (dynes·s)
+const float BALL_JUMP_IMPULSE = 9000.0f; // kgÂ·cm/s (dynesÂ·s)
 
-// A ball of radius 32cm has area ~3200cm².
+// A ball of radius 32cm has area ~3200cmï¿½.
 // We should pick a value that yields a reasonable weight-to-area ratio like a density of 0.01.
 // Thus our 32cm ball would have a weight of only 32kg.
 const float BALL_RADIUS = 32.0;
-const float BALL_DENSTIY = 0.01f; // kg/cm² (kilograms per square centimeter)
+const float BALL_DENSTIY = 0.01f; // kg/cmï¿½ (kilograms per square centimeter)
 const float BALL_FRICTION = 0.1f;
-const float BALL_RESTITUTION = 0.1f;
-const float BALL_ANGULAR_DAMPING = 0.75f; // 1/s (inverse seconds)
+const float BALL_RESTITUTION = 0.05f;
+const float BALL_ANGULAR_DAMPING = 0.80f; // 1/s (inverse seconds)
+const float BALL_ISGROUNDED_NORMAL_THRESHOLD = 0.3f; // the y-coord of the normalized contact normal. 1.f = vertical wall, 0.f = flat ground
+const float BALL_NONGRAPPLE_SOFT_SPEED_CAP = 300.f;
+const float BALL_DRAG_COEFFICIENT = 40.0f;
+const float RAMSTER_FLAME_THRESHOLD = 1000.f;
+
+// grapple constants
+const float GRAPPLE_STRAFE_SPEED_MULTIPLIER = 10.0f;
+const float GRAPPLE_RANGE = 850.f;
 
 // ENEMY 2DBODY
 // Shares most of player 2D body but different density, friction, restitution, etc.
-const float ENEMY_GROUNDED_MOVEMENT_FORCE = 12500.0f; // kg·cm/s² (dynes)
-const float ENEMY_JUMP_IMPULSE = 2000.0f; // kg·cm/s (dynes·s)
+const float ENEMY_GROUNDED_MOVEMENT_FORCE = 12500.0f; // kgï¿½cm/sï¿½ (dynes)
+const float ENEMY_JUMP_IMPULSE = 2000.0f; // kgï¿½cm/s (dynesï¿½s)
 
 const float ENEMY_RADIUS = 25.0;
-const float ENEMY_DENSITY = 0.005f; // kg/cm² (kilograms per square centimeter); lower number = less speed lost on collision, less enemy momentum.
+const float ENEMY_DENSITY = 0.005f; // kg/cmï¿½ (kilograms per square centimeter); lower number = less speed lost on collision, less enemy momentum.
 const float ENEMY_FRICTION = 0.1f; //enemy friction. for now we're setting it low so it's less affected by contact with floor slowing it down.
 const float ENEMY_RESTITUTION = 0.25f; //enemy bounciness... increase this number to make things more chaotic.
+
 
 // SWARM ENEMY PROXIMITY - MAX DELTA X OR DELTA Y FROM SWARM BEFORE REJOINING
 const float SWARM_ENEMY_PROXIMITY = 1.5 * GRID_CELL_WIDTH_PX;
@@ -132,6 +140,17 @@ const float WALL_DEFAULT_THICKNESS = 4.0f;
 
 // GRAPPLE PHYSICS
 const float GRAPPLE_ATTACHABLE_RADIUS = 256.0f;
+
+//GRAPPLE PHYSICS
+const float GRAPPLE_RETRACT_RATE =  20.0f;
+const float GRAPPLE_DETRACT_W = 0.5;
+const float GRAPPLE_HERTZ_GROUNDED = 1.0f;
+const float GRAPPLE_DAMPING_GROUNDED = 0.5f;
+const float GRAPPLE_MAX_LENGTH = 450.0f;
+const float GRAPPLE_MIN_LENGTH = 100.0f;
+
+// change this to change the clickable area to attach to a grapple point
+const float GRAPPLE_ATTACH_ZONE = 50.0f;
 
 // These are hard coded to the dimensions of the entity's texture
 // invaders are 64x64 px, but cells are 60x60

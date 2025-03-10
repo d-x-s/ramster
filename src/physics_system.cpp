@@ -279,15 +279,23 @@ void PhysicsSystem::step(float elapsed_ms)
   }
 
   // Get grapple point position (static for now)
-  Entity grapplePointEntity = registry.grapplePoints.entities[0];
-  PhysicsBody& grappleBody = registry.physicsBodies.get(grapplePointEntity);
-  b2BodyId grappleBodyId = grappleBody.bodyId;
-  b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
-
   // Move camera towards grapple point
   if (grappleActive) {
       // Initialize variables
-      camX = lerp(prev_x, grapplePos.x, grapple_shift.x);
+  Entity activeGrapplePointEntity;
+  b2BodyId activeGrappleBodyId;
+
+  // Loop through all grapple points and find the active one
+  for (Entity gpEntity : registry.grapplePoints.entities) {
+    GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+		//std::cout << gp.position.x << " " << gp.position.y <<  " " << gp.active << std::endl;
+    if (gp.active) {
+        activeGrapplePointEntity = gpEntity;
+        activeGrappleBodyId = gp.bodyId;
+    }
+  }
+  b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
+    camX = lerp(prev_x, grapplePos.x, grapple_shift.x);
 	  camY = lerp(prev_y, grapplePos.y, grapple_shift.y);
 
 	  if (camX != grapplePos.x || camY != grapplePos.y) {
@@ -309,15 +317,15 @@ void PhysicsSystem::step(float elapsed_ms)
 
   // Unlock the camera from the player if they approach the edge of world
   // This happens last because it has the highest priority
-  if (camX < LEFT_BOUNDARY)
+  if (camX < LEFT_BOUNDARY && !grappleActive)
   {
       camX = LEFT_BOUNDARY;
   }
-  if (camX > RIGHT_BOUNDARY)
+  if (camX > RIGHT_BOUNDARY && !grappleActive)
   {
       camX = RIGHT_BOUNDARY;
   }
-  if (camY > TOP_BOUNDARY)
+  if (camY > TOP_BOUNDARY && !grappleActive)
   {
       camY = TOP_BOUNDARY;
   }
@@ -399,7 +407,7 @@ void PhysicsSystem::step(float elapsed_ms)
               // NOTE: this depends on MIN_COLLISION_SPEED, which will need some fine-tuning to find a good speed at which we can hit the enemy.
               bool player_wins_collision = false;
 
-              if (playerSpeed > MIN_COLLISION_SPEED) {
+              if (playerSpeed > RAMSTER_FLAME_THRESHOLD) {
                   player_wins_collision = true;
               }
 
@@ -419,4 +427,25 @@ void PhysicsSystem::step(float elapsed_ms)
     }
   }
 
+
+  if (grappleActive) {
+    updateGrappleLines();
+  }
+}
+
+void PhysicsSystem::updateGrappleLines() {
+    for (Entity grappleEntity : registry.grapples.entities) {
+        Grapple& grapple = registry.grapples.get(grappleEntity);
+
+        // Get current positions
+        b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
+		b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
+
+        // Update line entity positions
+        if (registry.lines.has(grapple.lineEntity)) {
+            Line& line = registry.lines.get(grapple.lineEntity);
+            line.start_pos = vec2(ballPos.x, ballPos.y);
+            line.end_pos = vec2(grapplePos.x, grapplePos.y);
+        }
+    }
 }

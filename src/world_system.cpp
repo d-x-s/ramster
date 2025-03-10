@@ -566,7 +566,7 @@ void WorldSystem::handle_movement() {
         		Grapple& grapple = registry.grapples.get(grappleEntity);
 				float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
 				if (curLen >= 50.0f) {
-					b2DistanceJoint_SetLength(grapple.jointId , curLen - 5.0f);
+					b2DistanceJoint_SetLength(grapple.jointId , curLen - GRAPPLE_DETRACT_W);
 				}
 			}
 		}
@@ -685,7 +685,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 
         // Find the grapple point closest to the click that is within the threshold.
         GrapplePoint* selectedGp = nullptr;
-        float bestDist = 50.0f;  // distance threshold
+        float bestDist = GRAPPLE_ATTACH_ZONE;  // distance threshold
 
         for (Entity gpEntity : registry.grapplePoints.entities) {
             GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
@@ -783,7 +783,7 @@ void WorldSystem::attachGrapple() {
                            (grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
 
     // Attach the grapple if within range
-    if (distance <= 450.0f) {
+    if (distance <= GRAPPLE_MAX_LENGTH) {
         createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
         grappleActive = true;
     }
@@ -807,13 +807,10 @@ void WorldSystem:: checkGrappleGrounded() {
 				float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
 				if (isGrounded) {
 					b2DistanceJoint_EnableSpring(grapple.jointId, true);
-					b2DistanceJoint_SetSpringHertz(grapple.jointId, 1.0f);
-					b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, 0.5f);
-					if (curLen >= 50.0f) {
-						b2DistanceJoint_SetLength(grapple.jointId , curLen - 5.0f);
-					}
+					b2DistanceJoint_SetSpringHertz(grapple.jointId, GRAPPLE_HERTZ_GROUNDED);
+					b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, GRAPPLE_DAMPING_GROUNDED);
+					b2DistanceJoint_SetLength(grapple.jointId , curLen - GRAPPLE_DETRACT_GROUNDED);
 				} else {
-
 					b2DistanceJoint_EnableSpring(grapple.jointId, false);
 				}
 			}

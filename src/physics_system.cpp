@@ -312,15 +312,15 @@ void PhysicsSystem::step(float elapsed_ms)
 
   // Unlock the camera from the player if they approach the edge of world
   // This happens last because it has the highest priority
-  if (camX < LEFT_BOUNDARY)
+  if (camX < LEFT_BOUNDARY && !grappleActive)
   {
       camX = WINDOW_WIDTH_PX / 2.f;
   }
-  if (camX > RIGHT_BOUNDARY)
+  if (camX > RIGHT_BOUNDARY && !grappleActive)
   {
       camX = WINDOW_WIDTH_PX * 2.5f;
   }
-  if (camY > TOP_BOUNDARY)
+  if (camY > TOP_BOUNDARY && !grappleActive)
   {
       camY = WINDOW_HEIGHT_PX / 2.f;
   }

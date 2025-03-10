@@ -399,8 +399,8 @@ void PhysicsSystem::step(float elapsed_ms)
               }
 
               // DEBUG
-              std::cout << "ENTITY 1 SPEED: " << entity1_speedFactor << std::endl;
-              std::cout << "ENTITY 2 SPEED: " << entity2_speedFactor << std::endl;
+              // std::cout << "ENTITY 1 SPEED: " << entity1_speedFactor << std::endl;
+              // std::cout << "ENTITY 2 SPEED: " << entity2_speedFactor << std::endl;
               std::cout << "PLAYER SPEED: " << playerSpeed << std::endl;
 
               // Create a collisions event

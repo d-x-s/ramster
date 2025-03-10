@@ -96,7 +96,7 @@ const float BALL_INITIAL_POSITION_Y = 500.0;
 // Player input related physics
 const float BALL_GROUNDED_MOVEMENT_FORCE = 25000.0f; // kg·cm/s² (dynes)
 const float BALL_AIR_STRAFE_FORCE_MULTIPLIER = 0.5f;
-const float BALL_JUMP_IMPULSE = 4000.0f; // kg·cm/s (dynes·s)
+const float BALL_JUMP_IMPULSE = 9000.0f; // kg·cm/s (dynes·s)
 
 // A ball of radius 32cm has area ~3200cm².
 // We should pick a value that yields a reasonable weight-to-area ratio like a density of 0.01.
@@ -105,7 +105,10 @@ const float BALL_RADIUS = 32.0;
 const float BALL_DENSTIY = 0.01f; // kg/cm² (kilograms per square centimeter)
 const float BALL_FRICTION = 0.1f;
 const float BALL_RESTITUTION = 0.3f;
-const float BALL_ANGULAR_DAMPING = 0.75f; // 1/s (inverse seconds)
+const float BALL_ANGULAR_DAMPING = 0.80f; // 1/s (inverse seconds)
+const float BALL_ISGROUNDED_NORMAL_THRESHOLD = 0.65f; // the y-coord of the normalized contact normal. 1.f = vertical wall, 0.f = flat ground
+const float BALL_NONGRAPPLE_SOFT_SPEED_CAP = 800.f;
+const float BALL_DRAG_COEFFICIENT = 75.0f;
 
 // ENEMY 2DBODY
 // Shares most of player 2D body but different density, friction, restitution, etc.

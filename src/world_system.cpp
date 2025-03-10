@@ -520,7 +520,7 @@ void WorldSystem::update_isGrounded() {
 			b2Manifold manifold = contact.manifold;
 			b2Vec2 normal = manifold.normal;
 
-      if (normal.y >= 0.6f)
+      if (normal.y >= BALL_ISGROUNDED_NORMAL_THRESHOLD)
       {
         isGroundedRef = true;
         delete[] contactData;
@@ -608,11 +608,27 @@ void WorldSystem::handle_movement() {
 					bodyPosition.y += 2.f;
 					b2Body_ApplyForce(bodyId, nonjump_movement_force * multiplier, bodyPosition, true);
 				}
+
+
+				// apply drag seperately from all other movement forces:
+				// drag is there to bring the ball's speed down to the soft cap to prevent them from moving at top speeds all the time.
+				b2Vec2 velocity = b2Body_GetLinearVelocity(bodyId);
+				float speed = std::sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+				std::cout << "Ball speed: " << speed << std::endl;
+				if (speed > BALL_NONGRAPPLE_SOFT_SPEED_CAP) {
+					std::cout << "Applying drag" << std::endl;
+
+					float overspeed = speed - BALL_NONGRAPPLE_SOFT_SPEED_CAP;
+					// DRAG_COEFFICIENT is a constant you define to tune the deceleration rate.
+					float dragMagnitude = BALL_DRAG_COEFFICIENT * overspeed;
+					b2Vec2 dragForce = -velocity;
+					dragForce = b2Normalize(dragForce);
+					dragForce *= dragMagnitude;
+					b2Body_ApplyForce(bodyId, dragForce, b2Body_GetPosition(bodyId), true);
+				}
 			}
 		}
 	}
-
-
 
 }
 
@@ -677,7 +693,7 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 	// record the current mouse position
 	mouse_pos_x = mouse_position.x;
 	mouse_pos_y = mouse_position.y;
-	std::cout << "mouse coordinate position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
+	// std::cout << "mouse coordinate position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
 }
 
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {

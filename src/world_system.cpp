@@ -552,13 +552,23 @@ void WorldSystem::handle_movement() {
 		}
 	}
 	else if (keyStates[GLFW_KEY_A]) {
-		nonjump_movement_force = { -forceMagnitude, 0 };
+		if (grappleActive) {
+			// Speed boost for grapple
+			nonjump_movement_force = { -forceMagnitude * 3, 0 };
+		} else {
+			nonjump_movement_force = { -forceMagnitude, 0 };
+		}
 	}
 	else if (keyStates[GLFW_KEY_S]) {
 		// nonjump_movement_force = { 0, -forceMagnitude };
 	}
 	else if (keyStates[GLFW_KEY_D]) {
-		nonjump_movement_force = { forceMagnitude, 0 };
+		if (grappleActive) {
+			// Speed boost for grapple
+			nonjump_movement_force = { forceMagnitude * 3, 0 };
+		} else {
+			nonjump_movement_force = { forceMagnitude, 0 };
+		}
 	}
 
 	// jump is set seperately, since it can be used in conjunction with the movement keys.
@@ -668,6 +678,14 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
 
 		float dist = length(vec2(1200, 300) - worldMousePos);
 
+		// Change to this if you don't want to have to aim the grapple
+		// if (!grappleActive) {
+		// 	attachGrapple();
+		// } else {
+		// 	removeGrapple();
+		// 	grappleActive = false;
+		// }
+
 		if (dist < 50 && !grappleActive) {
 			attachGrapple();
 		} else {
@@ -737,22 +755,21 @@ void WorldSystem:: checkGrappleGrounded() {
 
 				// check if the player is grounded
 				bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
+				Grapple grapple;
+				for (Entity grappleEntity : registry.grapples.entities) {
+					grapple = registry.grapples.get(grappleEntity);
+				}
+				float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
 				if (isGrounded) {
-					// if the player is grounded shorten the grapple rope
-					for (Entity grappleEntity : registry.grapples.entities) {
-						Grapple& grapple = registry.grapples.get(grappleEntity);
-						float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
-						// b2Shape_SetFriction(phys.shapeId, BALL_FRICTION * 2);
-						// b2Shape_SetRestitution(phys.shapeId, BALL_RESTITUTION / 2);
-						// b2DistanceJoint_SetSpringHertz(grapple.jointId, 1.0f);
-						// b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, 0.7f);
-						if (curLen >= 50.0f) {
-							b2DistanceJoint_SetLength(grapple.jointId , curLen - 5.0f);
-						}
+					b2DistanceJoint_EnableSpring(grapple.jointId, true);
+					b2DistanceJoint_SetSpringHertz(grapple.jointId, 1.0f);
+					b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, 0.5f);
+					if (curLen >= 50.0f) {
+						b2DistanceJoint_SetLength(grapple.jointId , curLen - 5.0f);
 					}
 				} else {
-					// b2Shape_SetFriction(phys.shapeId, BALL_FRICTION);
-					// b2Shape_SetRestitution(phys.shapeId, BALL_RESTITUTION);
+
+					b2DistanceJoint_EnableSpring(grapple.jointId, false);
 				}
 			}
 		}

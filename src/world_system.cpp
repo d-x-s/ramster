@@ -179,6 +179,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 	if (game_active) {
 		update_isGrounded();
 		handle_movement();
+		checkGrappleGrounded();
 
 		// Removing out of screen entities
 		auto& motions_registry = registry.motions;
@@ -223,10 +224,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			//setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
 			handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
 			handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
-		}
-
-		if (grappleActive) {
-			updateGrappleLines();
 		}
 
 	}
@@ -378,7 +375,9 @@ void WorldSystem::restart_game() {
 	generateTestTerrain();
 
 	//create grapple point
-	createGrapplePoint(worldId);
+	createGrapplePoint(worldId, vec2(1200.0f, 300.0f));
+
+	createGrapplePoint(worldId, vec2(900.0f, 300.0f));
 
 	// turn off trigger for fadeout shader
 	registry.screenStates.components[0].fadeout = 0.0f;
@@ -561,15 +560,34 @@ void WorldSystem::handle_movement() {
 	// Determine impulse direction based on key pressed
 	if (keyStates[GLFW_KEY_W]) {
 		// nonjump_movement_force = { 0, forceMagnitude };
+		if (grappleActive) {
+			for (Entity grappleEntity : registry.grapples.entities) {
+        		Grapple& grapple = registry.grapples.get(grappleEntity);
+				float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
+				if (curLen >= 50.0f) {
+					b2DistanceJoint_SetLength(grapple.jointId , curLen - 5.0f);
+				}
+			}
+		}
 	}
 	else if (keyStates[GLFW_KEY_A]) {
-		nonjump_movement_force = { -forceMagnitude, 0 };
+		if (grappleActive) {
+			// Speed boost for grapple
+			nonjump_movement_force = { -forceMagnitude * 3, 0 };
+		} else {
+			nonjump_movement_force = { -forceMagnitude, 0 };
+		}
 	}
 	else if (keyStates[GLFW_KEY_S]) {
 		// nonjump_movement_force = { 0, -forceMagnitude };
 	}
 	else if (keyStates[GLFW_KEY_D]) {
-		nonjump_movement_force = { forceMagnitude, 0 };
+		if (grappleActive) {
+			// Speed boost for grapple
+			nonjump_movement_force = { forceMagnitude * 3, 0 };
+		} else {
+			nonjump_movement_force = { forceMagnitude, 0 };
+		}
 	}
 
 	// jump is set seperately, since it can be used in conjunction with the movement keys.
@@ -668,34 +686,6 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod) {
 	if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
 		debugging.in_debug_mode = !debugging.in_debug_mode;
 	}
-
-	if (action == GLFW_PRESS) {
-		if (key == GLFW_KEY_LEFT_SHIFT ) {
-			Entity ballEntity = registry.physicsBodies.entities[0];  
-    		Entity grapplePointEntity = registry.physicsBodies.entities[1];  
-
-    		PhysicsBody& ballBody = registry.physicsBodies.get(ballEntity);
-    		PhysicsBody& grappleBody = registry.physicsBodies.get(grapplePointEntity);
-
-    		b2BodyId ballBodyId = ballBody.bodyId;
-    		b2BodyId grappleBodyId = grappleBody.bodyId;
-
-			b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
-    		b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
-
-    		// Compute the distance between the two points
-    		float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
-                           			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
-
-			if (distance <= 280.0f && !grappleActive) {
-				createGrapple(worldId, ballBodyId, grappleBodyId, distance);
-				grappleActive = true;
-			} else if (grappleActive) {
-				removeGrapple();
-				grappleActive = false;
-			}
-		}
-	}
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position) {
@@ -703,36 +693,157 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 	// record the current mouse position
 	mouse_pos_x = mouse_position.x;
 	mouse_pos_y = mouse_position.y;
-	// std::cout << "mouse coordinate position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
+	//std::cout << "mouse coordinate position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
 }
 
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
+    if (!game_active) {
+        return;
+    }
 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// {{{ OK }}} TODO A1: Handle mouse clicking for invader and tower placement.
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        // Get mouse position and convert to world coordinates.
+        vec2 mouseScreenPos = { mouse_pos_x, mouse_pos_y };
+        vec2 worldMousePos = screenToWorld(mouseScreenPos);
+        std::cout << "Mouse clicked at world position: (" 
+                  << worldMousePos.x << ", " << worldMousePos.y << ")" << std::endl;
 
-	// ignore mouse input if game is over
-	if (!game_active) {
-		return;
+        // Find the grapple point closest to the click that is within the threshold.
+        GrapplePoint* selectedGp = nullptr;
+        float bestDist = 50.0f;  // distance threshold
+
+        for (Entity gpEntity : registry.grapplePoints.entities) {
+            GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+            float dist = length(gp.position - worldMousePos);
+            if (dist < bestDist) {
+                bestDist = dist;
+                selectedGp = &gp;
+            }
+        }
+
+        // Deactivate all grapple points.
+        for (Entity gpEntity : registry.grapplePoints.entities) {
+            GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+            gp.active = false;
+        }
+
+        // If a valid grapple point is found, mark it as active.
+        if (selectedGp != nullptr) {
+            selectedGp->active = true;
+            std::cout << "Selected grapple point at (" 
+                      << selectedGp->position.x << ", " << selectedGp->position.y 
+                      << ") with active = " << selectedGp->active << std::endl;
+        }
+
+        // Now, if no grapple is currently attached and we found an active point, attach the grapple.
+        if (!grappleActive && selectedGp != nullptr) {
+            attachGrapple();
+        } else if (grappleActive) {
+            removeGrapple();
+            grappleActive = false;
+        }
+    }
+}
+
+
+vec2 WorldSystem::screenToWorld(vec2 mouse_position) {
+	for (Entity cameraEntity : registry.cameras.entities) {
+		Camera& camera = registry.cameras.get(cameraEntity);
+		// Calculate the screen center.
+		float centerX = WINDOW_WIDTH_PX / 2.0f;
+		float centerY = WINDOW_HEIGHT_PX / 2.0f;
+
+		// Flip the Y coordinate: if the screen's Y=0 is at the top,
+		// convert it so Y increases upward. This example assumes that
+		// your world-space Y increases upward.
+		float flippedY = WINDOW_HEIGHT_PX - mouse_position.y;
+
+		// Offset the mouse position relative to the screen center.
+		float offsetX = mouse_position.x - centerX;
+		float offsetY = flippedY - centerY;
+
+		// Now add the camera's world position.
+		// camera.position is the world-space coordinate at the screen center.
+		vec2 worldPos;
+		worldPos.x = offsetX + camera.position.x;
+		worldPos.y = offsetY + camera.position.y;
+		std::cout << "mouse coordinate position: " << worldPos.x<< ", " << worldPos.y << std::endl;
+		return worldPos;
 	}
 }
 
-void WorldSystem::updateGrappleLines() {
-    for (Entity grappleEntity : registry.grapples.entities) {
-        Grapple& grapple = registry.grapples.get(grappleEntity);
+void WorldSystem::attachGrapple() {
+    Entity playerEntity = registry.players.entities[0];
 
-        // Get current positions
-        b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
-        b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
+    // Retrieve the ball's physics body
+    PhysicsBody& ballBody = registry.physicsBodies.get(playerEntity);
+    b2BodyId ballBodyId = ballBody.bodyId;
+    b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
 
-        // Update line entity positions
-        if (registry.lines.has(grapple.lineEntity)) {
-            Line& line = registry.lines.get(grapple.lineEntity);
-            line.start_pos = vec2(ballPos.x, ballPos.y);
-            line.end_pos = vec2(grapplePos.x, grapplePos.y);
+    Entity activeGrapplePointEntity;
+    b2BodyId activeGrappleBodyId;
+    bool foundActive = false;
+
+    // Loop through all grapple points and find the active one
+    for (Entity gpEntity : registry.grapplePoints.entities) {
+        GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+		std::cout << gp.position.x << " " << gp.position.y <<  " " << gp.active << std::endl;
+        if (gp.active) {
+            activeGrapplePointEntity = gpEntity;
+            activeGrappleBodyId = gp.bodyId;
+            foundActive = true;
+            break; // Stop once we find the first active grapple point
         }
     }
+
+    // If no active grapple points were found, exit early
+    if (!foundActive) {
+        return;
+    }
+
+    b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
+
+    // Compute the distance between the ball and the grapple point
+    float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
+                           (grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
+
+    // Attach the grapple if within range
+    if (distance <= 450.0f) {
+        createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
+        grappleActive = true;
+    }
+}
+
+void WorldSystem:: checkGrappleGrounded() {
+	if (grappleActive) {
+		if (!registry.players.entities.empty()) {
+			Entity playerEntity = registry.players.entities[0];
+
+			if (registry.physicsBodies.has(playerEntity)) {
+				PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
+				b2BodyId bodyId = phys.bodyId;
+
+				// check if the player is grounded
+				bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
+				Grapple grapple;
+				for (Entity grappleEntity : registry.grapples.entities) {
+					grapple = registry.grapples.get(grappleEntity);
+				}
+				float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
+				if (isGrounded) {
+					b2DistanceJoint_EnableSpring(grapple.jointId, true);
+					b2DistanceJoint_SetSpringHertz(grapple.jointId, 1.0f);
+					b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, 0.5f);
+					if (curLen >= 50.0f) {
+						b2DistanceJoint_SetLength(grapple.jointId , curLen - 5.0f);
+					}
+				} else {
+
+					b2DistanceJoint_EnableSpring(grapple.jointId, false);
+				}
+			}
+		}
+	}
 }
 
 void WorldSystem::handleEnemySpawning(bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 position, vec2 movement_area) {

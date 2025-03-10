@@ -29,8 +29,9 @@ Entity createBall(b2WorldId worldId)
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
 	circle.radius = BALL_RADIUS;
-	b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	b2ShapeId shapeId = b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	ball.bodyId = bodyId;
+	ball.shapeId = shapeId;
 
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 
@@ -132,10 +133,11 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	// We'll update the enemy hitbox later.
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = enemySize; // Simple way to change size of enemies based on their type. Adjust int multiplier in ENEMY_TYPES to change this.
-	b2CreateCircleShape(bodyId, &shapeDef, &circle); // this is the hitbox
+	circle.radius = ENEMY_RADIUS;
+	b2ShapeId shapeId = b2CreateCircleShape(bodyId, &shapeDef, &circle);
 
 	enemyBody.bodyId = bodyId;
+	enemyBody.shapeId = shapeId;
 
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 
@@ -167,18 +169,20 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 
 	return entity;
 }
-
-
-Entity createGrapplePoint(b2WorldId worldId){
+Entity createGrapplePoint(b2WorldId worldId, vec2 position){
 	Entity entity = Entity();
 
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_staticBody;
-	bodyDef.position = b2Vec2{ 1200.0f, 300.0f };
+	bodyDef.position = b2Vec2{ position.x, position.y};
 
     b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
+
+	//Disable collisions
+	shapeDef.filter.maskBits = 0x0000;
+	shapeDef.isSensor = true; 
 
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
@@ -190,9 +194,12 @@ Entity createGrapplePoint(b2WorldId worldId){
     grappleBody.bodyId = bodyId;
 
 	GrapplePoint& grapplePoint = registry.grapplePoints.emplace(entity);
-
+	grapplePoint.position = position;
+	grapplePoint.active = false;
+	grapplePoint.bodyId = bodyId;
+	
 	auto& motion = registry.motions.emplace(entity);
-	motion.position = vec2(1200.0f, 300.0f);
+	motion.position = position;
 	motion.scale = vec2(64.0f, 64.0f);
 
 	registry.renderRequests.insert(
@@ -216,7 +223,8 @@ Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBod
     djd.bodyIdB = grappleBodyId;
     djd.length = distance;
     djd.collideConnected = false;
-    djd.maxLength = 280.0f;
+    djd.maxLength = 450.0f;
+	djd.minLength = 100.0f;
 
     b2JointId jointId = b2CreateDistanceJoint(worldId, &djd);
 

@@ -123,6 +123,9 @@ private:
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
 
+	vec2 screenToWorld(vec2 mouse_position);
+	void attachGrapple();
+	void checkGrappleGrounded();
 	// use this to handle enemy spawning.
 	/*
 	INPUTS

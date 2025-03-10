@@ -225,10 +225,13 @@ struct Explosion { };
 
 struct PhysicsBody {
 	b2BodyId bodyId;
+	b2ShapeId shapeId;
 };
 
 struct GrapplePoint {
-
+	vec2 position;
+	bool active;
+	b2BodyId bodyId;
 };
 
 struct Grapple {

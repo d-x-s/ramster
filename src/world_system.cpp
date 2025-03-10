@@ -359,7 +359,9 @@ void WorldSystem::restart_game() {
 	generateTestTerrain();
 
 	//create grapple point
-	createGrapplePoint(worldId);
+	createGrapplePoint(worldId, vec2(1200.0f, 300.0f));
+
+	createGrapplePoint(worldId, vec2(900.0f, 300.0f));
 
 	// turn off trigger for fadeout shader
 	registry.screenStates.components[0].fadeout = 0.0f;
@@ -652,48 +654,54 @@ void WorldSystem::on_mouse_move(vec2 mouse_position) {
 }
 
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods) {
-
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// {{{ OK }}} TODO A1: Handle mouse clicking for invader and tower placement.
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-	// ignore mouse input if game is over
-	if (!game_active) {
-		return;
-	}
+    if (!game_active) {
+        return;
+    }
 
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        // Get the raw mouse position (top-left origin).
+        // Get mouse position and convert to world coordinates.
         vec2 mouseScreenPos = { mouse_pos_x, mouse_pos_y };
-
-        // Convert to world coordinates.
         vec2 worldMousePos = screenToWorld(mouseScreenPos);
-        std::cout << "Mouse clicked at world position: ("
+        std::cout << "Mouse clicked at world position: (" 
                   << worldMousePos.x << ", " << worldMousePos.y << ")" << std::endl;
 
-		Entity ballEntity = registry.physicsBodies.entities[0]; 
-		PhysicsBody& ballBody = registry.physicsBodies.get(ballEntity); 
-		b2BodyId ballBodyId = ballBody.bodyId;
-		b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+        // Find the grapple point closest to the click that is within the threshold.
+        GrapplePoint* selectedGp = nullptr;
+        float bestDist = 50.0f;  // distance threshold
 
-		float dist = length(vec2(1200, 300) - worldMousePos);
+        for (Entity gpEntity : registry.grapplePoints.entities) {
+            GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+            float dist = length(gp.position - worldMousePos);
+            if (dist < bestDist) {
+                bestDist = dist;
+                selectedGp = &gp;
+            }
+        }
 
-		// Change to this if you don't want to have to aim the grapple
-		// if (!grappleActive) {
-		// 	attachGrapple();
-		// } else {
-		// 	removeGrapple();
-		// 	grappleActive = false;
-		// }
+        // Deactivate all grapple points.
+        for (Entity gpEntity : registry.grapplePoints.entities) {
+            GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+            gp.active = false;
+        }
 
-		if (dist < 50 && !grappleActive) {
-			attachGrapple();
-		} else {
-			removeGrapple();
-			grappleActive = false;
-		}
+        // If a valid grapple point is found, mark it as active.
+        if (selectedGp != nullptr) {
+            selectedGp->active = true;
+            std::cout << "Selected grapple point at (" 
+                      << selectedGp->position.x << ", " << selectedGp->position.y 
+                      << ") with active = " << selectedGp->active << std::endl;
+        }
+
+        // Now, if no grapple is currently attached and we found an active point, attach the grapple.
+        if (!grappleActive && selectedGp != nullptr) {
+            attachGrapple();
+        } else if (grappleActive) {
+            removeGrapple();
+            grappleActive = false;
+        }
     }
 }
+
 
 vec2 WorldSystem::screenToWorld(vec2 mouse_position) {
 	for (Entity cameraEntity : registry.cameras.entities) {
@@ -721,27 +729,46 @@ vec2 WorldSystem::screenToWorld(vec2 mouse_position) {
 	}
 }
 
-void WorldSystem:: attachGrapple() {
-		Entity ballEntity = registry.physicsBodies.entities[0];  
-    	Entity grapplePointEntity = registry.physicsBodies.entities[1];  
+void WorldSystem::attachGrapple() {
+    Entity playerEntity = registry.players.entities[0];
 
-    	PhysicsBody& ballBody = registry.physicsBodies.get(ballEntity);
-    	PhysicsBody& grappleBody = registry.physicsBodies.get(grapplePointEntity);
+    // Retrieve the ball's physics body
+    PhysicsBody& ballBody = registry.physicsBodies.get(playerEntity);
+    b2BodyId ballBodyId = ballBody.bodyId;
+    b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
 
-		b2BodyId ballBodyId = ballBody.bodyId;    		
-		b2BodyId grappleBodyId = grappleBody.bodyId;
+    Entity activeGrapplePointEntity;
+    b2BodyId activeGrappleBodyId;
+    bool foundActive = false;
 
-		b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
-    	b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
+    // Loop through all grapple points and find the active one
+    for (Entity gpEntity : registry.grapplePoints.entities) {
+        GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+		std::cout << gp.position.x << " " << gp.position.y <<  " " << gp.active << std::endl;
+        if (gp.active) {
+            activeGrapplePointEntity = gpEntity;
+            activeGrappleBodyId = gp.bodyId;
+            foundActive = true;
+            break; // Stop once we find the first active grapple point
+        }
+    }
 
-    	// Compute the distance between the two points
-    	float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
-                       			(grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
+    // If no active grapple points were found, exit early
+    if (!foundActive) {
+        return;
+    }
 
-		if (distance <= 450.0f) {
-			createGrapple(worldId, ballBodyId, grappleBodyId, distance);
-			grappleActive = true;
-		}
+    b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
+
+    // Compute the distance between the ball and the grapple point
+    float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
+                           (grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
+
+    // Attach the grapple if within range
+    if (distance <= 450.0f) {
+        createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
+        grappleActive = true;
+    }
 }
 
 void WorldSystem:: checkGrappleGrounded() {

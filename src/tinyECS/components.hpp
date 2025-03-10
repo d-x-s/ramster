@@ -219,7 +219,9 @@ struct PhysicsBody {
 };
 
 struct GrapplePoint {
-
+	vec2 position;
+	bool active;
+	b2BodyId bodyId;
 };
 
 struct Grapple {

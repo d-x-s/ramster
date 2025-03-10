@@ -200,14 +200,14 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
         // LLNOTE
         // Check if player reached spawn points of enemies.
         // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
-        for (auto& i : hasPlayerReachedPoint) {
+        for (auto& i : hasPlayerReachedTile) {
             if (!i.second) {
                 
-                i.second = playerReachedPoint(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
+                i.second = playerReachedTile(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
                 //debug
-                //if (playerReachedPoint(ivec2(i.first[0], i.first[1]))) {
+                //if (playerReachedTile(ivec2(i.first[0], i.first[1]))) {
                 //    std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
-                //    std::cout << "WHAT MAP SAYS: " << hasPlayerReachedPoint[i.first] << std::endl;
+                //    std::cout << "WHAT MAP SAYS: " << hasPlayerReachedTile[i.first] << std::endl;
                 //}
             }
         }
@@ -259,9 +259,9 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
             // LLNOTE
             // example of spawning using player-reached-point map:
             // note: there might be a delay before this happens because of next_enemy_spawn
-            handleEnemySpawning(hasPlayerReachedPoint[{5, 2}], OBSTACLE, 1, vec2(5 * GRID_CELL_WIDTH_PX, 2 * GRID_CELL_HEIGHT_PX + 50), vec2(-1000, 1000));
+            handleEnemySpawning(hasPlayerReachedTile[{5, 2}], OBSTACLE, 1, vec2(5 * GRID_CELL_WIDTH_PX, 2 * GRID_CELL_HEIGHT_PX + 50), vec2(-1000, 1000));
             // cleanup so they don't keep spawning:
-            hasPlayerReachedPoint[{5, 2}] = false;
+            hasPlayerReachedTile[{5, 2}] = false;
 		}
 
 		if (grappleActive) {
@@ -822,7 +822,7 @@ void WorldSystem::handleEnemySpawning(bool predicate, ENEMY_TYPES enemy_type, in
 }
 
 // LLNOTE
-bool WorldSystem::playerReachedPoint(ivec2 gridCoordinate) {
+bool WorldSystem::playerReachedTile(ivec2 gridCoordinate) {
 
     // Get player
     Entity player = registry.players.entities[0];

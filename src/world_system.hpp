@@ -111,7 +111,7 @@ private:
 	// LLNOTE
 	// Map to check if player has reached the specified point yet
 	// Note: maps don't support ivec2 so we'll need to convert them into vector<int> with x at [0] and y at [1]
-	std::map<std::vector<int>, bool> hasPlayerReachedPoint = {
+	std::map<std::vector<int>, bool> hasPlayerReachedTile = {
 		// ADD POINTS TO CHECK HERE. 
 		{{ 5, 2 }, false},
 		{{0, 15}, false}
@@ -145,7 +145,7 @@ private:
 	void handleEnemySpawning(bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 position, vec2 movement_area);
 
 	// use this to check if the player has reached a specified grid coordinate. (recall GRID_CELL_WIDTH, GRID_CELL_HEIGHT)
-	bool playerReachedPoint(ivec2 grid_coordinate);
+	bool playerReachedTile(ivec2 grid_coordinate);
 
 	// update grapple hook line
 	void updateGrappleLines();

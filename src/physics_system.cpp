@@ -23,12 +23,14 @@ float center_y = -1.f;             // The center y position of the camera
 vec2 grapple_shift = { 0.f, 0.f }; // What stage of the camera's movement it is in towards grapple
 float reset_shift = 0.f;           // What stage of the camera's movement it is in after grapple
 bool after_grapple = false;        // Whether the camera is resetting after a grapple
+int camera_panned = 0;             // 0 = Centered, 1 = Panned Right, 2 = Panned Left 
 
 // Camera Constants
-float QUICK_MOVEMENT_THRESHOLD = 700.f;
+float QUICK_MOVEMENT_THRESHOLD = 900.f;
 float HORIZONTAL_FOCAL_SHIFT = 200.f;
-float CAMERA_DELAY = 100.f;      // Higher = Slower camera movement
+float CAMERA_SPEED = 5.f;      // Lower = Slower camera movement
 float VERTICAL_THRESHOLD = 50.f; // Lower = Camera will follow more aggressively
+float DEFAULT = -1.f;
 
 // M1 Linear Interpolation for Camera Movement
 // See: https://www.gamedev.net/tutorials/programming/general-and-gameplay-programming/a-brief-introduction-to-lerp-r4954/
@@ -167,11 +169,12 @@ void PhysicsSystem::step(float elapsed_ms)
 
   // Push camera ahead when moving fast horizontally (Right)
   // std::cout << "Player velocity = (" << b2Body_GetLinearVelocity(bodyId).x << ", " << b2Body_GetLinearVelocity(bodyId).y << ")\n";
-  if (b2Body_GetLinearVelocity(playerBodyID).x > QUICK_MOVEMENT_THRESHOLD)
+  if (b2Body_GetLinearVelocity(playerBodyID).x > QUICK_MOVEMENT_THRESHOLD && camera_panned != 2)
   {
     speedy = true;
+    camera_panned = 1;
     // Initialize camera movement
-    camera_next_step = lerp(playerPosition.x, playerPosition.x + HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
+    camera_next_step = playerPosition.x + CAMERA_SPEED * shift_index;
     camera_objective_loc = playerPosition.x + HORIZONTAL_FOCAL_SHIFT;
     if (camera_next_step < camera_objective_loc)
     {
@@ -184,11 +187,12 @@ void PhysicsSystem::step(float elapsed_ms)
     }
   }
   // Push camera ahead when moving fast horizontally (Left)
-  else if (b2Body_GetLinearVelocity(playerBodyID).x < -QUICK_MOVEMENT_THRESHOLD)
+  else if (b2Body_GetLinearVelocity(playerBodyID).x < -QUICK_MOVEMENT_THRESHOLD && camera_panned != 1)
   {
     speedy = true;
+    camera_panned = 2;
     // Initialize camera movement
-    camera_next_step = lerp(playerPosition.x, playerPosition.x - HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
+	camera_next_step = playerPosition.x - CAMERA_SPEED * shift_index;
     camera_objective_loc = playerPosition.x - HORIZONTAL_FOCAL_SHIFT;
     if (camera_next_step > camera_objective_loc)
     {
@@ -206,17 +210,17 @@ void PhysicsSystem::step(float elapsed_ms)
   }
 
   // Slowly reset camera if no longer above movement threshold
-  if (!speedy && playerPosition.x != camera_objective_loc)
+  if (!speedy && camera_objective_loc != DEFAULT)
   {
     if (playerPosition.x < camera_objective_loc)
     {
       camera_objective_loc = playerPosition.x + HORIZONTAL_FOCAL_SHIFT;
-      camX = lerp(camX, camX + HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
+	  camX = playerPosition.x + CAMERA_SPEED * shift_index;
     }
     else if (playerPosition.x > camera_objective_loc)
     {
       camera_objective_loc = playerPosition.x - HORIZONTAL_FOCAL_SHIFT;
-      camX = lerp(camX, camX - HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
+	  camX = playerPosition.x - CAMERA_SPEED * shift_index;
     }
     if (shift_index > 1)
     {
@@ -224,7 +228,8 @@ void PhysicsSystem::step(float elapsed_ms)
     }
     else
     {
-      camera_objective_loc = -1.f; // Reset objective location
+      camera_objective_loc = DEFAULT; // Reset objective location
+	  camera_panned = 0; // Reset panning
     }
   }
 
@@ -329,7 +334,7 @@ void PhysicsSystem::step(float elapsed_ms)
       else {
           camX = lerp(prev_x, camX, reset_shift);
           camY = lerp(prev_y, camY, reset_shift);
-          reset_shift += 0.001;
+          reset_shift += 0.02;
       }
   }
 

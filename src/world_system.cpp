@@ -626,6 +626,16 @@ void WorldSystem::handle_movement() {
 					dragForce *= dragMagnitude;
 					b2Body_ApplyForce(bodyId, dragForce, b2Body_GetPosition(bodyId), true);
 				}
+
+				// update ramster sprite to flamming if reaching top speeds.
+				// M3 TODO: We should render the flame effect as seperate entity below the ball in the future.
+				RenderRequest& ballRR = registry.renderRequests.get(playerEntity);
+				if (speed > RAMSTER_FLAME_THRESHOLD) {
+					ballRR.used_texture = TEXTURE_ASSET_ID::RAMSTER_FLAMMING;
+				}
+				else {
+					ballRR.used_texture = TEXTURE_ASSET_ID::RAMSTER_1;
+				}
 			}
 		}
 	}

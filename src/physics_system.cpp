@@ -394,7 +394,7 @@ void PhysicsSystem::step(float elapsed_ms)
               // NOTE: this depends on MIN_COLLISION_SPEED, which will need some fine-tuning to find a good speed at which we can hit the enemy.
               bool player_wins_collision = false;
 
-              if (playerSpeed > MIN_COLLISION_SPEED) {
+              if (playerSpeed > RAMSTER_FLAME_THRESHOLD) {
                   player_wins_collision = true;
               }
 

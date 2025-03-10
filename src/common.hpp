@@ -64,7 +64,6 @@ const int PROJECTILE_DAMAGE = 10;
 
 // Amount of time to stop an enemy after colliding (if player loses collision)
 const float ENEMY_FREEZE_TIME_MS = 3000;
-const float MIN_COLLISION_SPEED = 2.0;
 
 // Amount of time before refreshing FPS counter. This will eliminate window flickering from too many updates per second.
 const int FPS_UPDATE_COOLDOWN_MS = 250;
@@ -109,6 +108,7 @@ const float BALL_ANGULAR_DAMPING = 0.80f; // 1/s (inverse seconds)
 const float BALL_ISGROUNDED_NORMAL_THRESHOLD = 0.65f; // the y-coord of the normalized contact normal. 1.f = vertical wall, 0.f = flat ground
 const float BALL_NONGRAPPLE_SOFT_SPEED_CAP = 800.f;
 const float BALL_DRAG_COEFFICIENT = 75.0f;
+const float RAMSTER_FLAME_THRESHOLD = 1000.f;
 
 // ENEMY 2DBODY
 // Shares most of player 2D body but different density, friction, restitution, etc.

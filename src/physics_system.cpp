@@ -422,12 +422,8 @@ void PhysicsSystem::step(float elapsed_ms)
     }
   }
 
-      std::cout << "TEST XXXXXXXXXXXXXXXXXXXXXXXX" << b2Body_GetUserData(collisionBody_A) << std::endl;
-  }
-  */
-
- 	if (grappleActive) {
-		updateGrappleLines();
+  if (grappleActive) {
+    updateGrappleLines();
   }
 }
 
@@ -437,7 +433,7 @@ void PhysicsSystem::updateGrappleLines() {
 
         // Get current positions
         b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
-        b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
+		b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
 
         // Update line entity positions
         if (registry.lines.has(grapple.lineEntity)) {

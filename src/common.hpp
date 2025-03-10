@@ -110,6 +110,9 @@ const float BALL_NONGRAPPLE_SOFT_SPEED_CAP = 800.f;
 const float BALL_DRAG_COEFFICIENT = 75.0f;
 const float RAMSTER_FLAME_THRESHOLD = 1000.f;
 
+// grapple constants
+const float GRAPPLE_STRAFE_SPEED_MULTIPLIER = 5.0f;
+
 // ENEMY 2DBODY
 // Shares most of player 2D body but different density, friction, restitution, etc.
 const float ENEMY_GROUNDED_MOVEMENT_FORCE = 12500.0f; // kg·cm/s² (dynes)

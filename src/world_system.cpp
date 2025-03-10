@@ -222,8 +222,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 
 			// create enemy at random position
 			//setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
-			handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
-			handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+			// handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+			// handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
 		}
 
 	}
@@ -572,8 +572,7 @@ void WorldSystem::handle_movement() {
 	}
 	else if (keyStates[GLFW_KEY_A]) {
 		if (grappleActive) {
-			// Speed boost for grapple
-			nonjump_movement_force = { -forceMagnitude * 3, 0 };
+			nonjump_movement_force = { -forceMagnitude * GRAPPLE_STRAFE_SPEED_MULTIPLIER, 0 };
 		} else {
 			nonjump_movement_force = { -forceMagnitude, 0 };
 		}
@@ -583,8 +582,7 @@ void WorldSystem::handle_movement() {
 	}
 	else if (keyStates[GLFW_KEY_D]) {
 		if (grappleActive) {
-			// Speed boost for grapple
-			nonjump_movement_force = { forceMagnitude * 3, 0 };
+			nonjump_movement_force = { forceMagnitude * GRAPPLE_STRAFE_SPEED_MULTIPLIER, 0 };
 		} else {
 			nonjump_movement_force = { forceMagnitude, 0 };
 		}

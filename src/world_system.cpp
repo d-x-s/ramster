@@ -834,7 +834,7 @@ void WorldSystem:: checkGrappleGrounded() {
 					b2DistanceJoint_EnableSpring(grapple.jointId, true);
 					b2DistanceJoint_SetSpringHertz(grapple.jointId, GRAPPLE_HERTZ_GROUNDED);
 					b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, GRAPPLE_DAMPING_GROUNDED);
-					b2DistanceJoint_SetLength(grapple.jointId , curLen - GRAPPLE_DETRACT_GROUNDED);
+					b2DistanceJoint_SetLength(grapple.jointId , curLen - GRAPPLE_RETRACT_RATE);
 				} else {
 					b2DistanceJoint_EnableSpring(grapple.jointId, false);
 				}

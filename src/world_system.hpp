@@ -6,6 +6,7 @@
 // stlib
 #include <vector>
 #include <random>
+#include <map>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -107,6 +108,15 @@ private:
 	// OpenGL window handle
 	GLFWwindow* window;
 
+	// LLNOTE
+	// Map to check if player has reached the specified point yet
+	// Note: maps don't support ivec2 so we'll need to convert them into vector<int> with x at [0] and y at [1]
+	std::map<std::vector<int>, bool> hasPlayerReachedPoint = {
+		// ADD POINTS TO CHECK HERE. 
+		{{ 5, 2 }, false},
+		{{0, 15}, false}
+	};;
+
 	int next_enemy_spawn;
 	int enemy_spawn_rate_ms;	// see default value in common.hpp
 
@@ -133,6 +143,9 @@ private:
 	- movement_area: this applies to OBSTACLE enemies only. Dictates the upper and lower bounds for x-coordinates on which it can move.
 	*/
 	void handleEnemySpawning(bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 position, vec2 movement_area);
+
+	// use this to check if the player has reached a specified grid coordinate. (recall GRID_CELL_WIDTH, GRID_CELL_HEIGHT)
+	bool playerReachedPoint(ivec2 grid_coordinate);
 
 	// update grapple hook line
 	void updateGrappleLines();

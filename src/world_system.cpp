@@ -197,6 +197,21 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 		update_isGrounded();
 		handle_movement();
 
+        // LLNOTE
+        // Check if player reached spawn points of enemies.
+        // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
+        for (auto& i : hasPlayerReachedPoint) {
+            if (!i.second) {
+                
+                i.second = playerReachedPoint(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
+                //debug
+                //if (playerReachedPoint(ivec2(i.first[0], i.first[1]))) {
+                //    std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
+                //    std::cout << "WHAT MAP SAYS: " << hasPlayerReachedPoint[i.first] << std::endl;
+                //}
+            }
+        }
+
 		// Removing out of screen entities
 		auto& motions_registry = registry.motions;
 
@@ -240,6 +255,13 @@ bool WorldSystem::step(float elapsed_ms_since_last_update) {
 			//setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
 			handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
 			handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+
+            // LLNOTE
+            // example of spawning using player-reached-point map:
+            // note: there might be a delay before this happens because of next_enemy_spawn
+            handleEnemySpawning(hasPlayerReachedPoint[{5, 2}], OBSTACLE, 1, vec2(5 * GRID_CELL_WIDTH_PX, 2 * GRID_CELL_HEIGHT_PX + 50), vec2(-1000, 1000));
+            // cleanup so they don't keep spawning:
+            hasPlayerReachedPoint[{5, 2}] = false;
 		}
 
 		if (grappleActive) {
@@ -797,5 +819,19 @@ void WorldSystem::handleEnemySpawning(bool predicate, ENEMY_TYPES enemy_type, in
 			createEnemy(worldId, position, enemy_type, movement_area);
 		}
 	}
+}
+
+// LLNOTE
+bool WorldSystem::playerReachedPoint(ivec2 gridCoordinate) {
+
+    // Get player
+    Entity player = registry.players.entities[0];
+    Motion playerMotion = registry.motions.get(player);
+
+    // Player location in terms of grid coordinates
+    ivec2 playerLocation = ivec2(playerMotion.position.x / GRID_CELL_WIDTH_PX, playerMotion.position.y / GRID_CELL_HEIGHT_PX);
+
+    // If player is in the same grid as specified, then return true. else false.
+    return playerLocation == gridCoordinate;
 }
 

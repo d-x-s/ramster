@@ -86,7 +86,7 @@ const std::vector<int> PLAYER_CONTROL_KEYS = {
 };
 
 // WORLD PHYSICS
-const float GRAVITY = -980; // cm/s² (centimeters per second squared)
+const float GRAVITY = -720; // cm/s² (centimeters per second squared)
 
 // PLAYER 2DBODY
 // PLAYER PHYSICS

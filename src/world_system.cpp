@@ -520,13 +520,14 @@ void WorldSystem::update_isGrounded() {
 			b2Manifold manifold = contact.manifold;
 			b2Vec2 normal = manifold.normal;
 
-			if (normal.y >= 0.15f) {
-				isGroundedRef = true;
-				delete[] contactData;
-				return;
-			}
-		}
-	}
+      if (normal.y >= 0.6f)
+      {
+        isGroundedRef = true;
+        delete[] contactData;
+        return;
+      }
+    }
+  }
 
 	isGroundedRef = false;
 	delete[] contactData;

@@ -35,5 +35,20 @@
 # exclude additional uneeded sub-directories
 out/*
 .vs/*
-build/*
-/ext
+data/*
+ext/*
+_deps/*
+CMakeFiles/*
+ramster.dir/*
+ZERO_CHECK.vcxproj
+ZERO_CHECK.vcxproj.filters
+CMakeCache.txt
+Debug/*
+x64/*
+ALL_BUILD*
+
+ramster.sln
+ramster.vcxproj
+ramster.vcxproj.filters
+cmake_install*
+INSTALL*

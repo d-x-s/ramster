@@ -14,6 +14,7 @@
 #include <box2d/box2d.h>
 
 #include "render_system.hpp"
+#include <random>
 
 // Global Variables
 extern bool grappleActive; // Bool to check if grapple is active
@@ -148,7 +149,7 @@ private:
 	// use this to check if the player has reached a specified grid coordinate. (recall GRID_CELL_WIDTH, GRID_CELL_HEIGHT)
 	bool playerReachedTile(ivec2 grid_coordinate);
 
-	// update grapple hook line
-	void updateGrappleLines();
-
+	vec2 screenToWorld(vec2 mouse_position);
+	void attachGrapple();
+	void checkGrappleGrounded();
 };

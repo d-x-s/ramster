@@ -162,117 +162,115 @@ void WorldSystem::init(RenderSystem *renderer_arg)
   std::cout << "Starting music..." << std::endl;
   Mix_PlayMusic(background_music, -1);
 
-	// Set all states to default
-	restart_game();
-	createBall(worldId);
-
-	// TODO DAVIS - Create obstacles here so they don't keep spawning.
-	// Like this:
-	// handleEnemySpawning(true, OBSTACLE, 1, vec2(500, 600), vec2(400, 500));
+  // Set all states to default
+  restart_game();
+  createBall(worldId);
 }
 
 // Update our game world
-bool WorldSystem::step(float elapsed_ms_since_last_update) {
+bool WorldSystem::step(float elapsed_ms_since_last_update)
+{
 
-	// Updating window title with points (and remaining towers)
-	std::stringstream title_ss;
-	title_ss << "Ramster | Points: " << points << " | FPS: " << fps;
-	glfwSetWindowTitle(window, title_ss.str().c_str());
+  // Updating window title with points (and remaining towers)
+  std::stringstream title_ss;
+  title_ss << "Ramster | Points: " << points << " | FPS: " << fps;
+  glfwSetWindowTitle(window, title_ss.str().c_str());
 
-	// FPS counter
-	if (fps_update_cooldown_ms <= 0) {
-		fps = 1 / (elapsed_ms_since_last_update / 1000);
-		fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
-	}
-	else {
-		fps_update_cooldown_ms -= elapsed_ms_since_last_update;
-	}
-	
+  // FPS counter
+  if (fps_update_cooldown_ms <= 0)
+  {
+    fps = 1 / (elapsed_ms_since_last_update / 1000);
+    fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
+  }
+  else
+  {
+    fps_update_cooldown_ms -= elapsed_ms_since_last_update;
+  }
 
-	// Remove debug info from the last step
-	while (registry.debugComponents.entities.size() > 0)
-		registry.remove_all_components_of(registry.debugComponents.entities.back());
+  // Remove debug info from the last step
+  while (registry.debugComponents.entities.size() > 0)
+    registry.remove_all_components_of(registry.debugComponents.entities.back());
 
-	if (game_active) {
-		update_isGrounded();
-		handle_movement();
+  if (game_active)
+  {
+    update_isGrounded();
+    handle_movement();
+    checkGrappleGrounded();
 
-        // LLNOTE
-        // Check if player reached spawn points of enemies.
-        // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
-        for (auto& i : hasPlayerReachedTile) {
-            if (!i.second) {
-                
-                i.second = playerReachedTile(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
-                //debug
-                //if (playerReachedTile(ivec2(i.first[0], i.first[1]))) {
-                //    std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
-                //    std::cout << "WHAT MAP SAYS: " << hasPlayerReachedTile[i.first] << std::endl;
-                //}
-            }
+    // LLNOTE
+    // Check if player reached spawn points of enemies.
+    // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
+    for (auto &i : hasPlayerReachedTile)
+    {
+      if (!i.second)
+      {
+
+        i.second = playerReachedTile(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
+                                                                     // debug
+        // if (playerReachedTile(ivec2(i.first[0], i.first[1]))) {
+        //     std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
+        //     std::cout << "WHAT MAP SAYS: " << hasPlayerReachedTile[i.first] << std::endl;
+        // }
+      }
+    }
+
+    // Removing out of screen entities
+    auto &motions_registry = registry.motions;
+
+    /* Given that stuff bounce off map walls we will not need this..
+    // {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
+    // Remove entities that leave the screen on the left side
+    // Iterate backwards to be able to remove without interfering with the next object to visit
+    // (the containers exchange the last element with the current)
+    for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
+      Motion& motion = motions_registry.components[i];
+
+      float right_edge = motion.position.x + abs(motion.scale.x);  // Rightmost x-coordinate
+      float left_edge = motion.position.x - motion.scale.x * 0.5f; // Leftmost x-coordinate
+
+      if (right_edge < 0.f || left_edge > WINDOW_WIDTH_PX) {
+        if (!registry.players.has(motions_registry.entities[i])) { // don't remove the player (outdated?)
+          // if it is an invader that has exited the screen, trigger game over
+          if (registry.invaders.has(motions_registry.entities[i])) { stop_game(); };
+          registry.remove_all_components_of(motions_registry.entities[i]);
         }
+      }
+    }
+    */
 
-		// Removing out of screen entities
-		auto& motions_registry = registry.motions;
+    // Spawns new enemies. borrows code from invader spawning.
+    next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+    if (next_enemy_spawn <= 0.f)
+    {
 
-		/* Given that stuff bounce off map walls we will not need this.. 
-		// {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
-		// Remove entities that leave the screen on the left side
-		// Iterate backwards to be able to remove without interfering with the next object to visit
-		// (the containers exchange the last element with the current)
-		for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
-			Motion& motion = motions_registry.components[i];
+      // reset timer
+      next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
 
-			float right_edge = motion.position.x + abs(motion.scale.x);  // Rightmost x-coordinate
-			float left_edge = motion.position.x - motion.scale.x * 0.5f; // Leftmost x-coordinate
+      // figure out x and y coordinates
+      float max_x = WORLD_WIDTH_PX * 3.0;  // this is also the room width
+      float max_y = WORLD_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
 
-			if (right_edge < 0.f || left_edge > WINDOW_WIDTH_PX) {
-				if (!registry.players.has(motions_registry.entities[i])) { // don't remove the player (outdated?)
-					// if it is an invader that has exited the screen, trigger game over
-					if (registry.invaders.has(motions_registry.entities[i])) { stop_game(); };
-					registry.remove_all_components_of(motions_registry.entities[i]);
-				}
-			}
-		}
-		*/
+      // random x and y coordinates on the map to spawn enemy
+      float pos_x = uniform_dist(rng) * max_x;
+      float pos_y = max_y; // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
 
-		// Spawns new enemies. borrows code from invader spawning.
-		next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-		if (next_enemy_spawn <= 0.f) {
+      // create enemy at random position
+      // setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+      // handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+      // handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
 
-			// reset timer
-			next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+      // LLNOTE
+      // example of spawning using player-reached-point map:
+      // note: there might be a delay before this happens because of next_enemy_spawn
+      // handleEnemySpawning(hasPlayerReachedTile[{9, 6}], OBSTACLE, 1, vec2(9, 6), vec2(9, 11));
+      // hasPlayerReachedTile[{9, 6}] = false;
 
-			//figure out x and y coordinates
-			float max_x = WORLD_WIDTH_PX * 3.0; //this is also the room width
-			float max_y = WORLD_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
+      handleEnemySpawning(hasPlayerReachedTile[{13, 6}], OBSTACLE, 1, vec2(22, 5), vec2(22, 29));
+      hasPlayerReachedTile[{13, 6}] = false;
+    }
+  }
 
-			// random x and y coordinates on the map to spawn enemy
-			float pos_x = uniform_dist(rng) * max_x; 
-			float pos_y = max_y;  // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
-
-			// create enemy at random position
-			//setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
-			// handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
-			// handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
-
-            // LLNOTE
-            // example of spawning using player-reached-point map:
-            // note: there might be a delay before this happens because of next_enemy_spawn
-            //handleEnemySpawning(hasPlayerReachedTile[{9, 6}], OBSTACLE, 1, vec2(9, 6), vec2(9, 11));
-            //hasPlayerReachedTile[{9, 6}] = false;
-
-            handleEnemySpawning(hasPlayerReachedTile[{13, 6}], OBSTACLE, 1, vec2(22, 5), vec2(22, 29));
-            hasPlayerReachedTile[{13, 6}] = false;
-		}
-
-		if (grappleActive) {
-			updateGrappleLines();
-		}
-
-	}
-
-	return game_active;
+  return game_active;
 }
 
 void WorldSystem::stop_game()
@@ -449,6 +447,7 @@ void WorldSystem::restart_game()
   create_tutorial_tile(worldId, vec2(9, 6), TEXTURE_ASSET_ID::TUTORIAL_GRAPPLE);
   create_block(worldId, vec2(10, 0), vec2(14, 3));
   create_grapple_tile(worldId, vec2(12, 6), TEXTURE_ASSET_ID::TEXTURE_COUNT);
+  create_grapple_tile(worldId, vec2(12, 10), TEXTURE_ASSET_ID::TEXTURE_COUNT);
   create_block(worldId, vec2(15, 0), vec2(21, 5));
   create_block(worldId, vec2(17, 8), vec2(21, 20));
 
@@ -458,6 +457,11 @@ void WorldSystem::restart_game()
 
   // generate the vertices for the terrain formed by the chain and render it
   // generateTestTerrain();
+
+  // create grapple point
+  //createGrapplePoint(worldId, vec2(1200.0f, 300.0f));
+  //createGrapplePoint(worldId, vec2(900.0f, 300.0f));
+  //createGrapplePoint(worldId, vec2(300.0f, 300.0f));
 
   // turn off trigger for fadeout shader
   registry.screenStates.components[0].fadeout = 0.0f;
@@ -477,89 +481,96 @@ void WorldSystem::restart_game()
 }
 
 // Compute collisions between entities
-void WorldSystem::handle_collisions() {
+void WorldSystem::handle_collisions()
+{
 
-	// This is mostly a repurposing of collision handling implementation from A1
-	ComponentContainer<Collision>& collision_container = registry.collisions;
-	for (uint i = 0; i < collision_container.components.size(); i++) {
-		Entity entity = collision_container.entities[i];
-		Collision& collision = collision_container.components[i];
-		Entity other = collision.other; // the other entity in the collision
+  // This is mostly a repurposing of collision handling implementation from A1
+  ComponentContainer<Collision> &collision_container = registry.collisions;
+  for (uint i = 0; i < collision_container.components.size(); i++)
+  {
+    Entity entity = collision_container.entities[i];
+    Collision &collision = collision_container.components[i];
+    Entity other = collision.other; // the other entity in the collision
 
-		// Player - Enemy Collision
-		if ((registry.enemies.has(entity) && registry.players.has(other)) ||
-			(registry.enemies.has(other) && registry.players.has(entity))) {
+    // Player - Enemy Collision
+    if ((registry.enemies.has(entity) && registry.players.has(other)) ||
+        (registry.enemies.has(other) && registry.players.has(entity)))
+    {
 
-			if (registry.enemies.has(entity)) {
+      if (registry.enemies.has(entity))
+      {
 
-				// Figure out the position, velocity characteristics of player and enemy
-				Entity enemyEntity = entity;
-				Enemy& enemyComponent = registry.enemies.get(enemyEntity);
-				Entity playerEntity = other;
-				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
-				b2BodyId enemyBodyId = enemyPhys.bodyId;
-				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
-				b2BodyId playerBodyId = playerPhys.bodyId;
+        // Figure out the position, velocity characteristics of player and enemy
+        Entity enemyEntity = entity;
+        Enemy &enemyComponent = registry.enemies.get(enemyEntity);
+        Entity playerEntity = other;
+        PhysicsBody &enemyPhys = registry.physicsBodies.get(enemyEntity);
+        b2BodyId enemyBodyId = enemyPhys.bodyId;
+        PhysicsBody &playerPhys = registry.physicsBodies.get(playerEntity);
+        b2BodyId playerBodyId = playerPhys.bodyId;
 
-				// For now we'll base everything entirely on speed.
-				// Handling based on whether player comes out on top in this collision
-				if (collision.player_wins_collision && enemyComponent.destructable) {
-					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(enemyEntity);
-					Mix_PlayChannel(-1, chicken_dead_sound, 0);
-					points++;
-				}
-				// Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily. 
-				// If the enemy is still frozen, player will not be punished.
-				else if (enemyComponent.freeze_time <= 0) {
-					enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
-					Mix_PlayChannel(-1, chicken_eat_sound, 0);
-					points -= 3; // small penalty for now
-				}
+        // For now we'll base everything entirely on speed.
+        // Handling based on whether player comes out on top in this collision
+        if (collision.player_wins_collision && enemyComponent.destructable)
+        {
+          b2DestroyBody(enemyBodyId);
+          registry.remove_all_components_of(enemyEntity);
+          Mix_PlayChannel(-1, chicken_dead_sound, 0);
+          points++;
+        }
+        // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
+        // If the enemy is still frozen, player will not be punished.
+        else if (enemyComponent.freeze_time <= 0)
+        {
+          enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
+          Mix_PlayChannel(-1, chicken_eat_sound, 0);
+          points -= 3; // small penalty for now
+        }
+      }
+      else
+      {
 
-			}
-			else { 
-				
-				// Figure out the position, velocity characteristics of player and enemy
-				Entity enemyEntity = other;
-				Enemy& enemyComponent = registry.enemies.get(enemyEntity);
-				Entity playerEntity = entity;
-				PhysicsBody& enemyPhys = registry.physicsBodies.get(enemyEntity);
-				b2BodyId enemyBodyId = enemyPhys.bodyId;
-				PhysicsBody& playerPhys = registry.physicsBodies.get(playerEntity);
-				b2BodyId playerBodyId = playerPhys.bodyId;
+        // Figure out the position, velocity characteristics of player and enemy
+        Entity enemyEntity = other;
+        Enemy &enemyComponent = registry.enemies.get(enemyEntity);
+        Entity playerEntity = entity;
+        PhysicsBody &enemyPhys = registry.physicsBodies.get(enemyEntity);
+        b2BodyId enemyBodyId = enemyPhys.bodyId;
+        PhysicsBody &playerPhys = registry.physicsBodies.get(playerEntity);
+        b2BodyId playerBodyId = playerPhys.bodyId;
 
-				// Handling based on whether player comes out on top in this collision
-				if (collision.player_wins_collision && enemyComponent.destructable) {
-					b2DestroyBody(enemyBodyId);
-					registry.remove_all_components_of(other);
-					Mix_PlayChannel(-1, chicken_dead_sound, 0);
-					points++;
-				}
-				// Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily. 
-				// If the enemy is still frozen, player will not be punished.
-				else if (enemyComponent.freeze_time <= 0) {
-					enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
-					Mix_PlayChannel(-1, chicken_eat_sound, 0);
-					points -= 3; // small penalty for now
-				}
+        // Handling based on whether player comes out on top in this collision
+        if (collision.player_wins_collision && enemyComponent.destructable)
+        {
+          b2DestroyBody(enemyBodyId);
+          registry.remove_all_components_of(other);
+          Mix_PlayChannel(-1, chicken_dead_sound, 0);
+          points++;
+        }
+        // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
+        // If the enemy is still frozen, player will not be punished.
+        else if (enemyComponent.freeze_time <= 0)
+        {
+          enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
+          Mix_PlayChannel(-1, chicken_eat_sound, 0);
+          points -= 3; // small penalty for now
+        }
+      }
 
-			}
+      // LEGACY CODE (Pre-Box2D Collision Handling)
+      /*
+      b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
+      b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
+      float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
+      b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
+      b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
+      float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
+      */
+    }
+  }
 
-			// LEGACY CODE (Pre-Box2D Collision Handling)
-			/*
-			b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
-			b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
-			float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
-			b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
-			b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
-			float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
-			*/
-		}
-	}
-
-	// Remove all collisions from this simulation step
-	registry.collisions.clear();
+  // Remove all collisions from this simulation step
+  registry.collisions.clear();
 }
 
 // Should the game be over ?
@@ -650,10 +661,30 @@ void WorldSystem::handle_movement()
   if (keyStates[GLFW_KEY_W])
   {
     // nonjump_movement_force = { 0, forceMagnitude };
+    if (grappleActive)
+    {
+      for (Entity grappleEntity : registry.grapples.entities)
+      {
+        Grapple &grapple = registry.grapples.get(grappleEntity);
+        float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
+        if (curLen >= 50.0f)
+        {
+          b2DistanceJoint_SetLength(grapple.jointId, curLen - GRAPPLE_DETRACT_W);
+        }
+      }
+    }
   }
   else if (keyStates[GLFW_KEY_A])
   {
-    nonjump_movement_force = {-forceMagnitude, 0};
+    if (grappleActive)
+    {
+      // Speed boost for grapple
+      nonjump_movement_force = {-forceMagnitude * 3, 0};
+    }
+    else
+    {
+      nonjump_movement_force = {-forceMagnitude, 0};
+    }
   }
   else if (keyStates[GLFW_KEY_S])
   {
@@ -661,7 +692,15 @@ void WorldSystem::handle_movement()
   }
   else if (keyStates[GLFW_KEY_D])
   {
-    nonjump_movement_force = {forceMagnitude, 0};
+    if (grappleActive)
+    {
+      // Speed boost for grapple
+      nonjump_movement_force = {forceMagnitude * 3, 0};
+    }
+    else
+    {
+      nonjump_movement_force = {forceMagnitude, 0};
+    }
   }
 
   // jump is set seperately, since it can be used in conjunction with the movement keys.
@@ -744,102 +783,202 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
   {
     debugging.in_debug_mode = !debugging.in_debug_mode;
   }
-
-  if (action == GLFW_PRESS)
-  {
-    if (key == GLFW_KEY_LEFT_SHIFT)
-    {
-      Entity ballEntity = registry.physicsBodies.entities[0];
-      Entity grapplePointEntity = registry.physicsBodies.entities[1];
-
-      PhysicsBody &ballBody = registry.physicsBodies.get(ballEntity);
-      PhysicsBody &grappleBody = registry.physicsBodies.get(grapplePointEntity);
-
-      b2BodyId ballBodyId = ballBody.bodyId;
-      b2BodyId grappleBodyId = grappleBody.bodyId;
-
-      b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
-      b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
-
-      // Compute the distance between the two points
-      float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
-                             (grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
-
-      if (distance <= GRAPPLE_ATTACHABLE_RADIUS && !grappleActive)
-      {
-        createGrapple(worldId, ballBodyId, grappleBodyId, distance);
-        grappleActive = true;
-      }
-      else if (grappleActive)
-      {
-        removeGrapple();
-        grappleActive = false;
-      }
-    }
-  }
 }
 
 void WorldSystem::on_mouse_move(vec2 mouse_position)
 {
+
   // record the current mouse position
   mouse_pos_x = mouse_position.x;
   mouse_pos_y = mouse_position.y;
+  // std::cout << "mouse coordinate position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
 }
 
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 {
-  int tile_x = (int)(mouse_pos_x / GRID_CELL_WIDTH_PX);
-  int tile_y = (int)(mouse_pos_y / GRID_CELL_HEIGHT_PX);
-  std::cout << "mouse position: " << mouse_pos_x << ", " << mouse_pos_y << std::endl;
-  std::cout << "mouse tile position: " << tile_x << ", " << tile_y << std::endl;
-
-  // ignore mouse input if game is over
   if (!game_active)
   {
     return;
   }
-}
 
-void WorldSystem::updateGrappleLines()
-{
-  for (Entity grappleEntity : registry.grapples.entities)
+  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
   {
-    Grapple &grapple = registry.grapples.get(grappleEntity);
+    // Get mouse position and convert to world coordinates.
+    vec2 mouseScreenPos = {mouse_pos_x, mouse_pos_y};
+    vec2 worldMousePos = screenToWorld(mouseScreenPos);
+    std::cout << "Mouse clicked at world position: ("
+              << worldMousePos.x << ", " << worldMousePos.y << ")" << std::endl;
+    std::cout << "Corresponding tile: ("
+              << worldMousePos.x / GRID_CELL_WIDTH_PX << ", " << worldMousePos.y / GRID_CELL_HEIGHT_PX << ")" << std::endl;
 
-    // Get current positions
-    b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
-    b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
+    // Find the grapple point closest to the click that is within the threshold.
+    GrapplePoint *selectedGp = nullptr;
+    float bestDist = GRAPPLE_ATTACH_ZONE_RADIUS; // distance threshold
 
-    // Update line entity positions
-    if (registry.lines.has(grapple.lineEntity))
+    for (Entity gpEntity : registry.grapplePoints.entities)
     {
-      Line &line = registry.lines.get(grapple.lineEntity);
-      line.start_pos = vec2(ballPos.x, ballPos.y);
-      line.end_pos = vec2(grapplePos.x, grapplePos.y);
+      GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
+      float dist = length(gp.position - worldMousePos);
+      if (dist < bestDist)
+      {
+        bestDist = dist;
+        selectedGp = &gp;
+      }
+    }
+
+    // Deactivate all grapple points.
+    for (Entity gpEntity : registry.grapplePoints.entities)
+    {
+      GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
+      gp.active = false;
+    }
+
+    // If a valid grapple point is found, mark it as active.
+    if (selectedGp != nullptr)
+    {
+      selectedGp->active = true;
+      std::cout << "Selected grapple point at ("
+                << selectedGp->position.x << ", " << selectedGp->position.y
+                << ") with active = " << selectedGp->active << std::endl;
+    }
+
+    // Now, if no grapple is currently attached and we found an active point, attach the grapple.
+    if (!grappleActive && selectedGp != nullptr)
+    {
+      attachGrapple();
+    }
+    else if (grappleActive)
+    {
+      removeGrapple();
+      grappleActive = false;
     }
   }
 }
 
-void WorldSystem::handleEnemySpawning(bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 tile_position, vec2 tile_movement_area) {
-    // only create if predicate is true
-    if (predicate) {
-        // Convert tile coordinates to pixel coordinates
-        vec2 pixel_position = {
-            tile_position.x * GRID_CELL_WIDTH_PX + (GRID_CELL_WIDTH_PX / 2.0f),
-            tile_position.y * GRID_CELL_HEIGHT_PX + (GRID_CELL_HEIGHT_PX / 2.0f)
-        };
+vec2 WorldSystem::screenToWorld(vec2 mouse_position)
+{
+  for (Entity cameraEntity : registry.cameras.entities)
+  {
+    Camera &camera = registry.cameras.get(cameraEntity);
+    // Calculate the screen center.
+    float centerX = WINDOW_WIDTH_PX / 2.0f;
+    float centerY = WINDOW_HEIGHT_PX / 2.0f;
 
-        vec2 pixel_movement_area = {
-            tile_movement_area.x * GRID_CELL_WIDTH_PX,
-            tile_movement_area.y * GRID_CELL_HEIGHT_PX
-        };
+    // Flip the Y coordinate: if the screen's Y=0 is at the top,
+    // convert it so Y increases upward. This example assumes that
+    // your world-space Y increases upward.
+    float flippedY = WINDOW_HEIGHT_PX - mouse_position.y;
 
-        // Create specified number of enemies by iterating
-        for (int i = 0; i < quantity; i++) {
-            // Create enemy with converted pixel coordinates
-            createEnemy(worldId, pixel_position, enemy_type, pixel_movement_area);
-        }
+    // Offset the mouse position relative to the screen center.
+    float offsetX = mouse_position.x - centerX;
+    float offsetY = flippedY - centerY;
+
+    // Now add the camera's world position.
+    // camera.position is the world-space coordinate at the screen center.
+    vec2 worldPos;
+    worldPos.x = offsetX + camera.position.x;
+    worldPos.y = offsetY + camera.position.y;
+    std::cout << "mouse coordinate position: " << worldPos.x << ", " << worldPos.y << std::endl;
+    return worldPos;
+  }
+}
+
+void WorldSystem::attachGrapple()
+{
+  Entity playerEntity = registry.players.entities[0];
+
+  // Retrieve the ball's physics body
+  PhysicsBody &ballBody = registry.physicsBodies.get(playerEntity);
+  b2BodyId ballBodyId = ballBody.bodyId;
+  b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+
+  Entity activeGrapplePointEntity;
+  b2BodyId activeGrappleBodyId;
+  bool foundActive = false;
+
+  // Loop through all grapple points and find the active one
+  for (Entity gpEntity : registry.grapplePoints.entities)
+  {
+    GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
+    std::cout << gp.position.x << " " << gp.position.y << " " << gp.active << std::endl;
+    if (gp.active)
+    {
+      activeGrapplePointEntity = gpEntity;
+      activeGrappleBodyId = gp.bodyId;
+      foundActive = true;
+      break; // Stop once we find the first active grapple point
     }
+  }
+
+  // If no active grapple points were found, exit early
+  if (!foundActive)
+  {
+    return;
+  }
+
+  b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
+
+  // Compute the distance between the ball and the grapple point
+  float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
+                         (grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
+
+  // Attach the grapple if within range
+  if (distance <= GRAPPLE_MAX_LENGTH)
+  {
+    createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
+    grappleActive = true;
+  }
+}
+
+void WorldSystem::checkGrappleGrounded()
+{
+  if (grappleActive)
+  {
+    if (!registry.players.entities.empty())
+    {
+      Entity playerEntity = registry.players.entities[0];
+
+      if (registry.physicsBodies.has(playerEntity))
+      {
+        PhysicsBody &phys = registry.physicsBodies.get(playerEntity);
+        b2BodyId bodyId = phys.bodyId;
+
+        // check if the player is grounded
+        bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
+        Grapple grapple;
+        for (Entity grappleEntity : registry.grapples.entities)
+        {
+          grapple = registry.grapples.get(grappleEntity);
+        }
+        float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
+        if (isGrounded)
+        {
+          b2DistanceJoint_EnableSpring(grapple.jointId, true);
+          b2DistanceJoint_SetSpringHertz(grapple.jointId, GRAPPLE_HERTZ_GROUNDED);
+          b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, GRAPPLE_DAMPING_GROUNDED);
+          b2DistanceJoint_SetLength(grapple.jointId, curLen - GRAPPLE_DETRACT_GROUNDED);
+        }
+        else
+        {
+          b2DistanceJoint_EnableSpring(grapple.jointId, false);
+        }
+      }
+    }
+  }
+}
+void WorldSystem::handleEnemySpawning(bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 position, vec2 movement_area)
+{
+
+  // only create if predicate is true
+  if (predicate)
+  {
+    // Create specified number of enemies by iterating
+    for (int i = 0; i < quantity; i++)
+    {
+      // enemy created here
+      createEnemy(worldId, position, enemy_type, movement_area);
+    }
+  }
 }
 
 // LLNOTE
@@ -855,4 +994,3 @@ bool WorldSystem::playerReachedTile(ivec2 gridCoordinate) {
     // If player is in the same grid as specified, then return true. else false.
     return playerLocation == gridCoordinate;
 }
-

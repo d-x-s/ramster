@@ -174,48 +174,18 @@ b2BodyId create_single_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET
     return bodyId;
 }
 
-b2BodyId create_grapple_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID textureId) {
+void create_grapple_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID textureId) {
     float centerX = (grid_position.x * GRID_CELL_WIDTH_PX) + (GRID_CELL_WIDTH_PX / 2.0f);
     float centerY = (grid_position.y * GRID_CELL_HEIGHT_PX) + (GRID_CELL_HEIGHT_PX / 2.0f);
     vec2 position = { centerX, centerY };
 
-    Entity entity = Entity();
-    b2BodyDef bodyDef = b2DefaultBodyDef();
-    bodyDef.type = b2_staticBody;
-    bodyDef.position = b2Vec2{ position.x, position.y };
+    createGrapplePoint(worldId, position);
 
-    b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
-
-    b2ShapeDef shapeDef = b2DefaultShapeDef();
-
-    b2Circle circle;
-    circle.center = b2Vec2{ 0.0f, 0.0f };
-    circle.radius = 0.2f;
-
-    b2CreateCircleShape(bodyId, &shapeDef, &circle);
-
-    PhysicsBody& grappleBody = registry.physicsBodies.emplace(entity);
-    grappleBody.bodyId = bodyId;
-
-    GrapplePoint& grapplePoint = registry.grapplePoints.emplace(entity);
-
-    auto& motion = registry.motions.emplace(entity);
-    motion.position = vec2(position.x, position.y);
-    motion.scale = vec2(64.0f, 64.0f);
-
-    registry.renderRequests.insert(
-        entity,
-        {
-            TEXTURE_ASSET_ID::GRAPPLE_POINT,
-            EFFECT_ASSET_ID::TEXTURED,
-            GEOMETRY_BUFFER_ID::SPRITE
-        }
-    );
-
+    // Outline
     Entity entity_grapple_outline = Entity();
     auto& grapple_outline_motion = registry.motions.emplace(entity_grapple_outline);
     grapple_outline_motion.position = vec2(position.x, position.y);
-    grapple_outline_motion.scale = vec2(GRAPPLE_ATTACHABLE_RADIUS * 2, GRAPPLE_ATTACHABLE_RADIUS * 2);
+    grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS * 2, GRAPPLE_ATTACH_ZONE_RADIUS * 2);
     registry.renderRequests.insert(
         entity_grapple_outline,
         {
@@ -224,8 +194,6 @@ b2BodyId create_grapple_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSE
             GEOMETRY_BUFFER_ID::SPRITE
         }
     );
-
-    return bodyId;
 }
 
 b2BodyId create_curve(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID textureId) {

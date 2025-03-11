@@ -274,16 +274,19 @@ struct PhysicsBody
   b2BodyId bodyId;
 };
 
-struct GrapplePoint
-{
-};
-
+// TODO remove this?
 struct Grapple
 {
   b2JointId jointId;
   b2BodyId ballBodyId;
   b2BodyId grappleBodyId;
   Entity lineEntity;
+};
+
+struct GrapplePoint {
+	vec2 position;
+	bool active;
+	b2BodyId bodyId;
 };
 
 struct Camera

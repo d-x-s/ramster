@@ -14,6 +14,7 @@ public:
 	void step(float elapsed_ms);
 	explicit PhysicsSystem(b2WorldId worldId);
 	~PhysicsSystem();
+	void updateGrappleLines();
 
 private:
 	b2WorldId worldId;

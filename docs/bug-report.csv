@@ -7,3 +7,5 @@ Reported Date,Reporter,Assignee,Severity,Status,Short Desc.,Expected Results,Act
 2/23/2025,Ning,Davis,P2 - Critical,Resolved,Grapple lags behind ball,The grapple can sometimes lag behind the ball visually,The grapple should not lag behind the ball,Go fast around a grapple point
 3/10/2025,Ning,Andrew,P3 - Major,Open,Grapple keeps shortening even when ball isn't moving,"The grapple should only automatically retract when it's forced to, and while the ball is moving","Grapple retracts even when ball is not moving, pulling ball towards grapple",Attach to a grapple point while on the ground and do nothing
 3/10/2025,Ning,Ning,P3 - Major,Open,"Ball sometimes 'double-jumps' when holding or spamming space, even on flat ground",The ball should jump only once (Implement ball jump cooldown?),Ball jumps higher than expected,Spam jump on ball
+3/10/2025,Andrew,Andrew,P3 - Major,Open,"Grapple cannot manually retract (with W) while ball is grounded",Grapple should retract when pressing W even while ball is grounded,Grapple does not retract when pressing w while ball is grounded,Press W while attached to grapple and ball is grounded
+

@@ -143,13 +143,24 @@ private:
 			}
 		},
 		{
-			{2, 4},
+			{33, 6},
 			{
 				ENEMY_TYPES::SWARM,
 				20,
 				false,
 				false,
-				{8, 6},
+				{42, 8},
+				{0, 0}
+			}
+		},
+		{
+			{ 50, 6 },
+			{
+				ENEMY_TYPES::COMMON,
+				3,
+				false,
+				false,
+				{68, 5},
 				{0, 0}
 			}
 		}

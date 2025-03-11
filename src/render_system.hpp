@@ -53,6 +53,22 @@ class RenderSystem
       textures_path("invaders/floater_2.png"),
       textures_path("invaders/floater_3.png"),
 
+      textures_path("invaders/common_1.png"),
+      textures_path("invaders/common_2.png"),
+      textures_path("invaders/common_3.png"),
+      textures_path("invaders/common_4.png"),
+      textures_path("invaders/common_5.png"),
+
+      textures_path("invaders/swarm_1.png"),
+      textures_path("invaders/swarm_2.png"),
+      textures_path("invaders/swarm_3.png"),
+      textures_path("invaders/swarm_4.png"),
+
+      textures_path("invaders/obstacle_1.png"),
+      textures_path("invaders/obstacle_2.png"),
+      textures_path("invaders/obstacle_3.png"),
+      textures_path("invaders/obstacle_4.png"),
+
       // tiles
     textures_path("tiles/half-ramp-bl.png"),
     textures_path("tiles/half-ramp-br.png"),

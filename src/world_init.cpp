@@ -143,26 +143,37 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	motion.angle = 0.f;
 	motion.position = pos;
 
-	float scale = circle.radius * 2;
+	float scale = circle.radius * 3;
 	motion.scale = vec2(scale, scale);
 
-	std::vector<TEXTURE_ASSET_ID> frames = { TEXTURE_ASSET_ID::FLOATER_1, TEXTURE_ASSET_ID::FLOATER_2, TEXTURE_ASSET_ID::FLOATER_3 };
+	std::vector<TEXTURE_ASSET_ID> frames;
+
+	if (enemy_type == ENEMY_TYPES::COMMON) {
+		frames = { TEXTURE_ASSET_ID::COMMON_1, TEXTURE_ASSET_ID::COMMON_2, TEXTURE_ASSET_ID::COMMON_3, TEXTURE_ASSET_ID::COMMON_4, TEXTURE_ASSET_ID::COMMON_5 };
+	}
+	else if (enemy_type == ENEMY_TYPES::SWARM)
+	{
+		frames = { TEXTURE_ASSET_ID::SWARM_1, TEXTURE_ASSET_ID::SWARM_2, TEXTURE_ASSET_ID::SWARM_3, TEXTURE_ASSET_ID::SWARM_4 };
+	}
+	else if (enemy_type == ENEMY_TYPES::OBSTACLE)
+	{
+		frames = { TEXTURE_ASSET_ID::OBSTACLE_1, TEXTURE_ASSET_ID::OBSTACLE_2, TEXTURE_ASSET_ID::OBSTACLE_3, TEXTURE_ASSET_ID::OBSTACLE_4 };
+	}
+
 	registry.renderRequests.insert(
 		entity,
 		{
-			// TODO: Apply different textures to different enemy types.
-			frames[0],                    // base apperance is just the first frame
+			frames[0],                    
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE,
-			frames,                       // store all animation frames
-			{},							              // no custom scale per frame
-			true,						              // loop the animation
-			200.0f,                       // frame time (ms)
-			0.0f,                         // elapsed time
-			0                             // current frame index
+			frames,                       
+			{},							              
+			true,						             
+			200.0f,                       
+			0.0f,                         
+			0                             
 		}
 	);
-	// DEBUG std::cout << "Inserted render request for enemy.\n";
 
 	return entity;
 }

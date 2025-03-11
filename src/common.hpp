@@ -40,7 +40,7 @@ inline std::string mesh_path(const std::string& name) {return data_path() + "/me
 const int WINDOW_WIDTH_PX = 1280;
 const int WINDOW_HEIGHT_PX = 800;
 
-const int WORLD_WIDTH_PX = 11520;
+const int WORLD_WIDTH_PX = 13440;
 const int WORLD_HEIGHT_PX = 3240;
 
 const int GRID_CELL_WIDTH_PX = 128;
@@ -99,7 +99,7 @@ const float BALL_INITIAL_POSITION_Y = 800.0;
 // Player input related physics
 const float BALL_GROUNDED_MOVEMENT_FORCE = 25000.0f; // kg�cm/s� (dynes)
 const float BALL_AIR_STRAFE_FORCE_MULTIPLIER = 0.5f;
-const float BALL_JUMP_IMPULSE = 4000.0f; // kg�cm/s (dynes�s)
+const float BALL_JUMP_IMPULSE = 8000.0f; // kg�cm/s (dynes�s)
 
 // A ball of radius 32cm has area ~3200cm�.
 // We should pick a value that yields a reasonable weight-to-area ratio like a density of 0.01.
@@ -112,7 +112,7 @@ const float BALL_ANGULAR_DAMPING = 0.75f; // 1/s (inverse seconds)
 
 // ENEMY 2DBODY
 // Shares most of player 2D body but different density, friction, restitution, etc.
-const float ENEMY_GROUNDED_MOVEMENT_FORCE = 12500.0f; // kg�cm/s� (dynes)
+const float ENEMY_GROUNDED_MOVEMENT_FORCE = 7500.0f; // kg�cm/s� (dynes)
 const float ENEMY_JUMP_IMPULSE = 2000.0f; // kg�cm/s (dynes�s)
 
 const float ENEMY_RADIUS = 25.0;

@@ -482,7 +482,6 @@ void WorldSystem::restart_game()
   create_tutorial_tile(worldId, vec2(9, 6), TEXTURE_ASSET_ID::TUTORIAL_GRAPPLE);
   create_block(worldId, vec2(10, 0), vec2(14, 3));
   create_grapple_tile(worldId, vec2(12, 6), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_grapple_tile(worldId, vec2(12, 10), TEXTURE_ASSET_ID::TEXTURE_COUNT);
   create_block(worldId, vec2(15, 0), vec2(21, 5));
   create_block(worldId, vec2(17, 8), vec2(21, 20));
 
@@ -494,12 +493,46 @@ void WorldSystem::restart_game()
   create_block(worldId, vec2(30, 8), vec2(34, 12));
 
   // tutorial: swarming enemy room
+  create_tutorial_tile(worldId, vec2(39, 7), TEXTURE_ASSET_ID::TUTORIAL_DESTROY);
+  create_curve(worldId, vec2(38, 6), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
+  create_curve(worldId, vec2(46, 6), TEXTURE_ASSET_ID::SMOOTH_RAMP_BL);
+  create_block(worldId, vec2(35, 5), vec2(49, 5));
+  create_block(worldId, vec2(39, 0), vec2(39, 6));
+  create_block(worldId, vec2(45, 0), vec2(45, 6));
+  // Roof left
+  create_block(worldId, vec2(35, 8), vec2(36, 15));
+  create_block(worldId, vec2(37, 9), vec2(37, 15));
+  create_block(worldId, vec2(38, 10), vec2(39, 15));
+  // Roof Middle
+  create_block(worldId, vec2(40, 11), vec2(44, 15));
+  create_block(worldId, vec2(45, 10), vec2(46, 15));
+  // Roof Right
+  create_block(worldId, vec2(47, 9), vec2(47, 15));
+  create_block(worldId, vec2(48, 8), vec2(49, 15));
+  create_grapple_tile(worldId, vec2(42, 8), TEXTURE_ASSET_ID::TEXTURE_COUNT);
+  // Exit
+  create_block(worldId, vec2(50, 0), vec2(54, 5));
+  create_block(worldId, vec2(50, 8), vec2(54, 12));
 
   // tutorial: walking enemy room
+  create_block(worldId, vec2(55, 0), vec2(69, 4));
+  create_curve(worldId, vec2(69, 5), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
 
   // tutorial: long vertical shaft with grapple points
+  create_block(worldId, vec2(70, 0), vec2(78, 0));
+  create_block(worldId, vec2(34 + 36, 8), vec2(37 + 36, 20));
+  create_block(worldId, vec2(37 + 36, 2), vec2(37 + 36, 20));
+  create_grapple_tile(worldId, vec2(40 + 36, 3), TEXTURE_ASSET_ID::TEXTURE_COUNT);
+  create_grapple_tile(worldId, vec2(40 + 36, 9), TEXTURE_ASSET_ID::TEXTURE_COUNT);
+  create_grapple_tile(worldId, vec2(40 + 36, 15), TEXTURE_ASSET_ID::TEXTURE_COUNT);
+  create_block(worldId, vec2(37 + 36, 18), vec2(50 + 36, 30));
+  create_block(worldId, vec2(43 + 36, 0), vec2(43 + 36, 15));
+  create_block(worldId, vec2(43 + 36, 18), vec2(43 + 36, 30));
+  create_block(worldId, vec2(43 + 36, 0), vec2(50 + 36, 5));
+  create_block(worldId, vec2(46 + 36, 8), vec2(50 + 36, 30));
 
   // tutorial: ending straight to the finish line
+  create_block(worldId, vec2(87, 0), vec2(104, 4));
 
   // generate the vertices for the terrain formed by the chain and render it
   // generateTestTerrain();

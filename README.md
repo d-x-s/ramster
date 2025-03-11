@@ -11,7 +11,27 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 |----------|----------|
 | `A/D` | Move left/right |
 | `Space` | Jump |
-| `LeftShift` | Attach/detach to a grapple point |
+| `Left Click` | Attach/detach to a grapple point |
+| `W` | Retract grapple |
+
+## M2 
+| Category | Task | Satisfying Feature(s) |
+|----------|----------|----------|
+| Improved Gameplay | Game AI Improvements | Obstacle, Walking, and Swarm Enemies |
+| Improved Gameplay | Sprite Animations | Enemy Animations |
+| Improved Gameplay | Improved Assets | Tile Textures |
+| Improved Gameplay  | Mesh-based collision detection | Box2D Chain Shapes  |
+| Improved Gameplay  | Gameplay tutorial | ✅ |
+| Improved Gameplay  | FPS Counter | See Game Window Caption |
+| Playability	 | 2-minutes of non-repetitive gameplay	| ✅ |
+| Stability | Stable frame rate and minimal game lag | ✅ |
+| Stability | No crashes, glitches, or unpredictable behaviour | ✅   |
+| Software Engineering | Updated test Plan | See `docs` |
+| Reporting | Bug List | See `docs` |
+| Reporting | Demo Video | See Canvas |
+
+<details>
+<summary>Expand for M1</summary>
 
 ## M1 Basic Elements
 | Category | Task | Satisfying Feature(s) |
@@ -46,6 +66,8 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 
 ## M1 Interpolation Implementation
 Linear interpolation is implemented whenever the camera performs movement not centered on the player. The `lerp()` function provided in the grading rubric is utilized. As an example, whenever the player grapples to a grapple point, the camera will go center on it. To calculate the in-between camera frames, the `lerp()` function is used in first the `x` direction, then the `y` direction. The `t` parameter is represented with a shift variable starting at `0` and incrementing by `0.02` up to `1`.
+
+</details>
 
 ## Building the Game
 1) Open Visual Studio (2022 is preferred)

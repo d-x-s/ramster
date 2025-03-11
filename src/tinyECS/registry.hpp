@@ -37,6 +37,7 @@ public:
 	ComponentContainer<Line> lines;
 	ComponentContainer<Grapple> grapples;
 	ComponentContainer<GrapplePoint> grapplePoints;
+	ComponentContainer<TutorialTile> tutorialTiles;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()

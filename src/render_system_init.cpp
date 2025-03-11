@@ -64,6 +64,7 @@ void RenderSystem::initializeGlTextures()
 {
     glGenTextures((GLsizei)texture_gl_handles.size(), texture_gl_handles.data());
 
+    stbi_set_flip_vertically_on_load(true);
     for(uint i = 0; i < texture_paths.size(); i++)
     {
 		const std::string& path = texture_paths[i];

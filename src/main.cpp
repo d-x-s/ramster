@@ -13,6 +13,7 @@
 #include "render_system.hpp"
 #include "world_system.hpp"
 #include "world_init.hpp"
+#include "terrain.hpp"
 
 using Clock = std::chrono::high_resolution_clock;
 
@@ -32,43 +33,7 @@ int main()
 	b2Vec2 gravity_vector;
 	gravity_vector.x = 0.f;
 	gravity_vector.y = GRAVITY;
-
 	b2World_SetGravity(worldId, gravity_vector);
-
-	// Room dimensions
-	const float roomWidth = WINDOW_WIDTH_PX * 3.0;
-	const float roomHeight = WINDOW_HEIGHT_PX;
-	const float wallThickness = 0.5f; // half-width for SetAsBox
-
-	auto create_wall = [&](float x, float y, float halfWidth, float halfHeight) {
-		b2BodyDef bodyDef = b2DefaultBodyDef();
-		bodyDef.position = b2Vec2{ x, y };
-
-		b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
-
-		b2Polygon polygon = b2MakeBox(halfWidth, halfHeight);
-		b2ShapeDef shapeDef = b2DefaultShapeDef();
-		shapeDef.friction = 0.1f;
-		b2CreatePolygonShape(bodyId, &shapeDef, &polygon);
-
-		// Draw the walls of the room
-		vec2 topLeft = { x - halfWidth, y + halfHeight };
-		vec2 topRight = { x + halfWidth, y + halfHeight };
-		vec2 bottomRight = { x + halfWidth, y - halfHeight };
-		vec2 bottomLeft = { x - halfWidth, y - halfHeight };
-		Entity topEdge = createLine(topLeft, topRight);
-		Entity rightEdge = createLine(topRight, bottomRight);
-		Entity bottomEdge = createLine(bottomRight, bottomLeft);
-		Entity leftEdge = createLine(bottomLeft, topLeft);
-
-		return bodyId;
-	};
-
-	// Create room boundaries
-	b2BodyId floorId = create_wall(roomWidth / 2, 0.0f, roomWidth / 2, wallThickness);			// Floor
-	b2BodyId ceilingId = create_wall(roomWidth / 2, roomHeight, roomWidth / 2, wallThickness);	// Ceiling
-	b2BodyId leftWallId = create_wall(0.0f, roomHeight / 2, wallThickness, roomHeight / 2);		// Left Wall
-	b2BodyId rightWallId = create_wall(roomWidth, roomHeight / 2, wallThickness, roomHeight / 2);	// Right Wall
 
 	// global systems
 	WorldSystem   world_system(worldId);

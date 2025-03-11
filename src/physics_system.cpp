@@ -23,12 +23,14 @@ float center_y = -1.f;             // The center y position of the camera
 vec2 grapple_shift = { 0.f, 0.f }; // What stage of the camera's movement it is in towards grapple
 float reset_shift = 0.f;           // What stage of the camera's movement it is in after grapple
 bool after_grapple = false;        // Whether the camera is resetting after a grapple
+int camera_panned = 0;             // 0 = Centered, 1 = Panned Right, 2 = Panned Left 
 
 // Camera Constants
-float QUICK_MOVEMENT_THRESHOLD = 700.f;
+float QUICK_MOVEMENT_THRESHOLD = 900.f;
 float HORIZONTAL_FOCAL_SHIFT = 200.f;
-float CAMERA_DELAY = 100.f;      // Higher = Slower camera movement
+float CAMERA_SPEED = 5.f;      // Lower = Slower camera movement
 float VERTICAL_THRESHOLD = 50.f; // Lower = Camera will follow more aggressively
+float DEFAULT = -1.f;
 
 // M1 Linear Interpolation for Camera Movement
 // See: https://www.gamedev.net/tutorials/programming/general-and-gameplay-programming/a-brief-introduction-to-lerp-r4954/
@@ -167,11 +169,12 @@ void PhysicsSystem::step(float elapsed_ms)
 
   // Push camera ahead when moving fast horizontally (Right)
   // std::cout << "Player velocity = (" << b2Body_GetLinearVelocity(bodyId).x << ", " << b2Body_GetLinearVelocity(bodyId).y << ")\n";
-  if (b2Body_GetLinearVelocity(playerBodyID).x > QUICK_MOVEMENT_THRESHOLD)
+  if (b2Body_GetLinearVelocity(playerBodyID).x > QUICK_MOVEMENT_THRESHOLD && camera_panned != 2)
   {
     speedy = true;
+    camera_panned = 1;
     // Initialize camera movement
-    camera_next_step = lerp(playerPosition.x, playerPosition.x + HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
+    camera_next_step = playerPosition.x + CAMERA_SPEED * shift_index;
     camera_objective_loc = playerPosition.x + HORIZONTAL_FOCAL_SHIFT;
     if (camera_next_step < camera_objective_loc)
     {
@@ -184,11 +187,12 @@ void PhysicsSystem::step(float elapsed_ms)
     }
   }
   // Push camera ahead when moving fast horizontally (Left)
-  else if (b2Body_GetLinearVelocity(playerBodyID).x < -QUICK_MOVEMENT_THRESHOLD)
+  else if (b2Body_GetLinearVelocity(playerBodyID).x < -QUICK_MOVEMENT_THRESHOLD && camera_panned != 1)
   {
     speedy = true;
+    camera_panned = 2;
     // Initialize camera movement
-    camera_next_step = lerp(playerPosition.x, playerPosition.x - HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
+	camera_next_step = playerPosition.x - CAMERA_SPEED * shift_index;
     camera_objective_loc = playerPosition.x - HORIZONTAL_FOCAL_SHIFT;
     if (camera_next_step > camera_objective_loc)
     {
@@ -206,17 +210,17 @@ void PhysicsSystem::step(float elapsed_ms)
   }
 
   // Slowly reset camera if no longer above movement threshold
-  if (!speedy && playerPosition.x != camera_objective_loc)
+  if (!speedy && camera_objective_loc != DEFAULT)
   {
     if (playerPosition.x < camera_objective_loc)
     {
       camera_objective_loc = playerPosition.x + HORIZONTAL_FOCAL_SHIFT;
-      camX = lerp(camX, camX + HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
+	  camX = playerPosition.x + CAMERA_SPEED * shift_index;
     }
     else if (playerPosition.x > camera_objective_loc)
     {
       camera_objective_loc = playerPosition.x - HORIZONTAL_FOCAL_SHIFT;
-      camX = lerp(camX, camX - HORIZONTAL_FOCAL_SHIFT / CAMERA_DELAY, shift_index);
+	  camX = playerPosition.x - CAMERA_SPEED * shift_index;
     }
     if (shift_index > 1)
     {
@@ -224,7 +228,8 @@ void PhysicsSystem::step(float elapsed_ms)
     }
     else
     {
-      camera_objective_loc = -1.f; // Reset objective location
+      camera_objective_loc = DEFAULT; // Reset objective location
+	  camera_panned = 0; // Reset panning
     }
   }
 
@@ -274,15 +279,23 @@ void PhysicsSystem::step(float elapsed_ms)
   }
 
   // Get grapple point position (static for now)
-  Entity grapplePointEntity = registry.grapplePoints.entities[0];
-  PhysicsBody& grappleBody = registry.physicsBodies.get(grapplePointEntity);
-  b2BodyId grappleBodyId = grappleBody.bodyId;
-  b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
-
   // Move camera towards grapple point
   if (grappleActive) {
       // Initialize variables
-      camX = lerp(prev_x, grapplePos.x, grapple_shift.x);
+  Entity activeGrapplePointEntity;
+  b2BodyId activeGrappleBodyId;
+
+  // Loop through all grapple points and find the active one
+  for (Entity gpEntity : registry.grapplePoints.entities) {
+    GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+		//std::cout << gp.position.x << " " << gp.position.y <<  " " << gp.active << std::endl;
+    if (gp.active) {
+        activeGrapplePointEntity = gpEntity;
+        activeGrappleBodyId = gp.bodyId;
+    }
+  }
+  b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
+    camX = lerp(prev_x, grapplePos.x, grapple_shift.x);
 	  camY = lerp(prev_y, grapplePos.y, grapple_shift.y);
 
 	  if (camX != grapplePos.x || camY != grapplePos.y) {
@@ -299,22 +312,22 @@ void PhysicsSystem::step(float elapsed_ms)
 
   // Hard coded for now, will change to be dynamic later
   float LEFT_BOUNDARY = WINDOW_WIDTH_PX / 2.f;
-  float RIGHT_BOUNDARY = WINDOW_WIDTH_PX * 2.5f;
-  float TOP_BOUNDARY = WINDOW_HEIGHT_PX / 2.f;
+  float RIGHT_BOUNDARY = WORLD_WIDTH_PX - (WINDOW_WIDTH_PX / 2.f);
+  float TOP_BOUNDARY = WORLD_HEIGHT_PX - (WINDOW_HEIGHT_PX / 2.f);
 
   // Unlock the camera from the player if they approach the edge of world
   // This happens last because it has the highest priority
-  if (camX < LEFT_BOUNDARY)
+  if (camX < LEFT_BOUNDARY && !grappleActive)
   {
-      camX = WINDOW_WIDTH_PX / 2.f;
+      camX = LEFT_BOUNDARY;
   }
-  if (camX > RIGHT_BOUNDARY)
+  if (camX > RIGHT_BOUNDARY && !grappleActive)
   {
-      camX = WINDOW_WIDTH_PX * 2.5f;
+      camX = RIGHT_BOUNDARY;
   }
-  if (camY > TOP_BOUNDARY)
+  if (camY > TOP_BOUNDARY && !grappleActive)
   {
-      camY = WINDOW_HEIGHT_PX / 2.f;
+      camY = TOP_BOUNDARY;
   }
 
   // If the camera is post-grapple, we need to dynamically move it back 
@@ -329,7 +342,7 @@ void PhysicsSystem::step(float elapsed_ms)
       else {
           camX = lerp(prev_x, camX, reset_shift);
           camY = lerp(prev_y, camY, reset_shift);
-          reset_shift += 0.001;
+          reset_shift += 0.02;
       }
   }
 
@@ -399,9 +412,9 @@ void PhysicsSystem::step(float elapsed_ms)
               }
 
               // DEBUG
-              std::cout << "ENTITY 1 SPEED: " << entity1_speedFactor << std::endl;
-              std::cout << "ENTITY 2 SPEED: " << entity2_speedFactor << std::endl;
-              std::cout << "PLAYER SPEED: " << playerSpeed << std::endl;
+              //std::cout << "ENTITY 1 SPEED: " << entity1_speedFactor << std::endl;
+              //std::cout << "ENTITY 2 SPEED: " << entity2_speedFactor << std::endl;
+              //std::cout << "PLAYER SPEED: " << playerSpeed << std::endl;
 
               // Create a collisions event
               // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
@@ -414,4 +427,25 @@ void PhysicsSystem::step(float elapsed_ms)
     }
   }
 
+
+ 	if (grappleActive) {
+		updateGrappleLines();
+  }
+}
+
+void PhysicsSystem::updateGrappleLines() {
+    for (Entity grappleEntity : registry.grapples.entities) {
+        Grapple& grapple = registry.grapples.get(grappleEntity);
+
+        // Get current positions
+        b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
+        b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
+
+        // Update line entity positions
+        if (registry.lines.has(grapple.lineEntity)) {
+            Line& line = registry.lines.get(grapple.lineEntity);
+            line.start_pos = vec2(ballPos.x, ballPos.y);
+            line.end_pos = vec2(grapplePos.x, grapplePos.y);
+        }
+    }
 }

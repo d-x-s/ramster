@@ -479,6 +479,14 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 
 	mat3 projection_2D = createProjectionMatrix();
 
+	// draw grid lines first
+	for (Entity entity : registry.renderRequests.entities)
+	{
+		if (registry.gridLines.has(entity)) {
+			drawGridLine(entity, projection_2D);
+		}
+	}
+
 	// draw all entities with a render request to the frame buffer
 	for (Entity entity : registry.renderRequests.entities)
 	{
@@ -487,10 +495,6 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 			// Note, its not very efficient to access elements indirectly via the entity
 			// albeit iterating through all Sprites in sequence. A good point to optimize
 			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
-		}
-		// draw grid lines separately, as they do not have motion but need to be rendered
-		else if (registry.gridLines.has(entity)) {
-			drawGridLine(entity, projection_2D);
 		}
 		// draw terrain lines separately
 		else if (registry.lines.has(entity)) {

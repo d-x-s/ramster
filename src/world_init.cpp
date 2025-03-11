@@ -29,9 +29,9 @@ Entity createBall(b2WorldId worldId)
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
 	circle.radius = BALL_RADIUS;
-	b2CreateCircleShape(bodyId, &shapeDef, &circle);
+	b2ShapeId shapeId = b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	ball.bodyId = bodyId;
-
+	
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 
 	// Add motion & render request for ECS synchronization
@@ -71,7 +71,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	// Size of enemy. ENEMY_RADIUS is the standard size, and we'll change it for non-common enemies.
 	float enemySize = ENEMY_RADIUS;
 	if (enemy_type == OBSTACLE) {
-		enemySize *= 2.5;
+		enemySize *= 1.5;
 	}
 	else if(enemy_type == SWARM) {
 		enemySize *= 0.75;
@@ -127,7 +127,6 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	shapeDef.friction = enemyFriction;
 	shapeDef.restitution = enemyBounciness; 
 
-	
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
 	// We'll update the enemy hitbox later.
 	b2Circle circle;
@@ -144,41 +143,56 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	motion.angle = 0.f;
 	motion.position = pos;
 
-	float scale = circle.radius * 2;
+	float scale = circle.radius * 3;
 	motion.scale = vec2(scale, scale);
 
-	std::vector<TEXTURE_ASSET_ID> frames = { TEXTURE_ASSET_ID::FLOATER_1, TEXTURE_ASSET_ID::FLOATER_2, TEXTURE_ASSET_ID::FLOATER_3 };
+	std::vector<TEXTURE_ASSET_ID> frames;
+
+	if (enemy_type == ENEMY_TYPES::COMMON) {
+		frames = { TEXTURE_ASSET_ID::COMMON_1, TEXTURE_ASSET_ID::COMMON_2, TEXTURE_ASSET_ID::COMMON_3, TEXTURE_ASSET_ID::COMMON_4, TEXTURE_ASSET_ID::COMMON_5 };
+	}
+	else if (enemy_type == ENEMY_TYPES::SWARM)
+	{
+		frames = { TEXTURE_ASSET_ID::SWARM_1, TEXTURE_ASSET_ID::SWARM_2, TEXTURE_ASSET_ID::SWARM_3, TEXTURE_ASSET_ID::SWARM_4 };
+	}
+	else if (enemy_type == ENEMY_TYPES::OBSTACLE)
+	{
+		frames = { TEXTURE_ASSET_ID::OBSTACLE_1, TEXTURE_ASSET_ID::OBSTACLE_2, TEXTURE_ASSET_ID::OBSTACLE_3, TEXTURE_ASSET_ID::OBSTACLE_4 };
+	}
+
 	registry.renderRequests.insert(
 		entity,
 		{
-			// TODO: Apply different textures to different enemy types.
-			frames[0],                    // base apperance is just the first frame
+			frames[0],                    
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE,
-			frames,                       // store all animation frames
-			{},							              // no custom scale per frame
-			true,						              // loop the animation
-			200.0f,                       // frame time (ms)
-			0.0f,                         // elapsed time
-			0                             // current frame index
+			frames,                       
+			{},							              
+			true,						             
+			200.0f,                       
+			0.0f,                         
+			0                             
 		}
 	);
-	// DEBUG std::cout << "Inserted render request for enemy.\n";
 
 	return entity;
 }
 
-
-Entity createGrapplePoint(b2WorldId worldId){
+  // Entity createGrapplePoint(b2WorldId worldId){
+Entity createGrapplePoint(b2WorldId worldId, vec2 position){
 	Entity entity = Entity();
 
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_staticBody;
-	bodyDef.position = b2Vec2{ 1200.0f, 300.0f };
+	bodyDef.position = b2Vec2{ position.x, position.y};
 
     b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
+
+	//Disable collisions
+	shapeDef.filter.maskBits = 0x0000;
+	shapeDef.isSensor = true; 
 
 	b2Circle circle;
 	circle.center = b2Vec2{ 0.0f, 0.0f };
@@ -190,9 +204,12 @@ Entity createGrapplePoint(b2WorldId worldId){
     grappleBody.bodyId = bodyId;
 
 	GrapplePoint& grapplePoint = registry.grapplePoints.emplace(entity);
-
+	grapplePoint.position = position;
+	grapplePoint.active = false;
+	grapplePoint.bodyId = bodyId;
+	
 	auto& motion = registry.motions.emplace(entity);
-	motion.position = vec2(1200.0f, 300.0f);
+	motion.position = position;
 	motion.scale = vec2(64.0f, 64.0f);
 
 	registry.renderRequests.insert(
@@ -216,7 +233,9 @@ Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBod
     djd.bodyIdB = grappleBodyId;
     djd.length = distance;
     djd.collideConnected = false;
-    djd.maxLength = 280.0f;
+    // djd.maxLength = GRAPPLE_ATTACHABLE_RADIUS;
+    djd.maxLength = GRAPPLE_MAX_LENGTH;
+	djd.minLength = GRAPPLE_MIN_LENGTH;
 
     b2JointId jointId = b2CreateDistanceJoint(worldId, &djd);
 

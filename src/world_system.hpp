@@ -6,6 +6,7 @@
 // stlib
 #include <vector>
 #include <random>
+#include <map>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -13,6 +14,7 @@
 #include <box2d/box2d.h>
 
 #include "render_system.hpp"
+#include <random>
 
 // Global Variables
 extern bool grappleActive; // Bool to check if grapple is active
@@ -107,6 +109,63 @@ private:
 	// OpenGL window handle
 	GLFWwindow* window;
 
+	// LLNOTE
+	// Updated map: 
+	//	key is a vector<int> (tile that triggers spawn), 
+	//	value is a tuple with:
+	// 1. ENEMY_TYPE denoting type of enemy to spawn
+	// 2. Int denoting quantity of enemies to spawn
+	// 3. Boolean denoting hasPlayerReachedTile
+	// 4. Boolean denoting hasEnemyAlreadySpawned (at this tile)
+	// 5. vector<int> denoting spawn position
+	// 6. vector<int> denoting patrol range on the X-axis
+	std::map<
+		std::vector<int>,			// KEY
+		std::tuple<					// VALUE
+			ENEMY_TYPES,			// 1
+			int,					// 2
+			bool,					// 3
+			bool,					// 4
+			std::vector<int>,		// 5
+			std::vector<int>		// 6
+		>
+	> 
+	hasPlayerReachedTile = {
+		{ 
+			{17, 6},
+			{	
+				ENEMY_TYPES::OBSTACLE,
+				1,
+				false,
+				false,
+				{26, 5},
+				{23, 28}
+			}
+		},
+		{
+			{33, 6},
+			{
+				ENEMY_TYPES::SWARM,
+				20,
+				false,
+				false,
+				{42, 8},
+				{0, 0}
+			}
+		},
+		{
+			{ 50, 6 },
+			{
+				ENEMY_TYPES::COMMON,
+				3,
+				false,
+				false,
+				{68, 5},
+				{0, 0}
+			}
+		}
+	};
+
 	int next_enemy_spawn;
 	int enemy_spawn_rate_ms;	// see default value in common.hpp
 
@@ -132,9 +191,12 @@ private:
 	- position: where to spawn the enemy.
 	- movement_area: this applies to OBSTACLE enemies only. Dictates the upper and lower bounds for x-coordinates on which it can move.
 	*/
-	void handleEnemySpawning(bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 position, vec2 movement_area);
+	void handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 gridPatrolXRange);
 
-	// update grapple hook line
-	void updateGrappleLines();
+	// use this to check if the player has reached a specified grid coordinate. (recall GRID_CELL_WIDTH, GRID_CELL_HEIGHT)
+	bool checkPlayerReachedTile(ivec2 grid_coordinate);
 
+	vec2 screenToWorld(vec2 mouse_position);
+	void attachGrapple();
+	void checkGrappleGrounded();
 };

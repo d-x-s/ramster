@@ -71,7 +71,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	// Size of enemy. ENEMY_RADIUS is the standard size, and we'll change it for non-common enemies.
 	float enemySize = ENEMY_RADIUS;
 	if (enemy_type == OBSTACLE) {
-		enemySize *= 2.5;
+		enemySize *= 1.5;
 	}
 	else if(enemy_type == SWARM) {
 		enemySize *= 0.75;
@@ -127,7 +127,6 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	shapeDef.friction = enemyFriction;
 	shapeDef.restitution = enemyBounciness; 
 
-	
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
 	// We'll update the enemy hitbox later.
 	b2Circle circle;

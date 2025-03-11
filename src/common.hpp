@@ -37,11 +37,11 @@ inline std::string mesh_path(const std::string& name) {return data_path() + "/me
 //
 // game constants
 //
-const int WINDOW_WIDTH_PX = 1920;
-const int WINDOW_HEIGHT_PX = 1080;
+const int WINDOW_WIDTH_PX = 1280;
+const int WINDOW_HEIGHT_PX = 800;
 
-const int WORLD_WIDTH_PX = WINDOW_WIDTH_PX * 5.0;
-const int WORLD_HEIGHT_PX = WINDOW_HEIGHT_PX * 3.0;
+const int WORLD_WIDTH_PX = 11520;
+const int WORLD_HEIGHT_PX = 3240;
 
 const int GRID_CELL_WIDTH_PX = 128;
 const int GRID_CELL_HEIGHT_PX = 128;

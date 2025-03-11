@@ -14,7 +14,7 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 | `Left Click` | Attach/detach to a grapple point |
 | `W` | Retract grapple |
 
-## M2 
+## M2 Requirements
 | Category | Task | Satisfying Feature(s) |
 |----------|----------|----------|
 | Improved Gameplay | Game AI Improvements | Obstacle, Walking, and Swarm Enemies |
@@ -29,6 +29,12 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 | Software Engineering | Updated test Plan | See `docs` |
 | Reporting | Bug List | See `docs` |
 | Reporting | Demo Video | See Canvas |
+
+## M2 Creative Elements
+- (Basic) Textured tiles
+- (Basic) Accurate physical interactions with the world
+- (Advanced) Grapple improvements, including support for multiple grapples, and grapple retraction
+- (Advanced) Enemy swarm behavior
 
 <details>
 <summary>Expand for M1</summary>

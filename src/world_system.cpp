@@ -166,7 +166,6 @@ void WorldSystem::init(RenderSystem *renderer_arg)
 
   // Set all states to default
   restart_game();
-  createBall(worldId);
 }
 
 // Update our game world
@@ -455,6 +454,8 @@ void WorldSystem::restart_game()
   const float roomWidth = WORLD_WIDTH_PX;
   const float roomHeight = WORLD_HEIGHT_PX;
   const float wallThickness = 0.5f; // half-width for SetAsBox
+
+  createBall(worldId);
 
   // Create room boundaries
   b2BodyId floorId = create_horizontal_wall(worldId, roomWidth / 2, 0.0f, roomWidth);          // Floor

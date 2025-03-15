@@ -8,6 +8,7 @@
 #include <iostream>
 #include <tuple>
 #include <vector>
+#include <json/json.h>
 
 // internal
 #include "physics_system.hpp"
@@ -328,6 +329,30 @@ void WorldSystem::stop_game()
   }
 }
 
+
+bool WorldSystem::load_level(const std::string& filename) {
+    const std::string full_filepath = LEVEL_DIR_FILEPATH + filename;
+    Json::Value mapData; 
+
+
+    std::ifstream infile(full_filepath);
+
+    if (infile.fail()) {
+        return false;
+    }
+
+    infile >> mapData;
+
+    // std::cout << mapData << std::endl;
+
+    for (const auto& mapElem : mapData) {
+        std::cout << mapElem << std::endl;
+    }
+
+
+    return true;
+}
+
 void WorldSystem::generateTestTerrain()
 {
   if (lines.empty())
@@ -406,6 +431,8 @@ void WorldSystem::restart_game()
   // Debugging for memory/component leaks
   registry.list_all_components();
 
+  load_level("Demo.json");
+
   // Reset the game speed
   current_speed = 1.f;
 
@@ -423,9 +450,6 @@ void WorldSystem::restart_game()
   // debugging for memory/component leaks
   registry.list_all_components();
 
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // {{{ OK }}} TODO A1: create grid lines
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   int grid_line_width = GRID_LINE_WIDTH_PX;
 
   // create grid lines if they do not already exist
@@ -470,6 +494,9 @@ void WorldSystem::restart_game()
   // create_single_tile(worldId, vec2(3, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
   // create_single_tile(worldId, vec2(4, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
   // create_single_tile(worldId, vec2(5, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
+
+  // load level
+  load_level("Demo..tmj");
 
   // tutorial: WASD movement
   create_tutorial_tile(worldId, vec2(2, 5), TEXTURE_ASSET_ID::TUTORIAL_MOVE);

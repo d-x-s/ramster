@@ -53,6 +53,11 @@ public:
 	// vignete fade out control
 	float vignette_timer_ms = 0.0f;
 
+	// M3 content
+
+	// level loading
+	bool load_level(const std::string& filename);
+
 	GLFWwindow* getWindow() {
 		return window;
 	}

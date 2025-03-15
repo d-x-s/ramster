@@ -158,6 +158,9 @@ const float TOWER_BB_HEIGHT = (float)GRID_CELL_HEIGHT_PX;
 const float PROJECTILE_BB_WIDTH = (float)GRID_CELL_WIDTH_PX*0.5f;
 const float PROJECTILE_BB_HEIGHT = (float)GRID_CELL_HEIGHT_PX*0.5f;
 
+// Level loading
+const std::string LEVEL_DIR_FILEPATH = "../levels/";
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f
 #endif

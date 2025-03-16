@@ -102,6 +102,9 @@ class RenderSystem
     textures_path("tutorial/move.png"),
     textures_path("tutorial/grapple.png"),
     textures_path("tutorial/destroy.png"),
+
+    // levels
+    textures_path("levels/demo.png")
   };
 
   std::array<GLuint, effect_count> effects;

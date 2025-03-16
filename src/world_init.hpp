@@ -35,6 +35,9 @@ Entity createGrapplePoint(b2WorldId worldId, vec2 position);
 Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBodyId, float distance);
 void removeGrapple();
 
+// level layers
+Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId);
+
 // legacy
 // the player
 Entity createChicken(RenderSystem* renderer, vec2 position);

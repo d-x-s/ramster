@@ -35,13 +35,23 @@ inline std::string audio_path(const std::string& name) {return data_path() + "/a
 inline std::string mesh_path(const std::string& name) {return data_path() + "/meshes/" + std::string(name);};
 
 //
+// level constants
+// TODO: if we allow levels of varying sizes, this needs to be updated dynamically between levels
+//
+const int WORLD_WIDTH_TILES = 50;
+const int WORLD_HEIGHT_TILES = 20;
+
+//
 // game constants
 //
 const int WINDOW_WIDTH_PX = 1280;
 const int WINDOW_HEIGHT_PX = 800;
 
-const int WORLD_WIDTH_PX = 13440;
-const int WORLD_HEIGHT_PX = 3240;
+const int TILE_WIDTH = 128;
+const int TILE_HEIGHT = 128;
+
+const int WORLD_WIDTH_PX = WORLD_WIDTH_TILES * TILE_WIDTH;
+const int WORLD_HEIGHT_PX = WORLD_HEIGHT_TILES * TILE_HEIGHT;
 
 const int GRID_CELL_WIDTH_PX = 128;
 const int GRID_CELL_HEIGHT_PX = 128;

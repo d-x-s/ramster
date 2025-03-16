@@ -462,6 +462,9 @@ void WorldSystem::restart_game()
   b2BodyId leftWallId = create_vertical_wall(worldId, 0.0f, roomHeight / 2, roomHeight);       // Left Wall
   b2BodyId rightWallId = create_vertical_wall(worldId, roomWidth, roomHeight / 2, roomHeight); // Right Wall
 
+  createLevelTextureLayer(TEXTURE_ASSET_ID::LEVEL_DEMO);
+
+  /*
   // tiles
   // create_single_tile(worldId, vec2(0, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
   // create_single_tile(worldId, vec2(1, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
@@ -533,6 +536,7 @@ void WorldSystem::restart_game()
 
   // tutorial: ending straight to the finish line
   create_block(worldId, vec2(87, 0), vec2(104, 4));
+  */
 
   // generate the vertices for the terrain formed by the chain and render it
   // generateTestTerrain();

@@ -32,6 +32,17 @@ add_git_dependency(
     main
 )
 
+# Add jsoncpp dependency using FetchContent
+#
+# Disable tests for a cleaner build
+set(JSONCPP_WITH_TESTS OFF CACHE BOOL "Disable jsoncpp tests" FORCE)
+set(JSONCPP_WITH_POST_BUILD_UNITTEST OFF CACHE BOOL "Disable jsoncpp unit tests" FORCE)
+add_git_dependency(
+    jsoncpp_lib
+    https://github.com/open-source-parsers/jsoncpp.git
+    master
+)
+
 # Detect OS
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(IS_OS_MAC 1)
@@ -155,6 +166,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${box2d_SOURCE_DIR}/include)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${GLFW_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2MIXER_LIBRARIES} glm::glm)
 target_link_libraries(${PROJECT_NAME} PRIVATE box2d)
+target_link_libraries(${PROJECT_NAME} PRIVATE jsoncpp_static)
 
 # Additional linking for Linux
 if (IS_OS_LINUX)

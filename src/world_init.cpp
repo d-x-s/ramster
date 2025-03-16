@@ -317,6 +317,30 @@ Entity createLine(vec2 start_pos, vec2 end_pos)
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!! render the entire level png at once
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId)
+{
+	Entity entity = Entity();
+	LevelLayer& levelLayer = registry.levelLayers.emplace(entity);
+
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 2);
+	motion.scale = vec2(WORLD_WIDTH_PX, WORLD_HEIGHT_PX);
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			textureId,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return entity;
+}
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! {{{ OK }}} TODO A1: createInvader?
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Entity createInvader(RenderSystem* renderer, vec2 position)

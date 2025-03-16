@@ -227,7 +227,10 @@ enum class TEXTURE_ASSET_ID
     TUTORIAL_GRAPPLE = TUTORIAL_MOVE + 1,
     TUTORIAL_DESTROY = TUTORIAL_GRAPPLE + 1,
 
-    TEXTURE_COUNT = TUTORIAL_DESTROY + 1,
+    // levels
+    LEVEL_DEMO = TUTORIAL_DESTROY + 1,
+
+    TEXTURE_COUNT = LEVEL_DEMO + 1,
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
@@ -328,6 +331,11 @@ struct EnemyPhysics
 };
 
 struct TutorialTile
+{
+
+};
+
+struct LevelLayer
 {
 
 };

@@ -159,7 +159,15 @@ const float PROJECTILE_BB_WIDTH = (float)GRID_CELL_WIDTH_PX*0.5f;
 const float PROJECTILE_BB_HEIGHT = (float)GRID_CELL_HEIGHT_PX*0.5f;
 
 // Level loading
+const int TILED_GRID_CELL_WIDTH_PX = 64;
+const int TILED_GRID_CELL_HEIGHT_PX = 64;
+const int TILED_TO_GRID_PIXEL_SCALE = -2;
+
 const std::string LEVEL_DIR_FILEPATH = "../levels/";
+const std::string JSON_POLYLINE_ATTR = "polyline";
+const std::string JSON_BALL_SPAWNPOINT = "ball_spawnpoint";
+const std::string JSON_SWARM_SPAWNPOINT = "swarm_spawnpoint";
+
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f

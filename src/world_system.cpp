@@ -343,10 +343,37 @@ bool WorldSystem::load_level(const std::string& filename) {
 
     infile >> mapData;
 
+    // checks to ensure JSON data is the expected format.
+    assert(mapData.find("layers") != nullptr);
+    assert(mapData["layers"].size() >= 2);
+    assert(mapData["layers"][1]["name"] == "Chain"); // this assert fails if map doesn't have at least 1 chainShape.
+    assert(mapData["layers"][1].find("objects") != nullptr);
+
+    auto& JsonObjects = mapData["layers"][1]["objects"];
+
+
     // std::cout << mapData << std::endl;
 
-    for (const auto& mapElem : mapData) {
-        std::cout << mapElem << std::endl;
+    for (const auto& jsonObj : JsonObjects) {
+        std::cout << jsonObj << std::endl;
+
+        // polyline case
+        if (jsonObj.find(JSON_POLYLINE_ATTR) != nullptr) {
+
+            std::vector<vec2> chainPoints;
+            for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
+                float x = point["x"].asFloat();
+                float y = point["y"].asFloat();
+                chainPoints.push_back(vec2(x, y));
+            }
+
+            create_chain(worldId, chainPoints, true);
+        }
+        // ball_spawnpoint case
+        else if (jsonObj.find("name") != nullptr && jsonObj["name"] == JSON_BALL_SPAWNPOINT) {
+
+        }
+
     }
 
 
@@ -431,7 +458,7 @@ void WorldSystem::restart_game()
   // Debugging for memory/component leaks
   registry.list_all_components();
 
-  load_level("Demo.json");
+  load_level("Demo..tmj");
 
   // Reset the game speed
   current_speed = 1.f;

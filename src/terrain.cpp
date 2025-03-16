@@ -196,6 +196,33 @@ void create_grapple_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID
     );
 }
 
+b2BodyId create_chain(b2WorldId worldId, std::vector<vec2> points, bool isLoop) {
+    // convert the coords to world space.
+    std::vector<b2Vec2> translatedVertices;
+    translatedVertices.reserve(points.size());
+    for (const auto& vertex : points) {
+        translatedVertices.push_back(b2Vec2{
+            vertex.x * TILED_TO_GRID_PIXEL_SCALE,
+            vertex.y * TILED_TO_GRID_PIXEL_SCALE,
+            });
+    }
+
+    // Create a Box2D chain shape based on the translated vertices
+    b2ChainDef chainDef = b2DefaultChainDef();
+    chainDef.count = translatedVertices.size();
+    chainDef.points = translatedVertices.data();
+
+    chainDef.isLoop = isLoop;
+    chainDef.friction = TERRAIN_DEFAULT_FRICTION;
+    chainDef.restitution = TERRAIN_DEFAULT_RESTITUTION;
+
+    b2BodyDef bodyDef = b2DefaultBodyDef();
+    b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+    b2CreateChain(bodyId, &chainDef);
+
+    return bodyId;
+}
+
 b2BodyId create_curve(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID textureId) {
     float halfWidth = GRID_CELL_WIDTH_PX / 2.0f;
     float halfHeight = GRID_CELL_HEIGHT_PX / 2.0f;

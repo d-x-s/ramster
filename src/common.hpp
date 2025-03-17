@@ -38,8 +38,8 @@ inline std::string mesh_path(const std::string& name) {return data_path() + "/me
 // level constants
 // TODO: if we allow levels of varying sizes, this needs to be updated dynamically between levels
 //
-const int WORLD_WIDTH_TILES = 50;
-const int WORLD_HEIGHT_TILES = 20;
+extern int WORLD_WIDTH_TILES;
+extern int WORLD_HEIGHT_TILES;
 
 //
 // game constants
@@ -169,12 +169,11 @@ const float PROJECTILE_BB_WIDTH = (float)GRID_CELL_WIDTH_PX*0.5f;
 const float PROJECTILE_BB_HEIGHT = (float)GRID_CELL_HEIGHT_PX*0.5f;
 
 // Level loading
-const int TILED_GRID_CELL_WIDTH_PX = 64;
-const int TILED_GRID_CELL_HEIGHT_PX = 64;
-const int TILED_TO_GRID_PIXEL_SCALE = -2;
+const int TILED_TO_GRID_PIXEL_SCALE = 1;
 
 const std::string LEVEL_DIR_FILEPATH = "../levels/";
 const std::string JSON_POLYLINE_ATTR = "polyline";
+const std::string JSON_POLYGON_ATTR = "polygon";
 const std::string JSON_BALL_SPAWNPOINT = "ball_spawnpoint";
 const std::string JSON_SWARM_SPAWNPOINT = "swarm_spawnpoint";
 
@@ -192,5 +191,25 @@ struct Transform {
 	void rotate(float radians);
 	void translate(vec2 offset);
 };
+
+
+// rotate points
+inline glm::vec2 rotateAroundPoint(const vec2& point, const vec2& origin, float angleRadians) {
+    // Translate point to origin
+    float translatedX = point.x - origin.x;
+    float translatedY = point.y - origin.y;
+
+    // Apply rotation
+    float cosTheta = std::cos(angleRadians);
+    float sinTheta = std::sin(angleRadians);
+    float rotatedX = translatedX * cosTheta - translatedY * sinTheta;
+    float rotatedY = translatedX * sinTheta + translatedY * cosTheta;
+
+    // Translate back
+    vec2 result;
+    result.x = rotatedX + origin.x;
+    result.y = rotatedY + origin.y;
+    return result;
+}
 
 bool gl_has_errors();

@@ -196,7 +196,7 @@ void create_grapple_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID
     );
 }
 
-b2BodyId create_chain(b2WorldId worldId, std::vector<vec2> points, bool isLoop) {
+b2BodyId create_chain(b2WorldId worldId, std::vector<vec2> points, bool isLoop, std::vector<Entity>& linesArrayRef) {
     // convert the coords to world space.
     std::vector<b2Vec2> translatedVertices;
     translatedVertices.reserve(points.size());
@@ -205,6 +205,17 @@ b2BodyId create_chain(b2WorldId worldId, std::vector<vec2> points, bool isLoop) 
             vertex.x * TILED_TO_GRID_PIXEL_SCALE,
             vertex.y * TILED_TO_GRID_PIXEL_SCALE,
             });
+    }
+
+    // render the line segments between points
+    auto& lines = linesArrayRef;
+    int count = translatedVertices.size();
+    for (int i = 0; i < count - 1; ++i)
+    {
+        lines.push_back(
+            createLine(
+                glm::vec2(translatedVertices[i].x, translatedVertices[i].y),
+                glm::vec2(translatedVertices[i + 1].x, translatedVertices[i + 1].y)));
     }
 
     // Create a Box2D chain shape based on the translated vertices

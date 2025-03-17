@@ -2,7 +2,7 @@
 #include "tinyECS/registry.hpp"
 #include <iostream>
 
-Entity createBall(b2WorldId worldId)
+Entity createBall(b2WorldId worldId, vec2 startPos)
 {
 	Entity entity = Entity();
 
@@ -17,7 +17,7 @@ Entity createBall(b2WorldId worldId)
 	// Define a dynamic body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
-	bodyDef.position = b2Vec2{ BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y };
+	bodyDef.position = b2Vec2{ startPos.x, startPos.y };
 	bodyDef.fixedRotation = false; // Allow rolling
 	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
@@ -37,14 +37,14 @@ Entity createBall(b2WorldId worldId)
 	// Add motion & render request for ECS synchronization
 	auto& motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
-	motion.position = vec2(BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y);
+	motion.position = startPos;
 
 	// The sprite is 64x64 pixels, and 1cm = 1pixel
 	motion.scale = vec2(2 * circle.radius, 2 * circle.radius);
 
 	// Associate player with camera
 	auto& camera = registry.cameras.emplace(entity);
-	camera.position = vec2(BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y);
+	camera.position = startPos;
 
 	registry.renderRequests.insert(
 		entity,

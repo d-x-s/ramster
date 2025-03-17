@@ -344,38 +344,96 @@ bool WorldSystem::load_level(const std::string& filename) {
     infile >> mapData;
 
     // checks to ensure JSON data is the expected format.
+    assert(mapData.find("height") != nullptr);
+    assert(mapData.find("width") != nullptr);
     assert(mapData.find("layers") != nullptr);
     assert(mapData["layers"].size() >= 2);
     assert(mapData["layers"][1]["name"] == "Chain"); // this assert fails if map doesn't have at least 1 chainShape.
     assert(mapData["layers"][1].find("objects") != nullptr);
 
-    auto& JsonObjects = mapData["layers"][1]["objects"];
+    // set stage dimensions
+    WORLD_WIDTH_TILES = mapData["width"].asFloat();
+	WORLD_HEIGHT_TILES = mapData["height"].asFloat();
 
+    auto& JsonObjects = mapData["layers"][1]["objects"];
+    bool spawnpoint_found = false;
 
     // std::cout << mapData << std::endl;
 
     for (const auto& jsonObj : JsonObjects) {
-        std::cout << jsonObj << std::endl;
+        // std::cout << jsonObj << std::endl;
 
         // polyline case
         if (jsonObj.find(JSON_POLYLINE_ATTR) != nullptr) {
 
             std::vector<vec2> chainPoints;
+			const float x_offset = jsonObj["x"].asFloat();
+			const float y_offset = jsonObj["y"].asFloat();
+			const float rotation = jsonObj["rotation"].asFloat() * (M_PI / 180.f);
+
             for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
                 float x = point["x"].asFloat();
                 float y = point["y"].asFloat();
-                chainPoints.push_back(vec2(x, y));
+
+                // rotate points 
+				if (rotation != 0.f) {
+					vec2 origin = vec2(0.f, 0.f);
+					vec2 rotatedPoint = rotateAroundPoint(vec2(x, y), origin, rotation);
+					x = rotatedPoint.x;
+					y = rotatedPoint.y;
+				}
+
+                chainPoints.push_back(vec2(x + x_offset,
+                                           WORLD_HEIGHT_PX - (y + y_offset)));
             }
 
-            create_chain(worldId, chainPoints, true);
+			std::cout << "Creating chain with " << chainPoints.size() << " points." << std::endl;
+
+            create_chain(worldId, chainPoints, false, lines);
         }
+        // polygon case: polygon = closed-loop chain
+        // polyline case
+        else if (jsonObj.find(JSON_POLYGON_ATTR) != nullptr) {
+
+            std::vector<vec2> chainPoints;
+            const float x_offset = jsonObj["x"].asFloat();
+            const float y_offset = jsonObj["y"].asFloat();
+            const float rotation = jsonObj["rotation"].asFloat() * (M_PI / 180.f);
+
+            for (auto& point : jsonObj[JSON_POLYGON_ATTR]) {
+                float x = point["x"].asFloat();
+                float y = point["y"].asFloat();
+
+                // rotate points 
+                if (rotation != 0.f) {
+                    vec2 origin = vec2(0.f, 0.f);
+                    vec2 rotatedPoint = rotateAroundPoint(vec2(x, y), origin, rotation);
+                    x = rotatedPoint.x;
+                    y = rotatedPoint.y;
+                }
+
+                chainPoints.push_back(vec2(x + x_offset,
+                    WORLD_HEIGHT_PX - (y + y_offset)));
+            }
+
+			std::cout << "Creating chain with " << chainPoints.size() << " points." << std::endl;
+
+            create_chain(worldId, chainPoints, false, lines);
+        }
+
         // ball_spawnpoint case
         else if (jsonObj.find("name") != nullptr && jsonObj["name"] == JSON_BALL_SPAWNPOINT) {
-
+            const float x = jsonObj["x"].asFloat();
+            const float y = jsonObj["y"].asFloat();
+            createBall(worldId, vec2(x, WORLD_HEIGHT_PX - y));
+            spawnpoint_found = true;
         }
 
     }
-
+	if (!spawnpoint_found) {
+		std::cerr << "No spawnpoint found in map file." << std::endl;
+        return true;
+	}
 
     return true;
 }
@@ -458,8 +516,6 @@ void WorldSystem::restart_game()
   // Debugging for memory/component leaks
   registry.list_all_components();
 
-  load_level("Demo..tmj");
-
   // Reset the game speed
   current_speed = 1.f;
 
@@ -471,13 +527,17 @@ void WorldSystem::restart_game()
 
   // Remove all entities that we created
   // All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
+
+  // TODO: this probably is clearing the screenState entity, which causes the game to crash on restart. Need to fix by re-adding essential components on every restart.
   while (registry.motions.entities.size() > 0)
-    registry.remove_all_components_of(registry.motions.entities.back());
+      registry.clear_all_components();
 
   // debugging for memory/component leaks
   registry.list_all_components();
 
   int grid_line_width = GRID_LINE_WIDTH_PX;
+
+  load_level("Demo.tmj");
 
   // create grid lines if they do not already exist
   if (grid_lines.size() == 0)
@@ -506,8 +566,6 @@ void WorldSystem::restart_game()
   const float roomHeight = WORLD_HEIGHT_PX;
   const float wallThickness = 0.5f; // half-width for SetAsBox
 
-  createBall(worldId);
-
   // Create room boundaries
   b2BodyId floorId = create_horizontal_wall(worldId, roomWidth / 2, 0.0f, roomWidth);          // Floor
   b2BodyId ceilingId = create_horizontal_wall(worldId, roomWidth / 2, roomHeight, roomWidth);  // Ceiling
@@ -525,9 +583,7 @@ void WorldSystem::restart_game()
   // create_single_tile(worldId, vec2(4, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
   // create_single_tile(worldId, vec2(5, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
 
-  // load level
-  load_level("Demo..tmj");
-
+  /*
   // tutorial: WASD movement
   create_tutorial_tile(worldId, vec2(2, 5), TEXTURE_ASSET_ID::TUTORIAL_MOVE);
   create_tutorial_tile(worldId, vec2(3, 5), TEXTURE_ASSET_ID::TUTORIAL_SPACEBAR);
@@ -602,7 +658,7 @@ void WorldSystem::restart_game()
   //createGrapplePoint(worldId, vec2(300.0f, 300.0f));
 
   // turn off trigger for fadeout shader
-  registry.screenStates.components[0].fadeout = 0.0f;
+  // registry.screenStates.components[0].fadeout = 0.0f;
 
   // turn the tunes back on
   if (Mix_PausedMusic())

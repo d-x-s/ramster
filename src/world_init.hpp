@@ -41,4 +41,4 @@ Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId);
 // legacy
 // the player
 Entity createChicken(RenderSystem* renderer, vec2 position);
-Entity createBall(b2WorldId worldId);
+Entity createBall(b2WorldId worldId, vec2 startPos);

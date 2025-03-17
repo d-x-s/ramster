@@ -574,7 +574,6 @@ void WorldSystem::restart_game()
 
   createLevelTextureLayer(TEXTURE_ASSET_ID::LEVEL_DEMO);
 
-  /*
   // tiles
   // create_single_tile(worldId, vec2(0, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
   // create_single_tile(worldId, vec2(1, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);

@@ -207,16 +207,16 @@ b2BodyId create_chain(b2WorldId worldId, std::vector<vec2> points, bool isLoop, 
             });
     }
 
-    // render the line segments between points
-    auto& lines = linesArrayRef;
-    int count = translatedVertices.size();
-    for (int i = 0; i < count - 1; ++i)
-    {
-        lines.push_back(
-            createLine(
-                glm::vec2(translatedVertices[i].x, translatedVertices[i].y),
-                glm::vec2(translatedVertices[i + 1].x, translatedVertices[i + 1].y)));
-    }
+    //// render the line segments between points
+    //auto& lines = linesArrayRef;
+    //int count = translatedVertices.size();
+    //for (int i = 0; i < count - 1; ++i)
+    //{
+    //    lines.push_back(
+    //        createLine(
+    //            glm::vec2(translatedVertices[i].x, translatedVertices[i].y),
+    //            glm::vec2(translatedVertices[i + 1].x, translatedVertices[i + 1].y)));
+    //}
 
     // Create a Box2D chain shape based on the translated vertices
     b2ChainDef chainDef = b2DefaultChainDef();

@@ -37,6 +37,11 @@ b2BodyId create_vertical_wall(b2WorldId worldId, float x, float y, float height)
     vec2 bottom = { x, y - halfHeight };
     createLine(bottom, top);
 
+    // create PhysicsBody component
+    Entity& entity = Entity();
+    PhysicsBody& physicsBody = registry.physicsBodies.emplace(entity);
+    physicsBody.bodyId = bodyId;
+
     return bodyId;
 };
 
@@ -70,6 +75,11 @@ b2BodyId create_horizontal_wall(b2WorldId worldId, float x, float y, float width
     vec2 left = { x - halfWidth, y };
     vec2 right = { x + halfWidth, y };
     createLine(left, right);
+
+    // create PhysicsBody component
+    Entity& entity = Entity();
+	PhysicsBody& physicsBody = registry.physicsBodies.emplace(entity);
+	physicsBody.bodyId = bodyId;
 
     return bodyId;
 };
@@ -230,6 +240,11 @@ b2BodyId create_chain(b2WorldId worldId, std::vector<vec2> points, bool isLoop, 
     b2BodyDef bodyDef = b2DefaultBodyDef();
     b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
     b2CreateChain(bodyId, &chainDef);
+
+    // create physicsBody component to track the terrain shapes.
+    Entity entity = Entity();
+    PhysicsBody& pb = registry.physicsBodies.emplace(entity);
+	pb.bodyId = bodyId;
 
     return bodyId;
 }

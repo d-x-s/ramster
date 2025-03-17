@@ -67,6 +67,9 @@ public:
 		registry_list.push_back(&enemyPhysics);
 		registry_list.push_back(&grapples);
 		registry_list.push_back(&grapplePoints);
+
+		registry_list.push_back(&levelLayers);
+		registry_list.push_back(&cameras);
 	}
 
 	void clear_all_components() {

@@ -9,6 +9,7 @@
 #include <tuple>
 #include <vector>
 #include <json/json.h>
+#include <box2d/box2d.h>
 
 // internal
 #include "physics_system.hpp"
@@ -525,15 +526,22 @@ void WorldSystem::restart_game()
   enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
   grappleActive = false;
 
-  // Remove all entities that we created
-  // All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
+  // remove all box2d bodies
+  while (registry.physicsBodies.entities.size() > 0) {
+	  PhysicsBody& physicsBody = registry.physicsBodies.get(registry.physicsBodies.entities.back());
+      b2DestroyBody(physicsBody.bodyId);
+      registry.physicsBodies.remove(registry.physicsBodies.entities.back());
+  }
 
-  // TODO: this probably is clearing the screenState entity, which causes the game to crash on restart. Need to fix by re-adding essential components on every restart.
-  while (registry.motions.entities.size() > 0)
-      registry.clear_all_components();
+  while (registry.motions.entities.size() > 0) {
+      registry.remove_all_components_of(registry.motions.entities.back());
+  }
 
-  // debugging for memory/component leaks
-  registry.list_all_components();
+  if (registry.players.entities.size() > 0) {
+      // clear player-related stuff.
+	  Entity& playerEntity = registry.players.entities.back();
+      registry.remove_all_components_of(playerEntity);
+  }
 
   int grid_line_width = GRID_LINE_WIDTH_PX;
 

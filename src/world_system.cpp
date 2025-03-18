@@ -196,7 +196,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     if (game_active)
     {
         update_isGrounded();
-        handle_movement();
+        handle_movement(elapsed_ms_since_last_update);
         checkGrappleGrounded();
 
 //        // LLNOTE
@@ -709,8 +709,11 @@ void WorldSystem::update_isGrounded()
 }
 
 // call inside step() function for the most precise and responsive movement handling.
-void WorldSystem::handle_movement()
+void WorldSystem::handle_movement(float elapsed_ms)
 {
+
+  static float jumpCooldownTime = JUMP_COOLDOWN;
+  static float jumpCooldownTimer = 0.0f; 
 
   // first, update states.
   int state = glfwGetKey(window, GLFW_KEY_E);
@@ -783,11 +786,18 @@ void WorldSystem::handle_movement()
   }
 
   // jump is set seperately, since it can be used in conjunction with the movement keys.
-  if (keyStates[GLFW_KEY_SPACE])
+  if (keyStates[GLFW_KEY_SPACE] && jumpCooldownTimer <= 0.0f)
   {
     // Jump: apply a strong upward impulse
     jump_impulse = {0, jumpImpulseMagnitude};
+	jumpCooldownTimer = jumpCooldownTime;
   }
+
+  if (jumpCooldownTimer > 0.0f) 
+    {
+        jumpCooldownTimer -= (elapsed_ms / 1000.0f); // Decrease based on the time that has passed
+    }
+
 
   // Apply impulse if non-zero.
   if (nonjump_movement_force != b2Vec2_zero || jump_impulse != b2Vec2_zero)

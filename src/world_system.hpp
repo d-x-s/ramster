@@ -81,7 +81,7 @@ private:
 	Mix_Chunk* chicken_eat_sound;
 
 	// player movement
-	void handle_movement();
+	void handle_movement(float elapsed_ms);
 	void update_isGrounded();
 
 	// C++ random number generator

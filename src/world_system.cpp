@@ -203,7 +203,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 //        // LLNOTE
 //        // Check if player reached spawn points of enemies.
 //        // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
-//        for (auto& i : hasPlayerReachedTile)
+//        for (auto& i : spawnMap)
 //        {
 //            if (!i.second)
 //            {
@@ -212,7 +212,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 //                // debug
 //// if (playerReachedTile(ivec2(i.first[0], i.first[1]))) {
 ////     std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
-////     std::cout << "WHAT MAP SAYS: " << hasPlayerReachedTile[i.first] << std::endl;
+////     std::cout << "WHAT MAP SAYS: " << spawnMap[i.first] << std::endl;
 //// }
 //            }
 //        }
@@ -265,8 +265,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             // LLNOTE
             // example of spawning using player-reached-point map:
             // note: there might be a delay before this happens because of next_enemy_spawn
-            // handleEnemySpawning(hasPlayerReachedTile[{9, 6}], OBSTACLE, 1, vec2(9, 6), vec2(9, 11));
-            // hasPlayerReachedTile[{9, 6}] = false;
+            // handleEnemySpawning(spawnMap[{9, 6}], OBSTACLE, 1, vec2(9, 6), vec2(9, 11));
+            // spawnMap[{9, 6}] = false;
         }
     }
 
@@ -275,11 +275,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     //	value is a tuple with:
     // 1. ENEMY_TYPE denoting type of enemy to spawn
     // 2. Int denoting quantity of enemies to spawn
-    // 3. Boolean denoting hasPlayerReachedTile
+    // 3. Boolean denoting spawnMap
     // 4. Boolean denoting hasEnemyAlreadySpawned (at this tile)
     // 5. vector<int> denoting spawn position
     // 6. vector<int> denoting patrol range on the X-axis
-    for (auto& i : hasPlayerReachedTile) {
+    for (auto& i : spawnMap) {
         std::vector<int> spawnTile = i.first;
         std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>>& enemyDataTuple = i.second;
         ENEMY_TYPES         enemyType               = std::get<0>(enemyDataTuple);
@@ -290,7 +290,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
         std::vector<int>    patrolRange             = std::get<5>(enemyDataTuple);
 
         if (!hasPlayerReachedTile) {
-            hasPlayerReachedTile = checkPlayerReachedTile(ivec2(spawnTile[0], spawnTile[1]));
+            hasPlayerReachedTile = checkPlayerReachedArea(ivec2(spawnTile[0], spawnTile[1]), ivec2(spawnTile[2], spawnTile[3]));
         }
 
         if (hasPlayerReachedTile && !hasEnemyAlreadySpawned) {
@@ -519,6 +519,14 @@ void WorldSystem::restart_game()
 
   // Reset the game speed
   current_speed = 1.f;
+
+  // LLTEST
+  // Clear spawn map
+  spawnMap.clear();
+  // Add some spawning
+  // Note: for some reason SWARM crashes when more than 1 is spawned simultaneously.. This is a breaking issue that I'll resolve later.
+  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), COMMON, 5, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
+  insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), SWARM, 1, ivec2(6, 3), ivec2(0, 0), ivec2(0, 0));
 
   points = 0;
   max_towers = MAX_TOWERS_START;
@@ -1175,7 +1183,7 @@ void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec
     {
         createEnemy(
             worldId,
-            vec2((gridPosition.x + 0.5 + 0.1*i) * GRID_CELL_WIDTH_PX,
+            vec2((gridPosition.x + 0.5 + 0.05*i) * GRID_CELL_WIDTH_PX,
                 (gridPosition.y + 0.5) * GRID_CELL_HEIGHT_PX),
             enemy_type,
             vec2((gridPatrolXRange.x + 0.5) * GRID_CELL_WIDTH_PX,
@@ -1184,16 +1192,55 @@ void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec
     }
 }
 
-// LLNOTE
-bool WorldSystem::checkPlayerReachedTile(ivec2 gridCoordinate) {
+// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!
+// Takes:
+// - Enemy Spawn Area
+// - Enemy type/number to spawn
+// - Location to spawn enemy
+// - Patrol area if it's an obstacle
+// Returns:
+// - Handles enemy spawning according to specs.
+void WorldSystem::insertToSpawnMap(ivec2 bottom_left, ivec2 top_right, ENEMY_TYPES enemy_type, int num_enemies, ivec2 spawn_location, ivec2 obstacle_patrol_bottom_left, ivec2 obstacle_patrol_top_right) {
+    // Prep key from "spawn trigger area"
+    std::vector<int> mapKey = { bottom_left.x, bottom_left.y, top_right.x, top_right.y };
 
+    // Prep value from other inputs
+    std::tuple< ENEMY_TYPES,
+                int,
+                bool,
+                bool,			
+                std::vector<int>,
+                std::vector<int>>	
+        mapValue = {enemy_type,
+                    num_enemies,
+                    false,
+                    false,
+                    {spawn_location.x, spawn_location.y},
+                    // For now we're only implementing 1-dimensional obstacle movement. This will be changed later.
+                    { obstacle_patrol_bottom_left.x, obstacle_patrol_top_right.x }
+                    };
+
+    // Insert to map
+    spawnMap.insert({mapKey, mapValue});
+}
+
+
+bool WorldSystem::checkPlayerReachedArea(ivec2 area_bottom_left, ivec2 area_top_right) {
     // Get player
     Entity player = registry.players.entities[0];
     Motion playerMotion = registry.motions.get(player);
 
+    // trigger area bounds
+    int min_x = area_bottom_left.x;
+    int min_y = area_bottom_left.y;
+    int max_x = area_top_right.x;
+    int max_y = area_top_right.y;
+
     // Player location in terms of grid coordinates
     ivec2 playerLocation = ivec2(playerMotion.position.x / GRID_CELL_WIDTH_PX, playerMotion.position.y / GRID_CELL_HEIGHT_PX);
 
-    // If player is in the same grid as specified, then return true. else false.
-    return playerLocation == gridCoordinate;
+    // check that player location is inside the trigger area
+    bool player_inside_trigger_area = playerLocation.x >= min_x && playerLocation.y >= min_y && playerLocation.x <= max_x && playerLocation.y <= max_y;
+
+    return player_inside_trigger_area;
 }

@@ -114,19 +114,31 @@ private:
 	// OpenGL window handle
 	GLFWwindow* window;
 
-	// LLNOTE
+	// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!
+	// Takes:
+	// - Enemy Spawn Area
+	// - Enemy type/number to spawn
+	// - Location to spawn enemy
+	// - Patrol area if it's an obstacle
+	// Returns:
+	// - Handles enemy spawning according to specs.
+	void insertToSpawnMap(ivec2 bottom_left, ivec2 top_right, 
+							ENEMY_TYPES enemy_type, int num_enemies, 
+							ivec2 spawn_location, 
+							ivec2 obstacle_patrol_bottom_left, ivec2 obstacle_patrol_top_right);
+
 	// Updated map: 
 	//	key is a vector<int> (tile that triggers spawn), 
 	//	value is a tuple with:
 	// 1. ENEMY_TYPE denoting type of enemy to spawn
 	// 2. Int denoting quantity of enemies to spawn
-	// 3. Boolean denoting hasPlayerReachedTile
+	// 3. Boolean denoting spawnMap
 	// 4. Boolean denoting hasEnemyAlreadySpawned (at this tile)
 	// 5. vector<int> denoting spawn position
 	// 6. vector<int> denoting patrol range on the X-axis
 	std::map<
-		std::vector<int>,			// KEY
-		std::tuple<					// VALUE
+		std::vector<int>,		// KEY
+		std::tuple<				// VALUE
 			ENEMY_TYPES,			// 1
 			int,					// 2
 			bool,					// 3
@@ -134,42 +146,8 @@ private:
 			std::vector<int>,		// 5
 			std::vector<int>		// 6
 		>
-	> 
-	hasPlayerReachedTile = {
-		{ 
-			{17, 6},
-			{	
-				ENEMY_TYPES::OBSTACLE,
-				1,
-				false,
-				false,
-				{26, 5},
-				{23, 28}
-			}
-		},
-		{
-			{33, 6},
-			{
-				ENEMY_TYPES::SWARM,
-				20,
-				false,
-				false,
-				{42, 8},
-				{0, 0}
-			}
-		},
-		{
-			{ 50, 6 },
-			{
-				ENEMY_TYPES::COMMON,
-				3,
-				false,
-				false,
-				{68, 5},
-				{0, 0}
-			}
-		}
-	};
+	> spawnMap;
+	// call map helper to insert into this map.
 
 	int next_enemy_spawn;
 	int enemy_spawn_rate_ms;	// see default value in common.hpp
@@ -198,8 +176,10 @@ private:
 	*/
 	void handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 gridPatrolXRange);
 
+	
 	// use this to check if the player has reached a specified grid coordinate. (recall GRID_CELL_WIDTH, GRID_CELL_HEIGHT)
-	bool checkPlayerReachedTile(ivec2 grid_coordinate);
+	// Note that the ivec4
+	bool checkPlayerReachedArea(ivec2 area_bottom_left, ivec2 area_top_right);
 
 	vec2 screenToWorld(vec2 mouse_position);
 	void attachGrapple();

@@ -123,13 +123,13 @@ const float BALL_ANGULAR_DAMPING = 0.75f; // 1/s (inverse seconds)
 
 // ENEMY 2DBODY
 // Shares most of player 2D body but different density, friction, restitution, etc.
-const float ENEMY_GROUNDED_MOVEMENT_FORCE = 7500.0f; // kg�cm/s� (dynes)
+const float ENEMY_GROUNDED_MOVEMENT_FORCE = 1875.0f; // kg�cm/s� (dynes)
 const float ENEMY_JUMP_IMPULSE = 2000.0f; // kg�cm/s (dynes�s)
 
 const float ENEMY_RADIUS = 25.0;
-const float ENEMY_DENSITY = 0.005f; // kg/cm� (kilograms per square centimeter); lower number = less speed lost on collision, less enemy momentum.
+const float ENEMY_DENSITY = 0.00125f; // kg/cm� (kilograms per square centimeter); lower number = less speed lost on collision, less enemy momentum.
 const float ENEMY_FRICTION = 0.1f; //enemy friction. for now we're setting it low so it's less affected by contact with floor slowing it down.
-const float ENEMY_RESTITUTION = 0.25f; //enemy bounciness... increase this number to make things more chaotic.
+const float ENEMY_RESTITUTION = 0.5f; //enemy bounciness... increase this number to make things more chaotic.
 
 // SWARM ENEMY PROXIMITY - MAX DELTA X OR DELTA Y FROM SWARM BEFORE REJOINING
 const float SWARM_ENEMY_PROXIMITY = 1.5 * GRID_CELL_WIDTH_PX;

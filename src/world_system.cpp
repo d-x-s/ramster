@@ -300,7 +300,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
                 enemyType,
                 quantity,
                 ivec2(spawnPosition[0], spawnPosition[1]),
-                ivec2(patrolRange[0], patrolRange[1])
+                ivec2(patrolRange[0], patrolRange[1]),
+                ivec2(patrolRange[2], patrolRange[3])
             );
         }
     }
@@ -526,8 +527,9 @@ void WorldSystem::restart_game()
   spawnMap.clear();
   // Add some spawning
   // Note: for some reason SWARM crashes when more than 1 is spawned simultaneously.. This is a breaking issue that I'll resolve later.
-  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 5, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
-  insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), SWARM, 10, ivec2(6, 3), ivec2(0, 0), ivec2(0, 0));
+  // insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 5, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
+  insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
+  insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
 
   points = 0;
   max_towers = MAX_TOWERS_START;
@@ -1177,7 +1179,7 @@ void WorldSystem::checkGrappleGrounded()
   }
 }
 
-void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 gridPatrolXRange)
+void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 grid_patrol_point_a, ivec2 grid_patrol_point_b)
 {
     // Create specified number of enemies by iterating
     for (int i = 0; i < quantity; i++)
@@ -1187,8 +1189,8 @@ void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec
             vec2((gridPosition.x + 0.5 + 0.05*i) * GRID_CELL_WIDTH_PX,
                 (gridPosition.y + 0.5) * GRID_CELL_HEIGHT_PX),
             enemy_type,
-            vec2((gridPatrolXRange.x + 0.5) * GRID_CELL_WIDTH_PX,
-                (gridPatrolXRange.y + 0.5) * GRID_CELL_HEIGHT_PX)
+            vec2((grid_patrol_point_a.x + 0.5) * GRID_CELL_WIDTH_PX, (grid_patrol_point_a.y + 0.5) * GRID_CELL_HEIGHT_PX),
+            vec2((grid_patrol_point_b.x + 0.5) * GRID_CELL_WIDTH_PX, (grid_patrol_point_b.y + 0.5) * GRID_CELL_HEIGHT_PX)
         );
     }
 }
@@ -1201,7 +1203,10 @@ void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec
 // - Patrol area if it's an obstacle
 // Returns:
 // - Handles enemy spawning according to specs.
-void WorldSystem::insertToSpawnMap(ivec2 bottom_left, ivec2 top_right, ENEMY_TYPES enemy_type, int num_enemies, ivec2 spawn_location, ivec2 obstacle_patrol_bottom_left, ivec2 obstacle_patrol_top_right) {
+void WorldSystem::insertToSpawnMap(ivec2 bottom_left, ivec2 top_right, 
+                                   ENEMY_TYPES enemy_type, int num_enemies, ivec2 spawn_location, 
+                                   ivec2 obstacle_patrol_point_a, ivec2 obstacle_patrol_point_b) {
+
     // Prep key from "spawn trigger area"
     std::vector<int> mapKey = { bottom_left.x, bottom_left.y, top_right.x, top_right.y };
 
@@ -1217,12 +1222,13 @@ void WorldSystem::insertToSpawnMap(ivec2 bottom_left, ivec2 top_right, ENEMY_TYP
                     false,
                     false,
                     {spawn_location.x, spawn_location.y},
-                    // For now we're only implementing 1-dimensional obstacle movement. This will be changed later.
-                    { obstacle_patrol_bottom_left.x, obstacle_patrol_top_right.x }
+                    { obstacle_patrol_point_a.x, obstacle_patrol_point_a.y, 
+                      obstacle_patrol_point_b.x, obstacle_patrol_point_b.y }
                     };
 
     // Insert to map
     spawnMap.insert({mapKey, mapValue});
+
 }
 
 

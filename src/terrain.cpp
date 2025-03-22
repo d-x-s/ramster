@@ -381,16 +381,21 @@ b2BodyId create_block(b2WorldId worldId, vec2 start_tile, vec2 end_tile) {
     return bodyId;
 }
 
-void spawnEnemyAtTile(b2WorldId worldId, bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 tile_position, vec2 tile_movement_area) {
+void spawnEnemyAtTile(b2WorldId worldId, bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 tile_position, ivec2 tile_movement_point_a, ivec2 tile_movement_point_b) {
     // Convert tile coordinates to pixel coordinates
     vec2 pixel_position = {
         tile_position.x * GRID_CELL_WIDTH_PX + (GRID_CELL_WIDTH_PX / 2.0f),
         tile_position.y * GRID_CELL_HEIGHT_PX + (GRID_CELL_HEIGHT_PX / 2.0f)
     };
 
-    vec2 pixel_movement_area = {
-        tile_movement_area.x * GRID_CELL_WIDTH_PX,
-        tile_movement_area.y * GRID_CELL_HEIGHT_PX
+    vec2 pixel_movement_area_bottom_left = {
+        tile_movement_point_a.x * GRID_CELL_WIDTH_PX,
+        tile_movement_point_a.y * GRID_CELL_HEIGHT_PX
+    };
+
+    vec2 pixel_movement_area_top_right = {
+        tile_movement_point_b.x * GRID_CELL_WIDTH_PX,
+        tile_movement_point_b.y * GRID_CELL_HEIGHT_PX
     };
 
     // only create if predicate is true
@@ -398,7 +403,7 @@ void spawnEnemyAtTile(b2WorldId worldId, bool predicate, ENEMY_TYPES enemy_type,
         // Create specified number of enemies by iterating
         for (int i = 0; i < quantity; i++) {
             // enemy created here
-            createEnemy(worldId, pixel_position, enemy_type, pixel_movement_area);
+            createEnemy(worldId, pixel_position, enemy_type, pixel_movement_area_bottom_left, pixel_movement_area_top_right);
         }
     }
 }

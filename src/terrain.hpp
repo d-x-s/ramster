@@ -16,4 +16,4 @@ b2BodyId create_chain(b2WorldId worldId, std::vector<vec2> points, bool isLoop, 
 
 void create_grapple_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID textureId);
 void create_tutorial_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID textureId);
-void spawnEnemyAtTile(b2WorldId worldId, bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 tile_position, vec2 tile_movement_area);
+void spawnEnemyAtTile(b2WorldId worldId, bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 tile_position, ivec2 tile_movement_point_a, ivec2 tile_movement_point_b);

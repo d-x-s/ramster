@@ -63,7 +63,7 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 // - pos (x, y): position to spawn enemy
 // - ENEMY_TYPES: type of enemy to spawn.
 // - MOVEMENT AREA (min_x, max_x): activity radius of the enemy. set to (-1, -1) if you want enemy to move anywhere on the map.
-Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_area) {
+Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_range_point_a, vec2 movement_range_point_b) {
 
 	// Determine enemy type-based characteristics here.
  
@@ -119,7 +119,8 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	auto& enemy_registry = registry.enemies;
 	Enemy& enemy = registry.enemies.emplace(entity);
 	enemy.enemyType = enemy_type;
-	enemy.movement_area = movement_area;
+	enemy.movement_area_point_a = movement_range_point_a;
+	enemy.movement_area_point_b = movement_range_point_b;
 	enemy.destructable = destructability;
 
 

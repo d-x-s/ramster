@@ -174,7 +174,7 @@ private:
 	- position: where to spawn the enemy.
 	- movement_area: this applies to OBSTACLE enemies only. Dictates the upper and lower bounds for x-coordinates on which it can move.
 	*/
-	void handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 gridPatrolXRange);
+	void handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 grid_patrol_point_a, ivec2 grid_patrol_point_b);
 
 	
 	// use this to check if the player has reached a specified grid coordinate. (recall GRID_CELL_WIDTH, GRID_CELL_HEIGHT)

@@ -18,8 +18,10 @@ struct Enemy
 	bool destructable;
 	// We apply the freeze time to destructable enemies upon collision so they stop pursuing the player momentarily after a collision.
 	float freeze_time;
-	// Movement area of the enemy (min x, max x). Set to (-1, -1) for enemy to move anywhere on the map.
-	vec2 movement_area;
+
+	// Patrol boundary for obstacles (a_x, a_y), (b_x, b_y).
+	vec2 movement_area_point_a;
+    vec2 movement_area_point_b;
 };
 
 // Tower

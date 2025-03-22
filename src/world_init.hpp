@@ -7,7 +7,7 @@
 #include <box2d/box2d.h>
 
 // enemy
-Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_area);
+Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_range_point_a, vec2 movement_range_point_b);
 
 // invaders
 Entity createInvader(RenderSystem* renderer, vec2 position);

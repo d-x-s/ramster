@@ -526,8 +526,8 @@ void WorldSystem::restart_game()
   spawnMap.clear();
   // Add some spawning
   // Note: for some reason SWARM crashes when more than 1 is spawned simultaneously.. This is a breaking issue that I'll resolve later.
-  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), COMMON, 5, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
-  insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), SWARM, 5, ivec2(6, 3), ivec2(0, 0), ivec2(0, 0));
+  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 5, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
+  insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), SWARM, 10, ivec2(6, 3), ivec2(0, 0), ivec2(0, 0));
 
   points = 0;
   max_towers = MAX_TOWERS_START;

@@ -36,18 +36,24 @@ void AISystem::step(float elapsed_ms)
 
 						[Excluded. This condition is effectively covered by 1bab_b.] 1bab_a. IF TOO CLOSE TO THE GROUND, PULL UP!
 
+						1bab_a. Pursue the player.  **Note that this takes precedence. Collision avoidance is applied later.
+
 						1bab_b. IF TOO CLOSE TO ANOTHER ENTITY THAT IS NOT THE PLAYER, move away from that entity.
 
 						1bab_c. IF TOO FAR FROM SWARM, rejoin swarm.
 
-						1bab_d. Pursue the player. 
 	*/
 
 	// Box2D physics
 	b2Vec2 nonjump_movement_force = { 0, 0 };
 	b2Vec2 jump_impulse = { 0, 0 }; // not needed for now, here for future use
 	const float forceMagnitude = ENEMY_GROUNDED_MOVEMENT_FORCE; 
-	const float swarm_forceMagnitude = forceMagnitude * 0.1;
+	// Different enemy types have different weights, so we'll need to apply some corrections here such that the movements are more fluid.
+	const float swarmPursuit_forceMagnitude = forceMagnitude * 0.02;
+	// The swarm applies corrections AFTER pursuing the player. To make sure player pursuit takes precedence, we'll make this force smaller so it corrects itself but will still
+	// mainly pursue the player while doing so.
+	const float swarmCorrection_forceMagnitude = swarmPursuit_forceMagnitude * 0.25; 
+
 	const float jumpImpulseMagnitude = ENEMY_JUMP_IMPULSE; // not needed for now, here for future use
 
 	// Get player and figure out player coords
@@ -138,6 +144,36 @@ void AISystem::step(float elapsed_ms)
 					// 1ba_b. SWARMING enemies:
 					vec2 entityToAvoid = vec2(0, 0); // This will get modifed after calling helper function to be the position of the enemy to avoid
 					vec2 swarmRejoinLocation = vec2(-1000, -1000); // This will get modified after calling helper function to be the position of the swarm to rejoin
+
+					// Reset whatever force they had
+					nonjump_movement_force = { 0, 0 };
+
+					if (true) {
+						// 1bab_c. Pursue the player.
+
+						// Apply impulse on both X and Y axis to pursue player
+						if (player_posX < enemy_posX) {
+							// If player is to the left, move left.
+
+							// accelerate left
+							nonjump_movement_force += { -swarmPursuit_forceMagnitude, nonjump_movement_force.y };
+						}
+						else {
+							// If player is to the right, move right.
+
+							// accelerate right
+							nonjump_movement_force += { swarmPursuit_forceMagnitude, nonjump_movement_force.y };
+						}
+						if (player_posY <= enemy_posY) {
+							// If player is below, go down
+							nonjump_movement_force += { nonjump_movement_force.x, -swarmPursuit_forceMagnitude };
+						}
+						else {
+							// If player is above, go up
+							nonjump_movement_force += { nonjump_movement_force.x, swarmPursuit_forceMagnitude };
+						}
+					}
+
 					if (tooFarFromSwarm(enemyEntity, swarmRejoinLocation)) {
 					// 1bab_c. IF TOO FAR FROM SWARM, rejoin swarm.
 
@@ -146,71 +182,45 @@ void AISystem::step(float elapsed_ms)
 							// If closest swarm is to the left, move left.
 
 							// accelerate left
-							nonjump_movement_force = { -swarm_forceMagnitude, nonjump_movement_force.y };
+							nonjump_movement_force += { -swarmCorrection_forceMagnitude, nonjump_movement_force.y };
 						}
 						else {
 							// If closest swarm is to the right, move right.
 
 							// accelerate right
-							nonjump_movement_force = { swarm_forceMagnitude, nonjump_movement_force.y };
+							nonjump_movement_force += { swarmCorrection_forceMagnitude, nonjump_movement_force.y };
 						}
 						if (swarmRejoinLocation.y <= enemy_posY) {
 							// If closest swarm is below, go down
-							nonjump_movement_force = { nonjump_movement_force.x, -swarm_forceMagnitude };
+							nonjump_movement_force += { nonjump_movement_force.x, -swarmCorrection_forceMagnitude };
 						}
 						else {
 							// If closest swarm above, go up
-							nonjump_movement_force = { nonjump_movement_force.x, swarm_forceMagnitude * 5 };
+							nonjump_movement_force += { nonjump_movement_force.x, swarmCorrection_forceMagnitude };
 						}
 					}
+
 					else if (tooCloseToSwarm(enemyEntity, entityToAvoid)) {
 						// 1bab_b. IF TOO CLOSE TO ANOTHER SWARMING ENTITY THAT IS NOT THE PLAYER, move away from that entity.
 						
 						// We will apply both an x and y impulse so it goes in the opposite direction.
 						if (entityToAvoid.x <= enemyMotion.position.x) {
 							// Need to go right
-							nonjump_movement_force = { swarm_forceMagnitude, nonjump_movement_force.y }; 
+							nonjump_movement_force += { swarmCorrection_forceMagnitude, nonjump_movement_force.y }; 
 						}
 						else {
 							// Need to go left
-							nonjump_movement_force = { -swarm_forceMagnitude, nonjump_movement_force.y };
+							nonjump_movement_force += { -swarmCorrection_forceMagnitude, nonjump_movement_force.y };
 						}
 						if (entityToAvoid.y <= enemyMotion.position.y) {
 							// Need to go up
-							nonjump_movement_force = { nonjump_movement_force.x, swarm_forceMagnitude * 5 };
+							nonjump_movement_force += { nonjump_movement_force.x, swarmCorrection_forceMagnitude };
 						}
 						else {
 							// Need to go down
-							nonjump_movement_force = { nonjump_movement_force.x, -swarm_forceMagnitude };
+							nonjump_movement_force += { nonjump_movement_force.x, -swarmCorrection_forceMagnitude };
 						}
 					}
-					
-					else {
-						// 1bab_c. Pursue the player.
-
-						// Apply impulse on both X and Y axis to pursue player
-						if (player_posX < enemy_posX) {
-							// If player is to the left, move left.
-
-							// accelerate left
-							nonjump_movement_force = { -swarm_forceMagnitude, nonjump_movement_force.y };
-						}
-						else {
-							// If player is to the right, move right.
-
-							// accelerate right
-							nonjump_movement_force = { swarm_forceMagnitude, nonjump_movement_force.y };
-						}
-						if (player_posY <= enemy_posY) {
-							// If player is below, go down
-							nonjump_movement_force = { nonjump_movement_force.x, -swarm_forceMagnitude };
-						}
-						else {
-							// If player is above, go up
-							nonjump_movement_force = { nonjump_movement_force.x, swarm_forceMagnitude };
-						}
-					}
-
 				}
 			}
 		}

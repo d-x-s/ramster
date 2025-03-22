@@ -77,7 +77,8 @@ const int PROJECTILE_DAMAGE = 10;
 
 // Amount of time to stop an enemy after colliding (if player loses collision)
 const float ENEMY_FREEZE_TIME_MS = 3000;
-const float MIN_COLLISION_SPEED = 2.0;
+// Minimum amount of speed the player needs after a collision to "win". Tune down for easier gameplay and vice versa.
+const float MIN_COLLISION_SPEED = 1.75;
 
 // Amount of time before refreshing FPS counter. This will eliminate window flickering from too many updates per second.
 const int FPS_UPDATE_COOLDOWN_MS = 250;

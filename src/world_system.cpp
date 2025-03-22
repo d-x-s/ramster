@@ -176,7 +176,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
     // Updating window title with points (and remaining towers)
     std::stringstream title_ss;
-    title_ss << "Ramster | Points: " << points << " | HP: " << hp << " | FPS: " << fps;
+    title_ss << "Ramster | Time: " << time_elapsed << "s | Points: " << points << " | HP : " << hp << " | FPS : " << fps;
     glfwSetWindowTitle(window, title_ss.str().c_str());
 
     // FPS counter
@@ -189,6 +189,15 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     {
         fps_update_cooldown_ms -= elapsed_ms_since_last_update;
     }
+    // Time elapsed
+    if (time_granularity <= 0) {
+        time_elapsed += 1; // note: this only works if granularity is 1000 ms and time is in seconds
+        time_granularity = TIME_GRANULARITY;
+    }
+    else {
+        time_granularity -= elapsed_ms_since_last_update;
+    }
+
 
     // Remove debug info from the last step
     while (registry.debugComponents.entities.size() > 0)

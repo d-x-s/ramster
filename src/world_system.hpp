@@ -164,6 +164,11 @@ private:
 	// Do an FPS cooldown to prevent flickering
 	float fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
 
+	// Time elapsed
+	int time_elapsed = 0; 
+	// Time cooldown to prevent flickering (also determines granularity of time)
+	int time_granularity = TIME_GRANULARITY;
+
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
 

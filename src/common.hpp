@@ -82,6 +82,8 @@ const float MIN_COLLISION_SPEED = 1.75;
 
 // Amount of time before refreshing FPS counter. This will eliminate window flickering from too many updates per second.
 const int FPS_UPDATE_COOLDOWN_MS = 250;
+// Granularity in ms of time
+const int TIME_GRANULARITY = 1000;
 
 // enemy types that we will be supporting.
 const enum ENEMY_TYPES {

@@ -121,6 +121,9 @@ const float BALL_FRICTION = 0.1f;
 const float BALL_RESTITUTION = 0.1f;
 const float BALL_ANGULAR_DAMPING = 0.75f; // 1/s (inverse seconds)
 
+// HP that the player starts with
+const float PLAYER_STARTING_HP = 5;
+
 // ENEMY 2DBODY
 // Shares most of player 2D body but different density, friction, restitution, etc.
 const float ENEMY_GROUNDED_MOVEMENT_FORCE = 1875.0f; // kg�cm/s� (dynes)

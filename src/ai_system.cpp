@@ -104,6 +104,9 @@ void AISystem::step(float elapsed_ms)
 		if (enemyComponent.enemyType == OBSTACLE) {
 			// 1_a.OBSTACLE enemies : **NOTE : these enemies will not die or freeze after a collision.
 
+			// Player gets an immunity window after hitting obstacle.
+			enemyComponent.freeze_time -= elapsed_ms;
+
 			// figure out lower and upper x-bound of patrol range (y doesn't matter as our movement vector ensures that if x triggers, y also triggers)
 			float left_hand_side = min(enemyComponent.movement_area_point_a.x, enemyComponent.movement_area_point_b.x);
 			float right_hand_side = max(enemyComponent.movement_area_point_a.x, enemyComponent.movement_area_point_b.x);

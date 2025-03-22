@@ -154,8 +154,10 @@ private:
 
 	int max_towers;	// see default value in common.hpp
 
-	// Number of invaders stopped by the towers, displayed in the window title
+	// Player score.
 	int points;
+	// Player hp. 
+	int hp = PLAYER_STARTING_HP;
 
 	// Frames per second
 	int fps = 0; // 0 is default val

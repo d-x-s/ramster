@@ -176,7 +176,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
     // Updating window title with points (and remaining towers)
     std::stringstream title_ss;
-    title_ss << "Ramster | Points: " << points << " | FPS: " << fps;
+    title_ss << "Ramster | Points: " << points << " | HP: " << hp << " | FPS: " << fps;
     glfwSetWindowTitle(window, title_ss.str().c_str());
 
     // FPS counter
@@ -527,10 +527,11 @@ void WorldSystem::restart_game()
   spawnMap.clear();
   // Add some spawning
   // Note: for some reason SWARM crashes when more than 1 is spawned simultaneously.. This is a breaking issue that I'll resolve later.
-  // insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 5, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
+  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 5, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
   insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
   insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
 
+  hp = PLAYER_STARTING_HP;
   points = 0;
   max_towers = MAX_TOWERS_START;
   next_enemy_spawn = 0;
@@ -736,7 +737,8 @@ void WorldSystem::handle_collisions()
         {
           enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
           Mix_PlayChannel(-1, chicken_eat_sound, 0);
-          points -= 3; // small penalty for now
+          // removed now that we have hp points -= 3; // small penalty for now
+          hp -= 1; // hp implementation
         }
       }
       else
@@ -765,9 +767,12 @@ void WorldSystem::handle_collisions()
         {
           enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
           Mix_PlayChannel(-1, chicken_eat_sound, 0);
-          points -= 3; // small penalty for now
+          // removed now that we have hp points -= 3; // small penalty for now
+          hp -= 1; // hp implementation
         }
       }
+
+
 
       // LEGACY CODE (Pre-Box2D Collision Handling)
       /*
@@ -780,9 +785,14 @@ void WorldSystem::handle_collisions()
       */
     }
   }
-
   // Remove all collisions from this simulation step
   registry.collisions.clear();
+
+  // If player HP reaches 0, restart the game
+  if (hp <= 0) {
+      restart_game();
+  }
+
 }
 
 // Should the game be over ?

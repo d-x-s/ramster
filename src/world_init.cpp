@@ -66,6 +66,7 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_area) {
 
 	// Determine enemy type-based characteristics here.
+ 
 	// If the enemy is an obstacle then they will not be destructable. Can expand w/ more indestructable enemies.
 	bool destructability = enemy_type == OBSTACLE ? false : true; 
 	// Size of enemy. ENEMY_RADIUS is the standard size, and we'll change it for non-common enemies.
@@ -97,6 +98,14 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	if (enemy_type == OBSTACLE) {
 		enemyFriction = 0;
 	}
+	// Whether the enemy is affected by gravity, applied using gravity scaling. Only common enemies have gravity.
+	float enemyGravityScaling = 0;
+	if (enemy_type == COMMON) {
+		enemyGravityScaling = 1;
+	}
+	
+
+	// Add enemy to ECS
 	
 	// Enemy entity
 	Entity entity = Entity();
@@ -113,6 +122,9 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	enemy.movement_area = movement_area;
 	enemy.destructable = destructability;
 
+
+	// Make Box2D body for enemy
+	
 	// Define a box2D body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
@@ -137,6 +149,10 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	enemyBody.bodyId = bodyId;
 
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
+
+	// This changes the effect of gravity on an enemy.
+	b2Body_SetGravityScale(bodyId, enemyGravityScaling);
+
 
 	// Add motion & render request for ECS synchronization
 	auto& motion = registry.motions.emplace(entity);

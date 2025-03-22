@@ -248,8 +248,8 @@ bool AISystem::tooCloseToSwarm(Entity swarmEnemy, vec2& entityToAvoid)
 	for (int i = 0; i < physicsEntities.size(); i++) {
 		Entity entity = physicsEntities[i];
 
-		// Ensure that we're not dealing with the player or the swarm enemy itself
-		if ((!registry.players.has(entity)) && (!(entity == swarmEnemy))) {
+		// Ensure that we're not dealing with the player or the swarm enemy itself and the enemy has a motion component
+		if ((!registry.players.has(entity)) && (!(entity == swarmEnemy)) && registry.motions.has(entity)) {
 			Motion entityMotion = registry.motions.get(entity);
 
 			if (abs(enemyMotion.position.x - entityMotion.position.x) <= GRID_CELL_WIDTH_PX/4 || abs(enemyMotion.position.y - entityMotion.position.y) <= GRID_CELL_HEIGHT_PX/4) {
@@ -264,6 +264,9 @@ bool AISystem::tooCloseToSwarm(Entity swarmEnemy, vec2& entityToAvoid)
 }
 
 bool AISystem::tooFarFromSwarm(Entity swarmEnemy, vec2& closestSwarm) {
+
+	// Safety check: if there's only a single swarm enemy return false.
+	
 
 	// Stuff that we'll need
 	Motion& selfMotion = registry.motions.get(swarmEnemy);

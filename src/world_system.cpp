@@ -270,6 +270,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
         }
     }
 
+    // This handles the enemy spawning. Refer copied comment from spawn map in header file:
     // Updated map: 
     //	key is a vector<int> (tile that triggers spawn), 
     //	value is a tuple with:
@@ -526,7 +527,7 @@ void WorldSystem::restart_game()
   // Add some spawning
   // Note: for some reason SWARM crashes when more than 1 is spawned simultaneously.. This is a breaking issue that I'll resolve later.
   insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), COMMON, 5, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
-  insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), SWARM, 1, ivec2(6, 3), ivec2(0, 0), ivec2(0, 0));
+  insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), SWARM, 5, ivec2(6, 3), ivec2(0, 0), ivec2(0, 0));
 
   points = 0;
   max_towers = MAX_TOWERS_START;

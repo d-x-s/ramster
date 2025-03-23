@@ -771,6 +771,18 @@ void WorldSystem::handle_movement(float elapsed_ms)
   else if (keyStates[GLFW_KEY_S])
   {
     // nonjump_movement_force = { 0, -forceMagnitude };
+    if (grappleActive)
+    {
+      for (Entity grappleEntity : registry.grapples.entities)
+      {
+        Grapple &grapple = registry.grapples.get(grappleEntity);
+        float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
+        if (curLen < GRAPPLE_MAX_LENGTH)
+        {
+          b2DistanceJoint_SetLength(grapple.jointId, curLen + GRAPPLE_DETRACT_W);
+        }
+      }
+    }
   }
   else if (keyStates[GLFW_KEY_D])
   {

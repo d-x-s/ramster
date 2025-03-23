@@ -893,7 +893,7 @@ void WorldSystem::handle_collisions()
           b2DestroyBody(enemyBodyId);
           registry.remove_all_components_of(other);
           playSoundEffect(FX::FX_DESTROY_ENEMY);
-          hp -= 1;
+          enemies_killed++;
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.

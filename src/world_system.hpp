@@ -82,8 +82,22 @@ private:
 
 	// music references
 	Mix_Music* background_music;
+  Mix_Music* background_music_memorybranch;
+  Mix_Music* background_music_oblanka;
+  Mix_Music* background_music_paradrizzle;
+  Mix_Music* background_music_windcatcher;
+
+  // fx references
+  Mix_Chunk* fx_destroy_enemy;
+  Mix_Chunk* fx_destroy_enemy_fail;
+  Mix_Chunk* fx_jump;
+  Mix_Chunk* fx_grapple;
 	Mix_Chunk* chicken_dead_sound;
 	Mix_Chunk* chicken_eat_sound;
+
+  // audio control
+  void WorldSystem::playMusic(MUSIC music);
+  void WorldSystem::playSoundEffect(FX effect);
 
 	// player movement
 	void handle_movement();
@@ -105,7 +119,7 @@ private:
 	bool game_active = true;
 
 	// restart level
-	void restart_game();
+	void restart_game(MUSIC music);
 
 	// prototype for generating chain terrain
 	void generateTestTerrain();

@@ -38,7 +38,7 @@ b2BodyId create_vertical_wall(b2WorldId worldId, float x, float y, float height)
     createLine(bottom, top);
 
     // create PhysicsBody component
-    Entity& entity = Entity();
+    Entity entity = Entity();
     PhysicsBody& physicsBody = registry.physicsBodies.emplace(entity);
     physicsBody.bodyId = bodyId;
 
@@ -77,7 +77,7 @@ b2BodyId create_horizontal_wall(b2WorldId worldId, float x, float y, float width
     createLine(left, right);
 
     // create PhysicsBody component
-    Entity& entity = Entity();
+    Entity entity = Entity();
 	PhysicsBody& physicsBody = registry.physicsBodies.emplace(entity);
 	physicsBody.bodyId = bodyId;
 

@@ -54,14 +54,14 @@ public:
 	// vignete fade out control
 	float vignette_timer_ms = 0.0f;
 
-	// M3 content
-
 	// level loading
 	bool load_level(const std::string& filename);
 
 	GLFWwindow* getWindow() {
 		return window;
 	}
+
+	RenderSystem* renderer;
 
 private:
 
@@ -79,10 +79,8 @@ private:
 
 	float mouse_pos_x = 0.0f;
 	float mouse_pos_y = 0.0f;
-
 	// Game state
-	RenderSystem* renderer;
-	float current_speed;
+  float current_speed;
 
 	// grid
 	std::vector<Entity> grid_lines;
@@ -104,8 +102,8 @@ private:
 	Mix_Chunk* chicken_eat_sound;
 
   // audio control
-  void WorldSystem::playMusic(MUSIC music);
-  void WorldSystem::playSoundEffect(FX effect);
+  void playMusic(MUSIC music);
+  void playSoundEffect(FX effect);
 
 	// player movement
 	void handle_movement();

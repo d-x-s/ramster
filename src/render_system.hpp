@@ -162,6 +162,9 @@ public:
 
   Entity get_screen_state_entity() { return screen_state_entity; }
 
+  // Window resizing
+  void resizeScreenTexture(int width, int height);
+
 private:
   // Internal drawing functions for each entity type
   void drawGridLine(Entity entity, const mat3 &projection);

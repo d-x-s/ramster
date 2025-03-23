@@ -382,71 +382,73 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 // then draw the intermediate texture
 void RenderSystem::drawToScreen()
 {
-	// Setting shaders
-	// get the vignette texture, sprite mesh, and program
+	// --- SET SHADER ---
 	glUseProgram(effects[(GLuint)EFFECT_ASSET_ID::VIGNETTE]);
 	gl_has_errors();
 
-	// Clearing backbuffer
-	int w, h;
-	glfwGetFramebufferSize(window, &w, &h); // Note, this will be 2x the resolution given to glfwCreateWindow on retina displays
+	// --- GET ACTUAL WINDOW SIZE ---
+	int win_w, win_h;
+	glfwGetFramebufferSize(window, &win_w, &win_h);
+
+	// --- COMPUTE LETTERBOXED VIEWPORT ---
+	const float target_aspect = ASPECT_RATIO;
+	float window_aspect = (float)win_w / (float)win_h;
+
+	int viewport_x = 0, viewport_y = 0;
+	int viewport_w = win_w, viewport_h = win_h;
+
+	if (window_aspect > target_aspect) {
+		// Window is too wide --> pillarbox
+		viewport_w = int(win_h * target_aspect);
+		viewport_x = (win_w - viewport_w) / 2;
+	}
+	else {
+		// Window is too tall --> letterbox
+		viewport_h = int(win_w / target_aspect);
+		viewport_y = (win_h - viewport_h) / 2;
+	}
+
+	// --- CLEAR & SETUP SCREEN ---
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, w, h);
+	glViewport(viewport_x, viewport_y, viewport_w, viewport_h);
 	glDepthRange(0, 10);
-	glClearColor(1.f, 0, 0, 1.0);
+	glClearColor(0.f, 0.f, 0.f, 1.0f); // black bars
 	glClearDepth(1.f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	gl_has_errors();
-	// Enabling alpha channel for textures
 	glDisable(GL_BLEND);
-	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_DEPTH_TEST);
-
-	// Draw the screen texture on the quad geometry
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]);
-	glBindBuffer(
-		GL_ELEMENT_ARRAY_BUFFER,
-		index_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]); // Note, GL_ELEMENT_ARRAY_BUFFER associates
-	// indices to the bound GL_ARRAY_BUFFER
 	gl_has_errors();
 
-	// add the "vignette" effect
+	// --- SET GEOMETRY ---
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]);
+	gl_has_errors();
+
+	// --- UNIFORMS ---
 	const GLuint vignette_program = effects[(GLuint)EFFECT_ASSET_ID::VIGNETTE];
 
-	// set clock
 	GLuint time_uloc = glGetUniformLocation(vignette_program, "time");
 	glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
 
-	// screen effects
-	GLuint dead_timer_uloc = glGetUniformLocation(vignette_program, "darken_screen_factor");
-	GLuint apply_vignette_uloc = glGetUniformLocation(vignette_program, "apply_vignette");
-	GLuint apply_fadeout_uloc = glGetUniformLocation(vignette_program, "apply_fadeout");
-
 	ScreenState& screen = registry.screenStates.get(screen_state_entity);
-	// std::cout << "screen.darken_screen_factor: " << screen.darken_screen_factor << " entity id: " << screen_state_entity << std::endl;
-	glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
-	glUniform1f(apply_vignette_uloc, screen.vignette);
-	glUniform1f(apply_fadeout_uloc, screen.fadeout);
+	glUniform1f(glGetUniformLocation(vignette_program, "darken_screen_factor"), screen.darken_screen_factor);
+	glUniform1f(glGetUniformLocation(vignette_program, "apply_vignette"), screen.vignette);
+	glUniform1f(glGetUniformLocation(vignette_program, "apply_fadeout"), screen.fadeout);
 	gl_has_errors();
 
-	// Set the vertex position and vertex texture coordinates (both stored in the
-	// same VBO)
+	// --- VERTEX ATTRIB ---
 	GLint in_position_loc = glGetAttribLocation(vignette_program, "in_position");
 	glEnableVertexAttribArray(in_position_loc);
 	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
 	gl_has_errors();
 
-	// Bind our texture in Texture Unit 0
+	// --- TEXTURE ---
 	glActiveTexture(GL_TEXTURE0);
-
 	glBindTexture(GL_TEXTURE_2D, off_screen_render_buffer_color);
 	gl_has_errors();
 
-	// Draw
-	glDrawElements(
-		GL_TRIANGLES, 3, GL_UNSIGNED_SHORT,
-		nullptr); // one triangle = 3 vertices; nullptr indicates that there is
-	// no offset from the bound index buffer
+	// --- DRAW ---
+	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, nullptr);
 	gl_has_errors();
 }
 
@@ -556,13 +558,14 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 mat3 RenderSystem::createProjectionMatrix() {
 	Camera camera = registry.cameras.components[0];
 
-	// Compute relative viewport bounds
-	float left = camera.position.x - WINDOW_WIDTH_PX / 2.0f;
-	float bottom = camera.position.y - WINDOW_HEIGHT_PX / 2.0f;
-	float right = left + WINDOW_WIDTH_PX;
-	float top = bottom + WINDOW_HEIGHT_PX;
+	
+  // Fixed camera view centered around player
+	float left = camera.position.x - VIEWPORT_WIDTH_PX / 2.f;
+	float right = camera.position.x + VIEWPORT_WIDTH_PX / 2.f;
+	float bottom = camera.position.y - VIEWPORT_HEIGHT_PX / 2.f;
+	float top = camera.position.y + VIEWPORT_HEIGHT_PX / 2.f;
 
-	// Scale factors, to scale to [-1, 1] OpenGl coordinate space
+  // Scale factors, to scale to [-1, 1] OpenGl coordinate space
 	float sx = 2.f / (right - left);
 	float sy = 2.f / (top - bottom);
 
@@ -575,4 +578,33 @@ mat3 RenderSystem::createProjectionMatrix() {
 		{ 0.f, sy, 0.f },
 		{ tx, ty, 1.f }
 	};
+}
+
+void RenderSystem::resizeScreenTexture(int width, int height)
+{
+	// Delete the previous color texture and depth buffer
+	glDeleteTextures(1, &off_screen_render_buffer_color);
+	glDeleteRenderbuffers(1, &off_screen_render_buffer_depth);
+
+	// Recreate the color texture with the new size
+	glGenTextures(1, &off_screen_render_buffer_color);
+	glBindTexture(GL_TEXTURE_2D, off_screen_render_buffer_color);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	gl_has_errors();
+
+	// Recreate the depth renderbuffer with the new size
+	glGenRenderbuffers(1, &off_screen_render_buffer_depth);
+	glBindRenderbuffer(GL_RENDERBUFFER, off_screen_render_buffer_depth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+	gl_has_errors();
+
+	// Reattach textures to the framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, off_screen_render_buffer_color, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, off_screen_render_buffer_depth);
+	gl_has_errors();
+
+	assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 }

@@ -514,7 +514,7 @@ bool WorldSystem::load_level(const std::string& filename) {
                                            WORLD_HEIGHT_PX - (y + y_offset)));
             }
 
-			std::cout << "Creating chain with " << chainPoints.size() << " enemies_killed." << std::endl;
+			std::cout << "Creating chain with " << chainPoints.size() << " points." << std::endl;
 
             create_chain(worldId, chainPoints, false, lines);
         }
@@ -650,7 +650,7 @@ void WorldSystem::restart_game(MUSIC music, std::string level)
   // Clear spawn map
   spawnMap.clear();
   // Add some spawning to test
-  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 5, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
+  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 15, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
   insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
   insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
 
@@ -872,7 +872,11 @@ void WorldSystem::handle_collisions()
         {
           enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
           playSoundEffect(FX::FX_DESTROY_ENEMY_FAIL);
-          hp -= 1; // small penalty for now
+
+          // Only lose HP if what we hit was NOT an obstacle
+          if (enemyComponent.destructable) {
+              hp -= 1; // small penalty for now
+          }
         }
       }
       else
@@ -901,7 +905,11 @@ void WorldSystem::handle_collisions()
         {
           enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
           playSoundEffect(FX::FX_DESTROY_ENEMY_FAIL);
-          hp -= 1; // small penalty for now
+
+          // Only lose HP if what we hit was NOT an obstacle
+          if (enemyComponent.destructable) {
+              hp -= 1; // small penalty for now
+          }
         }
       }
 

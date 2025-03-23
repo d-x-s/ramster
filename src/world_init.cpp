@@ -134,7 +134,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 		enemyBounciness = 0;
 	}
 	else if (enemy_type == SWARM) {
-		enemyBounciness = 0.75;
+		enemyBounciness = 0.5;
 	}
 	// Weight of enemy, based on density. Common has default weight ENEMY_DENSITY
 	float enemyWeight = ENEMY_DENSITY;

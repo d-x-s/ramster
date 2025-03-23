@@ -127,6 +127,8 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	shapeDef.friction = enemyFriction;
 	shapeDef.restitution = enemyBounciness; 
 
+	std::cout << "shape: "<< shapeDef.filter.maskBits << std::endl;
+
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
 	// We'll update the enemy hitbox later.
 	b2Circle circle;
@@ -231,6 +233,7 @@ Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBod
     b2DistanceJointDef djd = b2DefaultDistanceJointDef();
     djd.bodyIdA = ballBodyId;
     djd.bodyIdB = grappleBodyId;
+
     djd.length = distance;
     djd.collideConnected = false;
     // djd.maxLength = GRAPPLE_ATTACHABLE_RADIUS;

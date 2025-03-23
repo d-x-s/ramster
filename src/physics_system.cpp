@@ -20,15 +20,15 @@ bool speedy = false;               // Whether the player is moving faster than Q
 float prev_x = 0.f;                // The previous x position of the camera
 float prev_y = 0.f;                // The previous y position of the camera
 float center_y = -1.f;             // The center y position of the camera
-vec2 grapple_shift = { 0.f, 0.f }; // What stage of the camera's movement it is in towards grapple
+vec2 grapple_shift = {0.f, 0.f};   // What stage of the camera's movement it is in towards grapple
 float reset_shift = 0.f;           // What stage of the camera's movement it is in after grapple
 bool after_grapple = false;        // Whether the camera is resetting after a grapple
-int camera_panned = 0;             // 0 = Centered, 1 = Panned Right, 2 = Panned Left 
+int camera_panned = 0;             // 0 = Centered, 1 = Panned Right, 2 = Panned Left
 
 // Camera Constants
 float QUICK_MOVEMENT_THRESHOLD = 900.f;
 float HORIZONTAL_FOCAL_SHIFT = 200.f;
-float CAMERA_SPEED = 5.f;      // Lower = Slower camera movement
+float CAMERA_SPEED = 5.f;        // Lower = Slower camera movement
 float VERTICAL_THRESHOLD = 50.f; // Lower = Camera will follow more aggressively
 float DEFAULT = -1.f;
 
@@ -46,64 +46,65 @@ vec2 get_bounding_box(const Motion &motion)
   return {abs(motion.scale.x), abs(motion.scale.y)};
 }
 
-
 // NOTE THAT THIS SHOULD REALLY ONLY BE CALLED WITH EITHER PLAYER OR ENEMY, AS IT DEPENDS ON ENTITIES HAVING ONE SHAPE!!!
-// TODO NOTE: playtested & found an issue where the player and enemy occasionally phase through each other. Tried replicating by seeing if it triggers by jump, consecutive enemies, 
+// TODO NOTE: playtested & found an issue where the player and enemy occasionally phase through each other. Tried replicating by seeing if it triggers by jump, consecutive enemies,
 // etc, But it occurs seemingly randomly. Also encountered the issue where enemies occasionally phase through the ramp. These two issues could be related...?
-// NOTE 2: Increased scale of both the player and enemy entities. Confirmed that if a collision happens off-center (say, the edges touch), it will not register, 
-// but will if the centers of the 2 bodies are sufficiently close. This suggests that the on-screen geometry is not equal to the collision geometry, causing the phase-through 
+// NOTE 2: Increased scale of both the player and enemy entities. Confirmed that if a collision happens off-center (say, the edges touch), it will not register,
+// but will if the centers of the 2 bodies are sufficiently close. This suggests that the on-screen geometry is not equal to the collision geometry, causing the phase-through
 // issue.
-// NOTE 3: Tried decreasing scale of both player and enemy entities so the geometry on-screen is smaller than collision geometry. Confirmed that this remedied the phase-through 
+// NOTE 3: Tried decreasing scale of both player and enemy entities so the geometry on-screen is smaller than collision geometry. Confirmed that this remedied the phase-through
 // issue.
 bool collides(const Entity &entity1, const Entity &entity2)
 {
-    // Get body IDs to identify entities in box2D
-    b2BodyId entity1_id = registry.physicsBodies.get(entity1).bodyId;
-    b2BodyId entity2_id = registry.physicsBodies.get(entity2).bodyId;
-    
-    // Figure out the shape IDs
-    // Entity 1
-    int entity1_numShapes = b2Body_GetShapeCount(entity1_id);
-    b2ShapeId* entity1_shapeArray = new b2ShapeId[entity1_numShapes];
-    b2Body_GetShapes(entity1_id, entity1_shapeArray, entity1_numShapes);
-    b2ShapeId entity1_shape = entity1_shapeArray[0]; 
-    // Entity 2
-    int entity2_numShapes = b2Body_GetShapeCount(entity2_id);
-    b2ShapeId* entity2_shapeArray = new b2ShapeId[entity2_numShapes];
-    b2Body_GetShapes(entity2_id, entity2_shapeArray, entity2_numShapes);
-    b2ShapeId entity2_shape = entity2_shapeArray[0];
+  // Get body IDs to identify entities in box2D
+  b2BodyId entity1_id = registry.physicsBodies.get(entity1).bodyId;
+  b2BodyId entity2_id = registry.physicsBodies.get(entity2).bodyId;
 
-    // Get contact data for both entities
-    int entity1_numContacts = b2Body_GetContactCapacity(entity1_id);
-    int entity2_numContacts = b2Body_GetContactCapacity(entity2_id);
-    b2ContactData* entity1_contactData = new b2ContactData[entity1_numContacts];
-    b2ContactData* entity2_contactData = new b2ContactData[entity2_numContacts];
-    b2Body_GetContactData(entity1_id, entity1_contactData, entity1_numContacts);
-    b2Body_GetContactData(entity2_id, entity2_contactData, entity2_numContacts);
+  // Figure out the shape IDs
+  // Entity 1
+  int entity1_numShapes = b2Body_GetShapeCount(entity1_id);
+  b2ShapeId *entity1_shapeArray = new b2ShapeId[entity1_numShapes];
+  b2Body_GetShapes(entity1_id, entity1_shapeArray, entity1_numShapes);
+  b2ShapeId entity1_shape = entity1_shapeArray[0];
+  // Entity 2
+  int entity2_numShapes = b2Body_GetShapeCount(entity2_id);
+  b2ShapeId *entity2_shapeArray = new b2ShapeId[entity2_numShapes];
+  b2Body_GetShapes(entity2_id, entity2_shapeArray, entity2_numShapes);
+  b2ShapeId entity2_shape = entity2_shapeArray[0];
 
-    // Obvious case where if either of these entities have 0 contacts, then it must be the case that they're not colliding.
-    if (entity1_numContacts == 0 || entity2_numContacts == 0) {
-        return false;
-    }
+  // Get contact data for both entities
+  int entity1_numContacts = b2Body_GetContactCapacity(entity1_id);
+  int entity2_numContacts = b2Body_GetContactCapacity(entity2_id);
+  b2ContactData *entity1_contactData = new b2ContactData[entity1_numContacts];
+  b2ContactData *entity2_contactData = new b2ContactData[entity2_numContacts];
+  b2Body_GetContactData(entity1_id, entity1_contactData, entity1_numContacts);
+  b2Body_GetContactData(entity2_id, entity2_contactData, entity2_numContacts);
 
-    // If they have contacts then it's less obvious. 
-    // Iterate over every contact of either entity (as it should be reciprocal if they touch) and check if it contains the shapeID of the other. 
-    // If they have the other's shapeID then they're definitely colliding.
-    // We'll just check entity 1.
-    for (int i = 0; i < entity1_numContacts; i++) {
-        b2ContactData contact = entity1_contactData[i];
-
-        // confirming both entities are in the collision
-        if (((contact.shapeIdA.index1 == entity1_shape.index1 || contact.shapeIdB.index1 == entity1_shape.index1)) && // confirm that entity1 is one of the shapes involved
-            ((contact.shapeIdA.index1 == entity2_shape.index1 || contact.shapeIdB.index1 == entity2_shape.index1)) // confirm that entity2 is one of the shapes involved
-            ) 
-        {
-            return true;
-        }
-    }
-
-    // if loop found nothing then no collision.
+  // Obvious case where if either of these entities have 0 contacts, then it must be the case that they're not colliding.
+  if (entity1_numContacts == 0 || entity2_numContacts == 0)
+  {
     return false;
+  }
+
+  // If they have contacts then it's less obvious.
+  // Iterate over every contact of either entity (as it should be reciprocal if they touch) and check if it contains the shapeID of the other.
+  // If they have the other's shapeID then they're definitely colliding.
+  // We'll just check entity 1.
+  for (int i = 0; i < entity1_numContacts; i++)
+  {
+    b2ContactData contact = entity1_contactData[i];
+
+    // confirming both entities are in the collision
+    if (((contact.shapeIdA.index1 == entity1_shape.index1 || contact.shapeIdB.index1 == entity1_shape.index1)) && // confirm that entity1 is one of the shapes involved
+        ((contact.shapeIdA.index1 == entity2_shape.index1 || contact.shapeIdB.index1 == entity2_shape.index1))    // confirm that entity2 is one of the shapes involved
+    )
+    {
+      return true;
+    }
+  }
+
+  // if loop found nothing then no collision.
+  return false;
 }
 
 // Advances physics simulation
@@ -192,7 +193,7 @@ void PhysicsSystem::step(float elapsed_ms)
     speedy = true;
     camera_panned = 2;
     // Initialize camera movement
-	camera_next_step = playerPosition.x - CAMERA_SPEED * shift_index;
+    camera_next_step = playerPosition.x - CAMERA_SPEED * shift_index;
     camera_objective_loc = playerPosition.x - HORIZONTAL_FOCAL_SHIFT;
     if (camera_next_step > camera_objective_loc)
     {
@@ -215,12 +216,12 @@ void PhysicsSystem::step(float elapsed_ms)
     if (playerPosition.x < camera_objective_loc)
     {
       camera_objective_loc = playerPosition.x + HORIZONTAL_FOCAL_SHIFT;
-	  camX = playerPosition.x + CAMERA_SPEED * shift_index;
+      camX = playerPosition.x + CAMERA_SPEED * shift_index;
     }
     else if (playerPosition.x > camera_objective_loc)
     {
       camera_objective_loc = playerPosition.x - HORIZONTAL_FOCAL_SHIFT;
-	  camX = playerPosition.x - CAMERA_SPEED * shift_index;
+      camX = playerPosition.x - CAMERA_SPEED * shift_index;
     }
     if (shift_index > 1)
     {
@@ -229,7 +230,7 @@ void PhysicsSystem::step(float elapsed_ms)
     else
     {
       camera_objective_loc = DEFAULT; // Reset objective location
-	  camera_panned = 0; // Reset panning
+      camera_panned = 0;              // Reset panning
     }
   }
 
@@ -280,34 +281,40 @@ void PhysicsSystem::step(float elapsed_ms)
 
   // Get grapple point position (static for now)
   // Move camera towards grapple point
-  if (grappleActive) {
-      // Initialize variables
-  Entity activeGrapplePointEntity;
-  b2BodyId activeGrappleBodyId;
+  if (grapplePointActive)
+  {
+    // Initialize variables
+    Entity activeGrapplePointEntity;
+    b2BodyId activeGrappleBodyId;
 
-  // Loop through all grapple points and find the active one
-  for (Entity gpEntity : registry.grapplePoints.entities) {
-    GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
-		//std::cout << gp.position.x << " " << gp.position.y <<  " " << gp.active << std::endl;
-    if (gp.active) {
+    // Loop through all grapple points and find the active one
+    for (Entity gpEntity : registry.grapplePoints.entities)
+    {
+      GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
+      // std::cout << gp.position.x << " " << gp.position.y <<  " " << gp.active << std::endl;
+      if (gp.active)
+      {
         activeGrapplePointEntity = gpEntity;
         activeGrappleBodyId = gp.bodyId;
+      }
+    }
+    b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
+    camX = lerp(prev_x, grapplePos.x, grapple_shift.x);
+    camY = lerp(prev_y, grapplePos.y, grapple_shift.y);
+
+    if (camX != grapplePos.x || camY != grapplePos.y)
+    {
+      grapple_shift += 0.02;
     }
   }
-  b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
-    camX = lerp(prev_x, grapplePos.x, grapple_shift.x);
-	  camY = lerp(prev_y, grapplePos.y, grapple_shift.y);
-
-	  if (camX != grapplePos.x || camY != grapplePos.y) {
-          grapple_shift += 0.02;
-	  }
-  }
   // Reset camera back to player
-  else {
-      if (grapple_shift != vec2(0.f, 0.f)) {
-          after_grapple = true;
-          grapple_shift = { 0.f, 0.f };
-      }
+  else
+  {
+    if (grapple_shift != vec2(0.f, 0.f))
+    {
+      after_grapple = true;
+      grapple_shift = {0.f, 0.f};
+    }
   }
 
   // Hard coded for now, will change to be dynamic later
@@ -317,35 +324,36 @@ void PhysicsSystem::step(float elapsed_ms)
 
   // Unlock the camera from the player if they approach the edge of world
   // This happens last because it has the highest priority
-  if (camX < LEFT_BOUNDARY && !grappleActive)
+  if (camX < LEFT_BOUNDARY && !grapplePointActive)
   {
-      camX = LEFT_BOUNDARY;
+    camX = LEFT_BOUNDARY;
   }
-  if (camX > RIGHT_BOUNDARY && !grappleActive)
+  if (camX > RIGHT_BOUNDARY && !grapplePointActive)
   {
-      camX = RIGHT_BOUNDARY;
+    camX = RIGHT_BOUNDARY;
   }
-  if (camY > TOP_BOUNDARY && !grappleActive)
+  if (camY > TOP_BOUNDARY && !grapplePointActive)
   {
-      camY = TOP_BOUNDARY;
+    camY = TOP_BOUNDARY;
   }
 
-  // If the camera is post-grapple, we need to dynamically move it back 
+  // If the camera is post-grapple, we need to dynamically move it back
   // to wherever it needs to go
   if (after_grapple)
   {
-      // If we have reached destination or player re-grapples, stop the process
-      if (reset_shift >= 1.0f || grappleActive) {
-          after_grapple = false;
-		  reset_shift = 0.f;
-      }
-      else {
-          camX = lerp(prev_x, camX, reset_shift);
-          camY = lerp(prev_y, camY, reset_shift);
-          reset_shift += 0.02;
-      }
+    // If we have reached destination or player re-grapples, stop the process
+    if (reset_shift >= 1.0f || grapplePointActive)
+    {
+      after_grapple = false;
+      reset_shift = 0.f;
+    }
+    else
+    {
+      camX = lerp(prev_x, camX, reset_shift);
+      camY = lerp(prev_y, camY, reset_shift);
+      reset_shift += 0.02;
+    }
   }
-
 
   camera.position = vec2(camX, camY);
 
@@ -356,7 +364,7 @@ void PhysicsSystem::step(float elapsed_ms)
   // std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";
 
   // COLLISION HANDLING
-  // This just iterates over all motion entities to check. 
+  // This just iterates over all motion entities to check.
   // The collision check is handled by collides() helper function.
   ComponentContainer<Motion> &motion_container = registry.motions;
   for (uint i = 0; i < motion_container.components.size(); i++)
@@ -371,81 +379,87 @@ void PhysicsSystem::step(float elapsed_ms)
       Entity entity_j = motion_container.entities[j];
       // We really only want to check collisions if both of these are either players or enemies.
       if ((registry.players.has(entity_i) || registry.enemies.has(entity_i)) && // entity i is either a player or an enemy
-          (registry.players.has(entity_j) || registry.enemies.has(entity_j)) // entity j is either a player or an enemy
-          ) {
-          if (collides(entity_i, entity_j))
+          (registry.players.has(entity_j) || registry.enemies.has(entity_j))    // entity j is either a player or an enemy
+      )
+      {
+        if (collides(entity_i, entity_j))
+        {
+          // Now that we know the 2 entities are colliding we also want to figure out which entity comes out on top.
+          // Current criteria for "top" is higher speed during collision.
+
+          // Get body IDs to identify entities in box2D (note that i, j, maps onto 1, 2)
+          b2BodyId entity1_id = registry.physicsBodies.get(entity_i).bodyId;
+          b2BodyId entity2_id = registry.physicsBodies.get(entity_j).bodyId;
+          // Get speeds
+          b2Vec2 entity1_velocity = b2Body_GetLinearVelocity(entity1_id);
+          float entity1_speedFactor = ((entity1_velocity.x * entity1_velocity.x) + (entity1_velocity.y * entity1_velocity.y)) / 100000;
+          b2Vec2 entity2_velocity = b2Body_GetLinearVelocity(entity2_id);
+          float entity2_speedFactor = ((entity2_velocity.x * entity2_velocity.x) + (entity2_velocity.y * entity2_velocity.y)) / 100000;
+
+          // ID the player
+          Entity playerEntity;
+          float playerSpeed;
+          if (registry.players.has(entity_i))
           {
-              // Now that we know the 2 entities are colliding we also want to figure out which entity comes out on top.
-              // Current criteria for "top" is higher speed during collision.
-              
-              // Get body IDs to identify entities in box2D (note that i, j, maps onto 1, 2)
-              b2BodyId entity1_id = registry.physicsBodies.get(entity_i).bodyId;
-              b2BodyId entity2_id = registry.physicsBodies.get(entity_j).bodyId;
-              // Get speeds
-              b2Vec2 entity1_velocity = b2Body_GetLinearVelocity(entity1_id);
-              float entity1_speedFactor = ((entity1_velocity.x * entity1_velocity.x) + (entity1_velocity.y * entity1_velocity.y))/100000;
-              b2Vec2 entity2_velocity = b2Body_GetLinearVelocity(entity2_id);
-              float entity2_speedFactor = ((entity2_velocity.x * entity2_velocity.x) + (entity2_velocity.y * entity2_velocity.y))/100000;
-
-              // ID the player
-              Entity playerEntity;
-              float playerSpeed;
-              if (registry.players.has(entity_i)) {
-                playerSpeed = entity1_speedFactor;
-                playerEntity = entity_i;
-              }
-              else {
-                playerSpeed = entity2_speedFactor;
-                playerEntity = entity_j;
-              }
-
-              // To determine if the player "won" in that collision, what we ultimately want to find out is whether the player was moving fast enough.
-              // So, at a high enough speed, the player should be relatively resistant to damage. The goal of the enemy would then be to absorb as much of
-              // the player's speed as possible. 
-              // Since the player is bouncy and our enemies are not very fast (at least not fast enough to make the player surpass the required speed to "win"),
-              // we can figure out if the player is fast enough by just checking on how much speed they retain after the collision.
-              // NOTE: this depends on MIN_COLLISION_SPEED, which will need some fine-tuning to find a good speed at which we can hit the enemy.
-              bool player_wins_collision = false;
-
-              if (playerSpeed > MIN_COLLISION_SPEED) {
-                  player_wins_collision = true;
-              }
-
-              // DEBUG
-              //std::cout << "ENTITY 1 SPEED: " << entity1_speedFactor << std::endl;
-              //std::cout << "ENTITY 2 SPEED: " << entity2_speedFactor << std::endl;
-              //std::cout << "PLAYER SPEED: " << playerSpeed << std::endl;
-
-              // Create a collisions event
-              // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
-              // CK: why the duplication, except to allow searching by entity_id
-              Collision& collision = registry.collisions.emplace_with_duplicates(entity_i, entity_j);
-              collision.player_wins_collision = player_wins_collision;
+            playerSpeed = entity1_speedFactor;
+            playerEntity = entity_i;
           }
+          else
+          {
+            playerSpeed = entity2_speedFactor;
+            playerEntity = entity_j;
+          }
+
+          // To determine if the player "won" in that collision, what we ultimately want to find out is whether the player was moving fast enough.
+          // So, at a high enough speed, the player should be relatively resistant to damage. The goal of the enemy would then be to absorb as much of
+          // the player's speed as possible.
+          // Since the player is bouncy and our enemies are not very fast (at least not fast enough to make the player surpass the required speed to "win"),
+          // we can figure out if the player is fast enough by just checking on how much speed they retain after the collision.
+          // NOTE: this depends on MIN_COLLISION_SPEED, which will need some fine-tuning to find a good speed at which we can hit the enemy.
+          bool player_wins_collision = false;
+
+          if (playerSpeed > MIN_COLLISION_SPEED)
+          {
+            player_wins_collision = true;
+          }
+
+          // DEBUG
+          // std::cout << "ENTITY 1 SPEED: " << entity1_speedFactor << std::endl;
+          // std::cout << "ENTITY 2 SPEED: " << entity2_speedFactor << std::endl;
+          // std::cout << "PLAYER SPEED: " << playerSpeed << std::endl;
+
+          // Create a collisions event
+          // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
+          // CK: why the duplication, except to allow searching by entity_id
+          Collision &collision = registry.collisions.emplace_with_duplicates(entity_i, entity_j);
+          collision.player_wins_collision = player_wins_collision;
+        }
       }
-      
     }
   }
 
-
- 	if (grappleActive) {
-		updateGrappleLines();
+  if (grappleActive)
+  {
+    updateGrappleLines();
   }
 }
 
-void PhysicsSystem::updateGrappleLines() {
-    for (Entity grappleEntity : registry.grapples.entities) {
-        Grapple& grapple = registry.grapples.get(grappleEntity);
+void PhysicsSystem::updateGrappleLines()
+{
+  for (Entity grappleEntity : registry.grapples.entities)
+  {
+    Grapple &grapple = registry.grapples.get(grappleEntity);
 
-        // Get current positions
-        b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
-        b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
+    // Get current positions
+    b2Vec2 ballPos = b2Body_GetPosition(grapple.ballBodyId);
+    b2Vec2 grapplePos = b2Body_GetPosition(grapple.grappleBodyId);
 
-        // Update line entity positions
-        if (registry.lines.has(grapple.lineEntity)) {
-            Line& line = registry.lines.get(grapple.lineEntity);
-            line.start_pos = vec2(ballPos.x, ballPos.y);
-            line.end_pos = vec2(grapplePos.x, grapplePos.y);
-        }
+    // Update line entity positions
+    if (registry.lines.has(grapple.lineEntity))
+    {
+      Line &line = registry.lines.get(grapple.lineEntity);
+      line.start_pos = vec2(ballPos.x, ballPos.y);
+      line.end_pos = vec2(grapplePos.x, grapplePos.y);
     }
+  }
 }

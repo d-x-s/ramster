@@ -17,7 +17,8 @@
 #include <random>
 
 // Global Variables
-extern bool grappleActive; // Bool to check if grapple is active
+extern bool grapplePointActive; // Bool to check if grapple is on a grapple point
+extern bool grappleActive;		// Bool to check if grapple is active
 
 // Container for all our entities and game logic.
 // Individual rendering / updates are deferred to the update() methods.
@@ -27,7 +28,7 @@ public:
 	explicit WorldSystem(b2WorldId world);
 
 	// creates main window
-	GLFWwindow* create_window();
+	GLFWwindow *create_window();
 
 	// starts and loads music and sound effects
 	bool start_and_load_sounds();
@@ -36,7 +37,7 @@ public:
 	void close_window();
 
 	// starts the game
-	void init(RenderSystem* renderer);
+	void init(RenderSystem *renderer);
 
 	// releases all associated resources
 	~WorldSystem();
@@ -53,7 +54,8 @@ public:
 	// vignete fade out control
 	float vignette_timer_ms = 0.0f;
 
-	GLFWwindow* getWindow() {
+	GLFWwindow *getWindow()
+	{
 		return window;
 	}
 
@@ -68,7 +70,7 @@ private:
 	float mouse_pos_y = 0.0f;
 
 	// Game state
-	RenderSystem* renderer;
+	RenderSystem *renderer;
 	float current_speed;
 
 	// grid
@@ -76,9 +78,9 @@ private:
 	std::vector<Entity> lines;
 
 	// music references
-	Mix_Music* background_music;
-	Mix_Chunk* chicken_dead_sound;
-	Mix_Chunk* chicken_eat_sound;
+	Mix_Music *background_music;
+	Mix_Chunk *chicken_dead_sound;
+	Mix_Chunk *chicken_eat_sound;
 
 	// player movement
 	void handle_movement(float elapsed_ms);
@@ -107,11 +109,11 @@ private:
 	std::vector<b2Vec2> generateTestPoints();
 
 	// OpenGL window handle
-	GLFWwindow* window;
+	GLFWwindow *window;
 
 	// LLNOTE
-	// Updated map: 
-	//	key is a vector<int> (tile that triggers spawn), 
+	// Updated map:
+	//	key is a vector<int> (tile that triggers spawn),
 	//	value is a tuple with:
 	// 1. ENEMY_TYPE denoting type of enemy to spawn
 	// 2. Int denoting quantity of enemies to spawn
@@ -120,56 +122,42 @@ private:
 	// 5. vector<int> denoting spawn position
 	// 6. vector<int> denoting patrol range on the X-axis
 	std::map<
-		std::vector<int>,			// KEY
-		std::tuple<					// VALUE
-			ENEMY_TYPES,			// 1
-			int,					// 2
-			bool,					// 3
-			bool,					// 4
-			std::vector<int>,		// 5
-			std::vector<int>		// 6
-		>
-	> 
-	hasPlayerReachedTile = {
-		{ 
-			{17, 6},
-			{	
-				ENEMY_TYPES::OBSTACLE,
-				1,
-				false,
-				false,
-				{26, 5},
-				{23, 28}
-			}
-		},
-		{
-			{33, 6},
-			{
-				ENEMY_TYPES::SWARM,
-				20,
-				false,
-				false,
-				{42, 8},
-				{0, 0}
-			}
-		},
-		{
-			{ 50, 6 },
-			{
-				ENEMY_TYPES::COMMON,
-				3,
-				false,
-				false,
-				{68, 5},
-				{0, 0}
-			}
-		}
-	};
+		std::vector<int>,	  // KEY
+		std::tuple<			  // VALUE
+			ENEMY_TYPES,	  // 1
+			int,			  // 2
+			bool,			  // 3
+			bool,			  // 4
+			std::vector<int>, // 5
+			std::vector<int>  // 6
+			>>
+		hasPlayerReachedTile = {
+			{{17, 6},
+			 {ENEMY_TYPES::OBSTACLE,
+			  1,
+			  false,
+			  false,
+			  {26, 5},
+			  {23, 28}}},
+			{{33, 6},
+			 {ENEMY_TYPES::SWARM,
+			  20,
+			  false,
+			  false,
+			  {42, 8},
+			  {0, 0}}},
+			{{50, 6},
+			 {ENEMY_TYPES::COMMON,
+			  3,
+			  false,
+			  false,
+			  {68, 5},
+			  {0, 0}}}};
 
 	int next_enemy_spawn;
-	int enemy_spawn_rate_ms;	// see default value in common.hpp
+	int enemy_spawn_rate_ms; // see default value in common.hpp
 
-	int max_towers;	// see default value in common.hpp
+	int max_towers; // see default value in common.hpp
 
 	// Number of invaders stopped by the towers, displayed in the window title
 	int points;
@@ -197,6 +185,7 @@ private:
 	bool checkPlayerReachedTile(ivec2 grid_coordinate);
 
 	vec2 screenToWorld(vec2 mouse_position);
-	void attachGrapple();
 	void checkGrappleGrounded();
+	void shootGrapplePoint();
+	void shootGrapple(vec2 worldMousePos);
 };

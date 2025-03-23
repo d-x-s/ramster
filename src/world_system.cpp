@@ -14,6 +14,7 @@
 #include "terrain.hpp"
 
 // Global Variables
+bool grapplePointActive = false;
 bool grappleActive = false;
 
 // create the world
@@ -173,137 +174,139 @@ void WorldSystem::init(RenderSystem *renderer_arg)
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
 
-    // Updating window title with points (and remaining towers)
-    std::stringstream title_ss;
-    title_ss << "Ramster | Points: " << points << " | FPS: " << fps;
-    glfwSetWindowTitle(window, title_ss.str().c_str());
+  // Updating window title with points (and remaining towers)
+  std::stringstream title_ss;
+  title_ss << "Ramster | Points: " << points << " | FPS: " << fps;
+  glfwSetWindowTitle(window, title_ss.str().c_str());
 
-    // FPS counter
-    if (fps_update_cooldown_ms <= 0)
+  // FPS counter
+  if (fps_update_cooldown_ms <= 0)
+  {
+    fps = 1 / (elapsed_ms_since_last_update / 1000);
+    fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
+  }
+  else
+  {
+    fps_update_cooldown_ms -= elapsed_ms_since_last_update;
+  }
+
+  // Remove debug info from the last step
+  while (registry.debugComponents.entities.size() > 0)
+    registry.remove_all_components_of(registry.debugComponents.entities.back());
+
+  if (game_active)
+  {
+    update_isGrounded();
+    handle_movement(elapsed_ms_since_last_update);
+    checkGrappleGrounded();
+
+    //        // LLNOTE
+    //        // Check if player reached spawn points of enemies.
+    //        // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
+    //        for (auto& i : hasPlayerReachedTile)
+    //        {
+    //            if (!i.second)
+    //            {
+    //
+    //                i.second = playerReachedTile(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
+    //                // debug
+    //// if (playerReachedTile(ivec2(i.first[0], i.first[1]))) {
+    ////     std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
+    ////     std::cout << "WHAT MAP SAYS: " << hasPlayerReachedTile[i.first] << std::endl;
+    //// }
+    //            }
+    //        }
+
+    // Removing out of screen entities
+    auto &motions_registry = registry.motions;
+
+    /* Given that stuff bounce off map walls we will not need this..
+    // {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
+    // Remove entities that leave the screen on the left side
+    // Iterate backwards to be able to remove without interfering with the next object to visit
+    // (the containers exchange the last element with the current)
+    for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
+      Motion& motion = motions_registry.components[i];
+
+      float right_edge = motion.position.x + abs(motion.scale.x);  // Rightmost x-coordinate
+      float left_edge = motion.position.x - motion.scale.x * 0.5f; // Leftmost x-coordinate
+
+      if (right_edge < 0.f || left_edge > WINDOW_WIDTH_PX) {
+        if (!registry.players.has(motions_registry.entities[i])) { // don't remove the player (outdated?)
+          // if it is an invader that has exited the screen, trigger game over
+          if (registry.invaders.has(motions_registry.entities[i])) { stop_game(); };
+          registry.remove_all_components_of(motions_registry.entities[i]);
+        }
+      }
+    }
+    */
+
+    // Spawns new enemies. borrows code from invader spawning.
+    next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+    if (next_enemy_spawn <= 0.f)
     {
-        fps = 1 / (elapsed_ms_since_last_update / 1000);
-        fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
+
+      // reset timer
+      next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+
+      // figure out x and y coordinates
+      float max_x = WORLD_WIDTH_PX * 3.0;  // this is also the room width
+      float max_y = WORLD_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
+
+      // random x and y coordinates on the map to spawn enemy
+      float pos_x = uniform_dist(rng) * max_x;
+      float pos_y = max_y; // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
+
+      // create enemy at random position
+      // setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+      // handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+      // handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+
+      // LLNOTE
+      // example of spawning using player-reached-point map:
+      // note: there might be a delay before this happens because of next_enemy_spawn
+      // handleEnemySpawning(hasPlayerReachedTile[{9, 6}], OBSTACLE, 1, vec2(9, 6), vec2(9, 11));
+      // hasPlayerReachedTile[{9, 6}] = false;
     }
-    else
+  }
+
+  // Updated map:
+  //	key is a vector<int> (tile that triggers spawn),
+  //	value is a tuple with:
+  // 1. ENEMY_TYPE denoting type of enemy to spawn
+  // 2. Int denoting quantity of enemies to spawn
+  // 3. Boolean denoting hasPlayerReachedTile
+  // 4. Boolean denoting hasEnemyAlreadySpawned (at this tile)
+  // 5. vector<int> denoting spawn position
+  // 6. vector<int> denoting patrol range on the X-axis
+  for (auto &i : hasPlayerReachedTile)
+  {
+    std::vector<int> spawnTile = i.first;
+    std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>> &enemyDataTuple = i.second;
+    ENEMY_TYPES enemyType = std::get<0>(enemyDataTuple);
+    int quantity = std::get<1>(enemyDataTuple);
+    bool &hasPlayerReachedTile = std::get<2>(enemyDataTuple);
+    bool &hasEnemyAlreadySpawned = std::get<3>(enemyDataTuple);
+    std::vector<int> spawnPosition = std::get<4>(enemyDataTuple);
+    std::vector<int> patrolRange = std::get<5>(enemyDataTuple);
+
+    if (!hasPlayerReachedTile)
     {
-        fps_update_cooldown_ms -= elapsed_ms_since_last_update;
+      hasPlayerReachedTile = checkPlayerReachedTile(ivec2(spawnTile[0], spawnTile[1]));
     }
 
-    // Remove debug info from the last step
-    while (registry.debugComponents.entities.size() > 0)
-        registry.remove_all_components_of(registry.debugComponents.entities.back());
-
-    if (game_active)
+    if (hasPlayerReachedTile && !hasEnemyAlreadySpawned)
     {
-        update_isGrounded();
-        handle_movement(elapsed_ms_since_last_update);
-        checkGrappleGrounded();
-
-//        // LLNOTE
-//        // Check if player reached spawn points of enemies.
-//        // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
-//        for (auto& i : hasPlayerReachedTile)
-//        {
-//            if (!i.second)
-//            {
-//
-//                i.second = playerReachedTile(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
-//                // debug
-//// if (playerReachedTile(ivec2(i.first[0], i.first[1]))) {
-////     std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
-////     std::cout << "WHAT MAP SAYS: " << hasPlayerReachedTile[i.first] << std::endl;
-//// }
-//            }
-//        }
-
-        // Removing out of screen entities
-        auto& motions_registry = registry.motions;
-
-        /* Given that stuff bounce off map walls we will not need this..
-        // {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
-        // Remove entities that leave the screen on the left side
-        // Iterate backwards to be able to remove without interfering with the next object to visit
-        // (the containers exchange the last element with the current)
-        for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
-          Motion& motion = motions_registry.components[i];
-
-          float right_edge = motion.position.x + abs(motion.scale.x);  // Rightmost x-coordinate
-          float left_edge = motion.position.x - motion.scale.x * 0.5f; // Leftmost x-coordinate
-
-          if (right_edge < 0.f || left_edge > WINDOW_WIDTH_PX) {
-            if (!registry.players.has(motions_registry.entities[i])) { // don't remove the player (outdated?)
-              // if it is an invader that has exited the screen, trigger game over
-              if (registry.invaders.has(motions_registry.entities[i])) { stop_game(); };
-              registry.remove_all_components_of(motions_registry.entities[i]);
-            }
-          }
-        }
-        */
-
-        // Spawns new enemies. borrows code from invader spawning.
-        next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-        if (next_enemy_spawn <= 0.f)
-        {
-
-            // reset timer
-            next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
-
-            // figure out x and y coordinates
-            float max_x = WORLD_WIDTH_PX * 3.0;  // this is also the room width
-            float max_y = WORLD_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
-
-            // random x and y coordinates on the map to spawn enemy
-            float pos_x = uniform_dist(rng) * max_x;
-            float pos_y = max_y; // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
-
-            // create enemy at random position
-            // setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
-            // handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
-            // handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
-
-            // LLNOTE
-            // example of spawning using player-reached-point map:
-            // note: there might be a delay before this happens because of next_enemy_spawn
-            // handleEnemySpawning(hasPlayerReachedTile[{9, 6}], OBSTACLE, 1, vec2(9, 6), vec2(9, 11));
-            // hasPlayerReachedTile[{9, 6}] = false;
-        }
+      hasEnemyAlreadySpawned = true;
+      handleEnemySpawning(
+          enemyType,
+          quantity,
+          ivec2(spawnPosition[0], spawnPosition[1]),
+          ivec2(patrolRange[0], patrolRange[1]));
     }
+  }
 
-    // Updated map: 
-    //	key is a vector<int> (tile that triggers spawn), 
-    //	value is a tuple with:
-    // 1. ENEMY_TYPE denoting type of enemy to spawn
-    // 2. Int denoting quantity of enemies to spawn
-    // 3. Boolean denoting hasPlayerReachedTile
-    // 4. Boolean denoting hasEnemyAlreadySpawned (at this tile)
-    // 5. vector<int> denoting spawn position
-    // 6. vector<int> denoting patrol range on the X-axis
-    for (auto& i : hasPlayerReachedTile) {
-        std::vector<int> spawnTile = i.first;
-        std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>>& enemyDataTuple = i.second;
-        ENEMY_TYPES         enemyType               = std::get<0>(enemyDataTuple);
-        int                 quantity                = std::get<1>(enemyDataTuple);
-        bool&               hasPlayerReachedTile    = std::get<2>(enemyDataTuple);
-        bool&               hasEnemyAlreadySpawned  = std::get<3>(enemyDataTuple);
-        std::vector<int>    spawnPosition           = std::get<4>(enemyDataTuple);
-        std::vector<int>    patrolRange             = std::get<5>(enemyDataTuple);
-
-        if (!hasPlayerReachedTile) {
-            hasPlayerReachedTile = checkPlayerReachedTile(ivec2(spawnTile[0], spawnTile[1]));
-        }
-
-        if (hasPlayerReachedTile && !hasEnemyAlreadySpawned) {
-            hasEnemyAlreadySpawned = true;
-            handleEnemySpawning(
-                enemyType,
-                quantity,
-                ivec2(spawnPosition[0], spawnPosition[1]),
-                ivec2(patrolRange[0], patrolRange[1])
-            );
-        }
-    }
-
-    return game_active;
+  return game_active;
 }
 
 void WorldSystem::stop_game()
@@ -538,9 +541,9 @@ void WorldSystem::restart_game()
   // generateTestTerrain();
 
   // create grapple point
-  //createGrapplePoint(worldId, vec2(1200.0f, 300.0f));
-  //createGrapplePoint(worldId, vec2(900.0f, 300.0f));
-  //createGrapplePoint(worldId, vec2(300.0f, 300.0f));
+  // createGrapplePoint(worldId, vec2(1200.0f, 300.0f));
+  // createGrapplePoint(worldId, vec2(900.0f, 300.0f));
+  // createGrapplePoint(worldId, vec2(300.0f, 300.0f));
 
   // turn off trigger for fadeout shader
   registry.screenStates.components[0].fadeout = 0.0f;
@@ -713,7 +716,7 @@ void WorldSystem::handle_movement(float elapsed_ms)
 {
 
   static float jumpCooldownTime = JUMP_COOLDOWN;
-  static float jumpCooldownTimer = 0.0f; 
+  static float jumpCooldownTimer = 0.0f;
 
   // first, update states.
   int state = glfwGetKey(window, GLFW_KEY_E);
@@ -802,14 +805,13 @@ void WorldSystem::handle_movement(float elapsed_ms)
   {
     // Jump: apply a strong upward impulse
     jump_impulse = {0, jumpImpulseMagnitude};
-	jumpCooldownTimer = jumpCooldownTime;
+    jumpCooldownTimer = jumpCooldownTime;
   }
 
-  if (jumpCooldownTimer > 0.0f) 
-    {
-        jumpCooldownTimer -= (elapsed_ms / 1000.0f); // Decrease based on the time that has passed
-    }
-
+  if (jumpCooldownTimer > 0.0f)
+  {
+    jumpCooldownTimer -= (elapsed_ms / 1000.0f); // Decrease based on the time that has passed
+  }
 
   // Apply impulse if non-zero.
   if (nonjump_movement_force != b2Vec2_zero || jump_impulse != b2Vec2_zero)
@@ -946,12 +948,17 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
     // Now, if no grapple is currently attached and we found an active point, attach the grapple.
     if (!grappleActive && selectedGp != nullptr)
     {
-      attachGrapple();
+      shootGrapplePoint();
+    }
+    else if (!grappleActive && selectedGp == nullptr)
+    {
+      shootGrapple(worldMousePos);
     }
     else if (grappleActive)
     {
       removeGrapple();
       grappleActive = false;
+      grapplePointActive = false;
     }
   }
 }
@@ -984,7 +991,7 @@ vec2 WorldSystem::screenToWorld(vec2 mouse_position)
   }
 }
 
-void WorldSystem::attachGrapple()
+void WorldSystem::shootGrapplePoint()
 {
   Entity playerEntity = registry.players.entities[0];
 
@@ -1028,6 +1035,44 @@ void WorldSystem::attachGrapple()
   {
     createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
     grappleActive = true;
+    grapplePointActive = true;
+  }
+}
+
+void WorldSystem::shootGrapple(vec2 worldMousePos)
+{
+  Entity playerEntity = registry.players.entities[0];
+  PhysicsBody &ballBody = registry.physicsBodies.get(playerEntity);
+  b2BodyId ballBodyId = ballBody.bodyId;
+  b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+
+  b2Vec2 mousePos{worldMousePos.x, worldMousePos.y};
+  b2Vec2 rayDir = mousePos - ballPos;
+
+  b2RayCastInput input;
+  input.origin = ballPos;
+  input.translation = rayDir;
+  input.maxFraction = 1.0f;
+
+  b2RayResult result = b2World_CastRayClosest(worldId, ballPos, rayDir, b2DefaultQueryFilter());
+
+  float distance = sqrtf((result.point.x - ballPos.x) * (result.point.x - ballPos.x) +
+                         (result.point.y - ballPos.y) * (result.point.y - ballPos.y));
+
+  if (result.hit && distance <= GRAPPLE_MAX_LENGTH)
+  {
+    b2BodyId bodyId = b2Shape_GetBody(result.shapeId);
+    b2BodyType bodyType = b2Body_GetType(bodyId);
+    if (bodyType == b2_staticBody)
+    {
+      b2BodyDef bodyDef = b2DefaultBodyDef();
+      bodyDef.type = b2_staticBody;
+      bodyDef.position = b2Vec2{result.point.x, result.point.y};
+      b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+
+      createGrapple(worldId, ballBodyId, bodyId, distance);
+      grappleActive = true;
+    }
   }
 }
 
@@ -1070,30 +1115,30 @@ void WorldSystem::checkGrappleGrounded()
 
 void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 gridPatrolXRange)
 {
-    // Create specified number of enemies by iterating
-    for (int i = 0; i < quantity; i++)
-    {
-        createEnemy(
-            worldId,
-            vec2((gridPosition.x + 0.5 + 0.1*i) * GRID_CELL_WIDTH_PX,
-                (gridPosition.y + 0.5) * GRID_CELL_HEIGHT_PX),
-            enemy_type,
-            vec2((gridPatrolXRange.x + 0.5) * GRID_CELL_WIDTH_PX,
-                (gridPatrolXRange.y + 0.5) * GRID_CELL_HEIGHT_PX)
-        );
-    }
+  // Create specified number of enemies by iterating
+  for (int i = 0; i < quantity; i++)
+  {
+    createEnemy(
+        worldId,
+        vec2((gridPosition.x + 0.5 + 0.1 * i) * GRID_CELL_WIDTH_PX,
+             (gridPosition.y + 0.5) * GRID_CELL_HEIGHT_PX),
+        enemy_type,
+        vec2((gridPatrolXRange.x + 0.5) * GRID_CELL_WIDTH_PX,
+             (gridPatrolXRange.y + 0.5) * GRID_CELL_HEIGHT_PX));
+  }
 }
 
 // LLNOTE
-bool WorldSystem::checkPlayerReachedTile(ivec2 gridCoordinate) {
+bool WorldSystem::checkPlayerReachedTile(ivec2 gridCoordinate)
+{
 
-    // Get player
-    Entity player = registry.players.entities[0];
-    Motion playerMotion = registry.motions.get(player);
+  // Get player
+  Entity player = registry.players.entities[0];
+  Motion playerMotion = registry.motions.get(player);
 
-    // Player location in terms of grid coordinates
-    ivec2 playerLocation = ivec2(playerMotion.position.x / GRID_CELL_WIDTH_PX, playerMotion.position.y / GRID_CELL_HEIGHT_PX);
+  // Player location in terms of grid coordinates
+  ivec2 playerLocation = ivec2(playerMotion.position.x / GRID_CELL_WIDTH_PX, playerMotion.position.y / GRID_CELL_HEIGHT_PX);
 
-    // If player is in the same grid as specified, then return true. else false.
-    return playerLocation == gridCoordinate;
+  // If player is in the same grid as specified, then return true. else false.
+  return playerLocation == gridCoordinate;
 }

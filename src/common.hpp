@@ -82,6 +82,10 @@ extern int WORLD_HEIGHT_TILES;
 const int WINDOW_WIDTH_PX = 1280;
 const int WINDOW_HEIGHT_PX = 800;
 
+const float VIEWPORT_WIDTH_PX = 1920.0;
+const float VIEWPORT_HEIGHT_PX = 1080.0;
+const float ASPECT_RATIO = VIEWPORT_WIDTH_PX / VIEWPORT_HEIGHT_PX;
+
 const int TILE_WIDTH = 128;
 const int TILE_HEIGHT = 128;
 

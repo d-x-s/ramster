@@ -15,6 +15,16 @@
 #include "physics_system.hpp"
 #include "terrain.hpp"
 
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+
+    WorldSystem* world = (WorldSystem*)glfwGetWindowUserPointer(window);
+    if (world && world->renderer) {
+        world->renderer->resizeScreenTexture(width, height);
+    }
+}
+
 // Global Variables
 bool grappleActive = false;
 MUSIC current_music = MUSIC::LEVEL_1;
@@ -110,18 +120,21 @@ GLFWwindow *WorldSystem::create_window()
 #if __APPLE__
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
-  glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+  glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
   // CK: setting GLFW_SCALE_TO_MONITOR to true will rescale window but then you must handle different scalings
-  // glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);		// GLFW 3.3+
-  glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_FALSE); // GLFW 3.3+
+  glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);		// GLFW 3.3+
+  // glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_FALSE); // GLFW 3.3+
 
   // Create the main window (for rendering, keyboard, and mouse input)
-  window = glfwCreateWindow(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX, "Towers vs Invaders Assignment", nullptr, nullptr);
+  window = glfwCreateWindow(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX, "Ramster", nullptr, nullptr);
   if (window == nullptr)
   {
     std::cerr << "ERROR: Failed to glfwCreateWindow in world_system.cpp" << std::endl;
     return nullptr;
   }
+
+  // Fill the whole monitor
+  glfwMaximizeWindow(window);
 
   // Setting callbacks to member functions (that's why the redirect is needed)
   // Input is handled using GLFW, for more info see
@@ -133,6 +146,8 @@ GLFWwindow *WorldSystem::create_window()
   { ((WorldSystem *)glfwGetWindowUserPointer(wnd))->on_mouse_move({_0, _1}); };
   auto mouse_button_pressed_redirect = [](GLFWwindow *wnd, int _button, int _action, int _mods)
   { ((WorldSystem *)glfwGetWindowUserPointer(wnd))->on_mouse_button_pressed(_button, _action, _mods); };
+
+  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
   glfwSetKeyCallback(window, key_redirect);
   glfwSetCursorPosCallback(window, cursor_pos_redirect);

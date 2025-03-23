@@ -37,3 +37,17 @@ out/*
 .vs/*
 build/*
 /ext
+_deps
+vcpkg
+vcpkg_installed
+CMakeFiles/*
+CMakeCache.txt
+cmake_install.cmake
+Debug/*
+x64/*
+ramster.dir/*
+ALL_BUILD*
+INSTALL*
+ramster*
+ZERO_CHECK*
+/CMakeSettings.json

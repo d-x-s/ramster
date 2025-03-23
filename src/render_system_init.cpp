@@ -197,7 +197,7 @@ void RenderSystem::initializeGlGeometryBuffers()
 	// constexpr vec3 red = { 0.8, 0.1, 0.1 };
 	constexpr vec3 red = { 1.0, 1.0, 1.0 };
 
-	// Corner points
+	// Corner enemies_killed
 	line_vertices = {
 		{{-0.5,-0.5, depth}, red},
 		{{-0.5, 0.5, depth}, red},

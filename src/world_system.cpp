@@ -8,6 +8,8 @@
 #include <iostream>
 #include <tuple>
 #include <vector>
+#include <json/json.h>
+#include <box2d/box2d.h>
 
 // internal
 #include "physics_system.hpp"
@@ -15,9 +17,10 @@
 
 // Global Variables
 bool grappleActive = false;
+MUSIC current_music = MUSIC::LEVEL_1;
 
 // create the world
-WorldSystem::WorldSystem(b2WorldId worldId) : points(0),
+WorldSystem::WorldSystem(b2WorldId worldId) : enemies_killed(0),
                                               max_towers(MAX_TOWERS_START),
                                               next_enemy_spawn(0),
                                               enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
@@ -38,6 +41,22 @@ WorldSystem::~WorldSystem()
   // Destroy music components
   if (background_music != nullptr)
     Mix_FreeMusic(background_music);
+  if (background_music_memorybranch != nullptr)
+    Mix_FreeMusic(background_music_memorybranch);
+  if (background_music_oblanka != nullptr)
+    Mix_FreeMusic(background_music_oblanka);
+  if (background_music_paradrizzle != nullptr)
+    Mix_FreeMusic(background_music_paradrizzle);
+  if (background_music_windcatcher != nullptr)
+    Mix_FreeMusic(background_music_windcatcher);
+  if (fx_destroy_enemy != nullptr)
+    Mix_FreeChunk(fx_destroy_enemy);
+  if (fx_destroy_enemy_fail != nullptr)
+    Mix_FreeChunk(fx_destroy_enemy_fail);
+  if (fx_jump != nullptr)
+    Mix_FreeChunk(fx_jump);
+  if (fx_grapple != nullptr)
+    Mix_FreeChunk(fx_grapple);
   if (chicken_dead_sound != nullptr)
     Mix_FreeChunk(chicken_dead_sound);
   if (chicken_eat_sound != nullptr)
@@ -139,14 +158,47 @@ bool WorldSystem::start_and_load_sounds()
     return false;
   }
 
+  // music
   background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
+  background_music_memorybranch = Mix_LoadMUS(audio_path("music_memorybranch.wav").c_str());
+  background_music_oblanka = Mix_LoadMUS(audio_path("music_oblanka.wav").c_str());
+  background_music_paradrizzle = Mix_LoadMUS(audio_path("music_paradrizzle.wav").c_str());
+  background_music_windcatcher = Mix_LoadMUS(audio_path("music_windcatcher.wav").c_str());
+
+  // sound fx
+  fx_destroy_enemy = Mix_LoadWAV(audio_path("fx_destroy_enemy.wav").c_str());
+  fx_destroy_enemy_fail = Mix_LoadWAV(audio_path("fx_destroy_enemy_fail.wav").c_str());
+  fx_jump = Mix_LoadWAV(audio_path("fx_jump.wav").c_str());
+  fx_grapple = Mix_LoadWAV(audio_path("fx_grapple.wav").c_str());
   chicken_dead_sound = Mix_LoadWAV(audio_path("chicken_dead.wav").c_str());
   chicken_eat_sound = Mix_LoadWAV(audio_path("chicken_eat.wav").c_str());
-
-  if (background_music == nullptr || chicken_dead_sound == nullptr || chicken_eat_sound == nullptr)
+  
+  if (
+      background_music == nullptr || 
+      background_music_memorybranch == nullptr ||
+      background_music_oblanka == nullptr ||
+      background_music_paradrizzle == nullptr ||
+      background_music_windcatcher == nullptr ||
+      fx_destroy_enemy == nullptr ||
+      fx_destroy_enemy_fail == nullptr ||
+      fx_jump == nullptr ||
+      fx_grapple == nullptr ||
+      chicken_dead_sound == nullptr || 
+      chicken_eat_sound == nullptr)
   {
     fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
+            // music
             audio_path("music.wav").c_str(),
+            audio_path("music_memorybranch.wav").c_str(),
+            audio_path("music_oblanka.wav").c_str(),
+            audio_path("music_paradrizzle.wav").c_str(),
+            audio_path("music_windcatcher.wav").c_str(),
+
+            // sound fx
+            audio_path("fx_destroy_enemy.wav").c_str(),
+            audio_path("fx_destroy_enemy_fail.wav").c_str(),
+            audio_path("fx_jump.wav").c_str(),
+            audio_path("fx_grapple.wav").c_str(),
             audio_path("chicken_dead.wav").c_str(),
             audio_path("chicken_eat.wav").c_str());
     return false;
@@ -155,151 +207,226 @@ bool WorldSystem::start_and_load_sounds()
   return true;
 }
 
+void WorldSystem::playMusic(MUSIC music)
+{
+  switch (music)
+  {
+    case MUSIC::MENU:
+      Mix_PlayMusic(background_music_memorybranch, -1);
+      current_music = MUSIC::MENU;
+      break;
+    case MUSIC::LEVEL_1:
+      Mix_PlayMusic(background_music_oblanka, -1);
+      current_music = MUSIC::LEVEL_1;
+      break;
+    case MUSIC::LEVEL_2:
+      Mix_PlayMusic(background_music_paradrizzle, -1);
+      current_music = MUSIC::LEVEL_2;
+      break;
+    case MUSIC::LEVEL_3:
+      Mix_PlayMusic(background_music_windcatcher, -1);
+      current_music = MUSIC::LEVEL_3;
+      break;
+    default:
+      Mix_PlayMusic(background_music_memorybranch, -1);
+      current_music = MUSIC::MENU;
+      break;
+  }
+}
+
+void WorldSystem::playSoundEffect(FX effect)
+{
+  switch (effect)
+  {
+    case FX::FX_DESTROY_ENEMY:
+      Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+      break;
+    case FX::FX_DESTROY_ENEMY_FAIL:
+      Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
+      break;
+    case FX::FX_JUMP:
+      Mix_PlayChannel(-1, fx_jump, 0);
+      break;
+    case FX::FX_GRAPPLE:
+      Mix_PlayChannel(-1, fx_grapple, 0);
+      break;
+    default:
+      Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+      break;
+  } 
+}
+
 void WorldSystem::init(RenderSystem *renderer_arg)
 {
 
   this->renderer = renderer_arg;
 
   // start playing background music indefinitely
-  std::cout << "Starting music..." << std::endl;
-  Mix_PlayMusic(background_music, -1);
+  // std::cout << "Starting music..." << std::endl;
+  // Mix_PlayMusic(background_music, -1);
 
   // Set all states to default
-  restart_game();
-  createBall(worldId);
+  restart_game(current_music, levelMap.find(level_selection)->second);
 }
 
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
 
-    // Updating window title with points (and remaining towers)
+    // Current Screen
+    Entity currScreenEntity = registry.currentScreen.entities[0];
+    CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
+
+    // Updating window title with enemies_killed (and remaining towers)
     std::stringstream title_ss;
-    title_ss << "Ramster | Points: " << points << " | FPS: " << fps;
+    title_ss << "Ramster | Level : " << level_selection <<" | Time : " << time_elapsed << "s | Kills : " << enemies_killed << " | HP : " << hp << " | FPS : " << fps;
     glfwSetWindowTitle(window, title_ss.str().c_str());
 
-    // FPS counter
-    if (fps_update_cooldown_ms <= 0)
-    {
-        fps = 1 / (elapsed_ms_since_last_update / 1000);
-        fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
-    }
-    else
-    {
-        fps_update_cooldown_ms -= elapsed_ms_since_last_update;
-    }
-
-    // Remove debug info from the last step
-    while (registry.debugComponents.entities.size() > 0)
-        registry.remove_all_components_of(registry.debugComponents.entities.back());
-
-    if (game_active)
-    {
-        update_isGrounded();
-        handle_movement();
-        checkGrappleGrounded();
-
-//        // LLNOTE
-//        // Check if player reached spawn points of enemies.
-//        // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
-//        for (auto& i : hasPlayerReachedTile)
-//        {
-//            if (!i.second)
-//            {
-//
-//                i.second = playerReachedTile(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
-//                // debug
-//// if (playerReachedTile(ivec2(i.first[0], i.first[1]))) {
-////     std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
-////     std::cout << "WHAT MAP SAYS: " << hasPlayerReachedTile[i.first] << std::endl;
-//// }
-//            }
-//        }
-
-        // Removing out of screen entities
-        auto& motions_registry = registry.motions;
-
-        /* Given that stuff bounce off map walls we will not need this..
-        // {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
-        // Remove entities that leave the screen on the left side
-        // Iterate backwards to be able to remove without interfering with the next object to visit
-        // (the containers exchange the last element with the current)
-        for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
-          Motion& motion = motions_registry.components[i];
-
-          float right_edge = motion.position.x + abs(motion.scale.x);  // Rightmost x-coordinate
-          float left_edge = motion.position.x - motion.scale.x * 0.5f; // Leftmost x-coordinate
-
-          if (right_edge < 0.f || left_edge > WINDOW_WIDTH_PX) {
-            if (!registry.players.has(motions_registry.entities[i])) { // don't remove the player (outdated?)
-              // if it is an invader that has exited the screen, trigger game over
-              if (registry.invaders.has(motions_registry.entities[i])) { stop_game(); };
-              registry.remove_all_components_of(motions_registry.entities[i]);
-            }
-          }
-        }
-        */
-
-        // Spawns new enemies. borrows code from invader spawning.
-        next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-        if (next_enemy_spawn <= 0.f)
+    // Game logic only runs when playing
+    if (currentScreen.current_screen == "PLAYING") {
+        // FPS counter
+        if (fps_update_cooldown_ms <= 0)
         {
-
-            // reset timer
-            next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
-
-            // figure out x and y coordinates
-            float max_x = WORLD_WIDTH_PX * 3.0;  // this is also the room width
-            float max_y = WORLD_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
-
-            // random x and y coordinates on the map to spawn enemy
-            float pos_x = uniform_dist(rng) * max_x;
-            float pos_y = max_y; // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
-
-            // create enemy at random position
-            // setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
-            // handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
-            // handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
-
-            // LLNOTE
-            // example of spawning using player-reached-point map:
-            // note: there might be a delay before this happens because of next_enemy_spawn
-            // handleEnemySpawning(hasPlayerReachedTile[{9, 6}], OBSTACLE, 1, vec2(9, 6), vec2(9, 11));
-            // hasPlayerReachedTile[{9, 6}] = false;
+            fps = 1 / (elapsed_ms_since_last_update / 1000);
+            fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
         }
-    }
-
-    // Updated map: 
-    //	key is a vector<int> (tile that triggers spawn), 
-    //	value is a tuple with:
-    // 1. ENEMY_TYPE denoting type of enemy to spawn
-    // 2. Int denoting quantity of enemies to spawn
-    // 3. Boolean denoting hasPlayerReachedTile
-    // 4. Boolean denoting hasEnemyAlreadySpawned (at this tile)
-    // 5. vector<int> denoting spawn position
-    // 6. vector<int> denoting patrol range on the X-axis
-    for (auto& i : hasPlayerReachedTile) {
-        std::vector<int> spawnTile = i.first;
-        std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>>& enemyDataTuple = i.second;
-        ENEMY_TYPES         enemyType               = std::get<0>(enemyDataTuple);
-        int                 quantity                = std::get<1>(enemyDataTuple);
-        bool&               hasPlayerReachedTile    = std::get<2>(enemyDataTuple);
-        bool&               hasEnemyAlreadySpawned  = std::get<3>(enemyDataTuple);
-        std::vector<int>    spawnPosition           = std::get<4>(enemyDataTuple);
-        std::vector<int>    patrolRange             = std::get<5>(enemyDataTuple);
-
-        if (!hasPlayerReachedTile) {
-            hasPlayerReachedTile = checkPlayerReachedTile(ivec2(spawnTile[0], spawnTile[1]));
+        else
+        {
+            fps_update_cooldown_ms -= elapsed_ms_since_last_update;
+        }
+        // Time elapsed
+        if (time_granularity <= 0) {
+            time_elapsed += 1; // note: this only works if granularity is 1000 ms and time is in seconds
+            time_granularity = TIME_GRANULARITY;
+        }
+        else {
+            time_granularity -= elapsed_ms_since_last_update;
         }
 
-        if (hasPlayerReachedTile && !hasEnemyAlreadySpawned) {
-            hasEnemyAlreadySpawned = true;
-            handleEnemySpawning(
-                enemyType,
-                quantity,
-                ivec2(spawnPosition[0], spawnPosition[1]),
-                ivec2(patrolRange[0], patrolRange[1])
-            );
+
+        // Remove debug info from the last step
+        while (registry.debugComponents.entities.size() > 0)
+            registry.remove_all_components_of(registry.debugComponents.entities.back());
+
+        if (game_active)
+        {
+            // If player HP reaches 0, game ends.
+            if (hp <= 0) {
+                currentScreen.current_screen = "END OF GAME";
+            }
+            // If player reached finish line AND killed all enemies, game ends.
+            if (player_reached_finish_line && enemies_killed == num_enemies_to_kill) {
+                currentScreen.current_screen = "END OF GAME";
+            }
+
+            update_isGrounded();
+            handle_movement();
+            checkGrappleGrounded();
+
+            //        // LLNOTE
+            //        // Check if player reached spawn enemies_killed of enemies.
+            //        // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
+            //        for (auto& i : spawnMap)
+            //        {
+            //            if (!i.second)
+            //            {
+            //
+            //                i.second = playerReachedTile(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
+            //                // debug
+            //// if (playerReachedTile(ivec2(i.first[0], i.first[1]))) {
+            ////     std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
+            ////     std::cout << "WHAT MAP SAYS: " << spawnMap[i.first] << std::endl;
+            //// }
+            //            }
+            //        }
+
+                    // Removing out of screen entities
+            auto& motions_registry = registry.motions;
+
+            /* Given that stuff bounce off map walls we will not need this..
+            // {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
+            // Remove entities that leave the screen on the left side
+            // Iterate backwards to be able to remove without interfering with the next object to visit
+            // (the containers exchange the last element with the current)
+            for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
+              Motion& motion = motions_registry.components[i];
+
+              float right_edge = motion.position.x + abs(motion.scale.x);  // Rightmost x-coordinate
+              float left_edge = motion.position.x - motion.scale.x * 0.5f; // Leftmost x-coordinate
+
+              if (right_edge < 0.f || left_edge > WINDOW_WIDTH_PX) {
+                if (!registry.players.has(motions_registry.entities[i])) { // don't remove the player (outdated?)
+                  // if it is an invader that has exited the screen, trigger game over
+                  if (registry.invaders.has(motions_registry.entities[i])) { stop_game(); };
+                  registry.remove_all_components_of(motions_registry.entities[i]);
+                }
+              }
+            }
+            */
+
+            // Spawns new enemies. borrows code from invader spawning.
+            next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+            if (next_enemy_spawn <= 0.f)
+            {
+
+                // reset timer
+                next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+
+                // figure out x and y coordinates
+                float max_x = WORLD_WIDTH_PX * 3.0;  // this is also the room width
+                float max_y = WORLD_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
+
+                // random x and y coordinates on the map to spawn enemy
+                float pos_x = uniform_dist(rng) * max_x;
+                float pos_y = max_y; // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
+
+                // create enemy at random position
+                // setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+                // handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+                // handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+
+                // LLNOTE
+                // example of spawning using player-reached-point map:
+                // note: there might be a delay before this happens because of next_enemy_spawn
+                // handleEnemySpawning(spawnMap[{9, 6}], OBSTACLE, 1, vec2(9, 6), vec2(9, 11));
+                // spawnMap[{9, 6}] = false;
+            }
+        }
+
+        // This handles the enemy spawning. Refer copied comment from spawn map in header file:
+        // Updated map: 
+        //	key is a vector<int> (tile that triggers spawn), 
+        //	value is a tuple with:
+        // 1. ENEMY_TYPE denoting type of enemy to spawn
+        // 2. Int denoting quantity of enemies to spawn
+        // 3. Boolean denoting spawnMap
+        // 4. Boolean denoting hasEnemyAlreadySpawned (at this tile)
+        // 5. vector<int> denoting spawn position
+        // 6. vector<int> denoting patrol range on the X-axis
+        for (auto& i : spawnMap) {
+            std::vector<int> spawnTile = i.first;
+            std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>>& enemyDataTuple = i.second;
+            ENEMY_TYPES         enemyType = std::get<0>(enemyDataTuple);
+            int                 quantity = std::get<1>(enemyDataTuple);
+            bool& hasPlayerReachedTile = std::get<2>(enemyDataTuple);
+            bool& hasEnemyAlreadySpawned = std::get<3>(enemyDataTuple);
+            std::vector<int>    spawnPosition = std::get<4>(enemyDataTuple);
+            std::vector<int>    patrolRange = std::get<5>(enemyDataTuple);
+
+            if (!hasPlayerReachedTile) {
+                hasPlayerReachedTile = checkPlayerReachedArea(ivec2(spawnTile[0], spawnTile[1]), ivec2(spawnTile[2], spawnTile[3]));
+            }
+
+            if (hasPlayerReachedTile && !hasEnemyAlreadySpawned) {
+                hasEnemyAlreadySpawned = true;
+                handleEnemySpawning(
+                    enemyType,
+                    quantity,
+                    ivec2(spawnPosition[0], spawnPosition[1]),
+                    ivec2(patrolRange[0], patrolRange[1]),
+                    ivec2(patrolRange[2], patrolRange[3])
+                );
+            }
         }
     }
 
@@ -329,6 +456,115 @@ void WorldSystem::stop_game()
   }
 }
 
+
+bool WorldSystem::load_level(const std::string& filename) {
+    const std::string full_filepath = LEVEL_DIR_FILEPATH + filename;
+    Json::Value mapData; 
+
+
+    std::ifstream infile(full_filepath);
+
+    if (infile.fail()) {
+        return false;
+    }
+
+    infile >> mapData;
+
+    // checks to ensure JSON data is the expected format.
+    assert(mapData.find("height") != nullptr);
+    assert(mapData.find("width") != nullptr);
+    assert(mapData.find("layers") != nullptr);
+    assert(mapData["layers"].size() >= 2);
+    assert(mapData["layers"][1]["name"] == "Chain"); // this assert fails if map doesn't have at least 1 chainShape.
+    assert(mapData["layers"][1].find("objects") != nullptr);
+
+    // set stage dimensions
+    WORLD_WIDTH_TILES = mapData["width"].asFloat();
+	WORLD_HEIGHT_TILES = mapData["height"].asFloat();
+
+    auto& JsonObjects = mapData["layers"][1]["objects"];
+    bool spawnpoint_found = false;
+
+    // std::cout << mapData << std::endl;
+
+    for (const auto& jsonObj : JsonObjects) {
+        // std::cout << jsonObj << std::endl;
+
+        // polyline case
+        if (jsonObj.find(JSON_POLYLINE_ATTR) != nullptr) {
+
+            std::vector<vec2> chainPoints;
+			const float x_offset = jsonObj["x"].asFloat();
+			const float y_offset = jsonObj["y"].asFloat();
+			const float rotation = jsonObj["rotation"].asFloat() * (M_PI / 180.f);
+
+            for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
+                float x = point["x"].asFloat();
+                float y = point["y"].asFloat();
+
+                // rotate enemies_killed 
+				if (rotation != 0.f) {
+					vec2 origin = vec2(0.f, 0.f);
+					vec2 rotatedPoint = rotateAroundPoint(vec2(x, y), origin, rotation);
+					x = rotatedPoint.x;
+					y = rotatedPoint.y;
+				}
+
+                chainPoints.push_back(vec2(x + x_offset,
+                                           WORLD_HEIGHT_PX - (y + y_offset)));
+            }
+
+			std::cout << "Creating chain with " << chainPoints.size() << " points." << std::endl;
+
+            create_chain(worldId, chainPoints, false, lines);
+        }
+        // polygon case: polygon = closed-loop chain
+        // polyline case
+        else if (jsonObj.find(JSON_POLYGON_ATTR) != nullptr) {
+
+            std::vector<vec2> chainPoints;
+            const float x_offset = jsonObj["x"].asFloat();
+            const float y_offset = jsonObj["y"].asFloat();
+            const float rotation = jsonObj["rotation"].asFloat() * (M_PI / 180.f);
+
+            for (auto& point : jsonObj[JSON_POLYGON_ATTR]) {
+                float x = point["x"].asFloat();
+                float y = point["y"].asFloat();
+
+                // rotate enemies_killed 
+                if (rotation != 0.f) {
+                    vec2 origin = vec2(0.f, 0.f);
+                    vec2 rotatedPoint = rotateAroundPoint(vec2(x, y), origin, rotation);
+                    x = rotatedPoint.x;
+                    y = rotatedPoint.y;
+                }
+
+                chainPoints.push_back(vec2(x + x_offset,
+                    WORLD_HEIGHT_PX - (y + y_offset)));
+            }
+
+			std::cout << "Creating chain with " << chainPoints.size() << " enemies_killed." << std::endl;
+
+            create_chain(worldId, chainPoints, false, lines);
+        }
+
+        // ball_spawnpoint case
+        else if (jsonObj.find("name") != nullptr && jsonObj["name"] == JSON_BALL_SPAWNPOINT) {
+            const float x = jsonObj["x"].asFloat();
+            const float y = jsonObj["y"].asFloat();
+            createBall(worldId, vec2(x, WORLD_HEIGHT_PX - y));
+            spawnpoint_found = true;
+        }
+
+    }
+	if (!spawnpoint_found) {
+		std::cerr << "No spawnpoint found in map file." << std::endl;
+        return true;
+	}
+
+    return true;
+}
+
 void WorldSystem::generateTestTerrain()
 {
   if (lines.empty())
@@ -338,7 +574,7 @@ void WorldSystem::generateTestTerrain()
     // reverse vertices for counter-clockwise winding order
     std::reverse(testPoints.begin(), testPoints.end());
 
-    // render the line segments between points
+    // render the line segments between enemies_killed
     int count = testPoints.size();
     for (int i = 0; i < count - 1; ++i)
     {
@@ -363,7 +599,7 @@ void WorldSystem::generateTestTerrain()
 
 std::vector<b2Vec2> WorldSystem::generateTestPoints()
 {
-  // hardcoded points that make up a ramp
+  // hardcoded enemies_killed that make up a ramp
   return {
       {0.0f, 288.0f},
       {16.67f, 288.0f},
@@ -399,7 +635,7 @@ std::vector<b2Vec2> WorldSystem::generateTestPoints()
 }
 
 // Reset the world state to its initial state
-void WorldSystem::restart_game()
+void WorldSystem::restart_game(MUSIC music, std::string level)
 {
 
   std::cout << "Restarting..." << std::endl;
@@ -410,24 +646,44 @@ void WorldSystem::restart_game()
   // Reset the game speed
   current_speed = 1.f;
 
-  points = 0;
+  // LLTEST
+  // Clear spawn map
+  spawnMap.clear();
+  // Add some spawning to test
+  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 15, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
+  insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
+  insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
+
+  num_enemies_to_kill = countEnemiesOnLevel();
+  hp = PLAYER_STARTING_HP;
+  enemies_killed = 0;
+  time_elapsed = 0;
+  time_granularity = TIME_GRANULARITY;
   max_towers = MAX_TOWERS_START;
   next_enemy_spawn = 0;
   enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
   grappleActive = false;
 
-  // Remove all entities that we created
-  // All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
-  while (registry.motions.entities.size() > 0)
-    registry.remove_all_components_of(registry.motions.entities.back());
+  // remove all box2d bodies
+  while (registry.physicsBodies.entities.size() > 0) {
+	  PhysicsBody& physicsBody = registry.physicsBodies.get(registry.physicsBodies.entities.back());
+      b2DestroyBody(physicsBody.bodyId);
+      registry.physicsBodies.remove(registry.physicsBodies.entities.back());
+  }
 
-  // debugging for memory/component leaks
-  registry.list_all_components();
+  while (registry.motions.entities.size() > 0) {
+      registry.remove_all_components_of(registry.motions.entities.back());
+  }
 
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // {{{ OK }}} TODO A1: create grid lines
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  if (registry.players.entities.size() > 0) {
+      // clear player-related stuff.
+	  Entity& playerEntity = registry.players.entities.back();
+      registry.remove_all_components_of(playerEntity);
+  }
+
   int grid_line_width = GRID_LINE_WIDTH_PX;
+
+  load_level(level);
 
   // create grid lines if they do not already exist
   if (grid_lines.size() == 0)
@@ -451,6 +707,14 @@ void WorldSystem::restart_game()
     }
   }
 
+  // create screens if they do not already exist
+  if (registry.screens.entities.size() == 0) {
+      createScreen("MAIN MENU");
+      createScreen("PLAYING");
+      createScreen("PAUSE");
+      createScreen("END OF GAME");
+  }
+
   // Room dimensions
   const float roomWidth = WORLD_WIDTH_PX;
   const float roomHeight = WORLD_HEIGHT_PX;
@@ -462,6 +726,8 @@ void WorldSystem::restart_game()
   b2BodyId leftWallId = create_vertical_wall(worldId, 0.0f, roomHeight / 2, roomHeight);       // Left Wall
   b2BodyId rightWallId = create_vertical_wall(worldId, roomWidth, roomHeight / 2, roomHeight); // Right Wall
 
+  createLevelTextureLayer(TEXTURE_ASSET_ID::LEVEL_DEMO);
+
   // tiles
   // create_single_tile(worldId, vec2(0, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
   // create_single_tile(worldId, vec2(1, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
@@ -470,6 +736,7 @@ void WorldSystem::restart_game()
   // create_single_tile(worldId, vec2(4, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
   // create_single_tile(worldId, vec2(5, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
 
+  /*
   // tutorial: WASD movement
   create_tutorial_tile(worldId, vec2(2, 5), TEXTURE_ASSET_ID::TUTORIAL_MOVE);
   create_tutorial_tile(worldId, vec2(3, 5), TEXTURE_ASSET_ID::TUTORIAL_SPACEBAR);
@@ -518,7 +785,7 @@ void WorldSystem::restart_game()
   create_block(worldId, vec2(55, 0), vec2(69, 4));
   create_curve(worldId, vec2(69, 5), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
 
-  // tutorial: long vertical shaft with grapple points
+  // tutorial: long vertical shaft with grapple enemies_killed
   create_block(worldId, vec2(70, 0), vec2(78, 0));
   create_block(worldId, vec2(34 + 36, 8), vec2(37 + 36, 20));
   create_block(worldId, vec2(37 + 36, 2), vec2(37 + 36, 20));
@@ -533,6 +800,7 @@ void WorldSystem::restart_game()
 
   // tutorial: ending straight to the finish line
   create_block(worldId, vec2(87, 0), vec2(104, 4));
+  */
 
   // generate the vertices for the terrain formed by the chain and render it
   // generateTestTerrain();
@@ -543,7 +811,7 @@ void WorldSystem::restart_game()
   //createGrapplePoint(worldId, vec2(300.0f, 300.0f));
 
   // turn off trigger for fadeout shader
-  registry.screenStates.components[0].fadeout = 0.0f;
+  // registry.screenStates.components[0].fadeout = 0.0f;
 
   // turn the tunes back on
   if (Mix_PausedMusic())
@@ -552,7 +820,8 @@ void WorldSystem::restart_game()
   }
   else
   {
-    Mix_PlayMusic(background_music, -1);
+    Mix_VolumeMusic(MIX_MAX_VOLUME / 4);
+    playMusic(music);
   }
 
   // reactivate the game
@@ -594,16 +863,20 @@ void WorldSystem::handle_collisions()
         {
           b2DestroyBody(enemyBodyId);
           registry.remove_all_components_of(enemyEntity);
-          Mix_PlayChannel(-1, chicken_dead_sound, 0);
-          points++;
+          playSoundEffect(FX::FX_DESTROY_ENEMY);
+          enemies_killed++;
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.
         else if (enemyComponent.freeze_time <= 0)
         {
           enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
-          Mix_PlayChannel(-1, chicken_eat_sound, 0);
-          points -= 3; // small penalty for now
+          playSoundEffect(FX::FX_DESTROY_ENEMY_FAIL);
+
+          // Only lose HP if what we hit was NOT an obstacle
+          if (enemyComponent.destructable) {
+              hp -= 1; // small penalty for now
+          }
         }
       }
       else
@@ -623,18 +896,24 @@ void WorldSystem::handle_collisions()
         {
           b2DestroyBody(enemyBodyId);
           registry.remove_all_components_of(other);
-          Mix_PlayChannel(-1, chicken_dead_sound, 0);
-          points++;
+          playSoundEffect(FX::FX_DESTROY_ENEMY);
+          enemies_killed++;
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.
         else if (enemyComponent.freeze_time <= 0)
         {
           enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
-          Mix_PlayChannel(-1, chicken_eat_sound, 0);
-          points -= 3; // small penalty for now
+          playSoundEffect(FX::FX_DESTROY_ENEMY_FAIL);
+
+          // Only lose HP if what we hit was NOT an obstacle
+          if (enemyComponent.destructable) {
+              hp -= 1; // small penalty for now
+          }
         }
       }
+
+
 
       // LEGACY CODE (Pre-Box2D Collision Handling)
       /*
@@ -647,7 +926,6 @@ void WorldSystem::handle_collisions()
       */
     }
   }
-
   // Remove all collisions from this simulation step
   registry.collisions.clear();
 }
@@ -833,12 +1111,15 @@ void WorldSystem::handle_movement()
 // on key callback
 void WorldSystem::on_key(int key, int scancode, int action, int mod)
 {
+    // Current Screen
+    Entity currScreenEntity = registry.currentScreen.entities[0];
+    CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
 
   if (!game_active)
   {
     if (key == GLFW_KEY_R && action == GLFW_RELEASE)
     {
-      restart_game();
+      restart_game(current_music, levelMap.find(level_selection)->second);
     }
     return; // ignore all other inputs when game is inactive
   }
@@ -846,15 +1127,90 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
   // Exit game with ESC
   if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
   {
-    close_window();
+      // Playing screen - pauses game
+      if (currentScreen.current_screen == "PLAYING") {
+          currentScreen.current_screen = "PAUSE";
+          //freezeMovements();
+          return;
+      }
+      // Pause screen - resume game
+      if (currentScreen.current_screen == "PAUSE") {
+          currentScreen.current_screen = "PLAYING";
+          return;
+      }
+      // Menu and End of Game screen - exits game
+      if (currentScreen.current_screen == "MAIN MENU" || currentScreen.current_screen == "END OF GAME") {
+          close_window();
+      }
   }
 
   // Reset game when R is released
   if (action == GLFW_RELEASE && key == GLFW_KEY_R)
   {
-    int w, h;
-    glfwGetWindowSize(window, &w, &h);
-    restart_game();
+      // Pause and End of Game screen - restarts game
+      if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "END OF GAME") {
+          currentScreen.current_screen = "PLAYING";
+          int w, h;
+          glfwGetWindowSize(window, &w, &h);
+          restart_game(current_music, levelMap.find(level_selection)->second);
+      }
+  }
+
+  // Select level - only active on MAIN MENU screen
+  if (currentScreen.current_screen == "MAIN MENU") {
+      // Level keys 1-9
+      if (action == GLFW_RELEASE && key == GLFW_KEY_1) {
+          levelHelper(1);
+      }
+      if (action == GLFW_RELEASE && key == GLFW_KEY_2) {
+          levelHelper(2);
+      }
+      if (action == GLFW_RELEASE && key == GLFW_KEY_3) {
+          levelHelper(3);
+      }
+      if (action == GLFW_RELEASE && key == GLFW_KEY_4) {
+          levelHelper(4);
+      }
+      if (action == GLFW_RELEASE && key == GLFW_KEY_5) {
+          levelHelper(5);
+      }
+      if (action == GLFW_RELEASE && key == GLFW_KEY_6) {
+          levelHelper(6);
+      }
+      if (action == GLFW_RELEASE && key == GLFW_KEY_7) {
+          levelHelper(7);
+      }
+      if (action == GLFW_RELEASE && key == GLFW_KEY_8) {
+          levelHelper(8);
+      }
+      if (action == GLFW_RELEASE && key == GLFW_KEY_9) {
+          levelHelper(9);
+      }
+      // Increment or decrement selected level by 1
+      if (action == GLFW_RELEASE && key == GLFW_KEY_UP) {
+          levelHelper(level_selection + 1);
+      }
+      if (action == GLFW_RELEASE && key == GLFW_KEY_DOWN) {
+          levelHelper(level_selection - 1);
+      }
+  }
+
+  // ENTER key press handling
+  if (action == GLFW_RELEASE && key == GLFW_KEY_ENTER) {
+
+      // Main menu screen - Loads the selected level and starts the game
+      if (currentScreen.current_screen == "MAIN MENU") {
+          currentScreen.current_screen = "PLAYING";
+          restart_game(current_music, levelMap.find(level_selection)->second);
+          return;
+      }
+      // Pause and End of Game screen - back to main menu
+      if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "END OF GAME") {
+          currentScreen.current_screen = "MAIN MENU";
+          restart_game(current_music, levelMap.find(level_selection)->second);
+          return;
+      }
+
   }
 
   // Debug toggle with D
@@ -905,7 +1261,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
       }
     }
 
-    // Deactivate all grapple points.
+    // Deactivate all grapple enemies_killed.
     for (Entity gpEntity : registry.grapplePoints.entities)
     {
       GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
@@ -925,10 +1281,12 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
     if (!grappleActive && selectedGp != nullptr)
     {
       attachGrapple();
+      playSoundEffect(FX::FX_GRAPPLE);
     }
     else if (grappleActive)
     {
       removeGrapple();
+      playSoundEffect(FX::FX_GRAPPLE);
       grappleActive = false;
     }
   }
@@ -975,7 +1333,7 @@ void WorldSystem::attachGrapple()
   b2BodyId activeGrappleBodyId;
   bool foundActive = false;
 
-  // Loop through all grapple points and find the active one
+  // Loop through all grapple enemies_killed and find the active one
   for (Entity gpEntity : registry.grapplePoints.entities)
   {
     GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
@@ -989,7 +1347,7 @@ void WorldSystem::attachGrapple()
     }
   }
 
-  // If no active grapple points were found, exit early
+  // If no active grapple enemies_killed were found, exit early
   if (!foundActive)
   {
     return;
@@ -1046,32 +1404,138 @@ void WorldSystem::checkGrappleGrounded()
   }
 }
 
-void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 gridPatrolXRange)
+void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 grid_patrol_point_a, ivec2 grid_patrol_point_b)
 {
     // Create specified number of enemies by iterating
     for (int i = 0; i < quantity; i++)
     {
         createEnemy(
             worldId,
-            vec2((gridPosition.x + 0.5 + 0.1*i) * GRID_CELL_WIDTH_PX,
+            vec2((gridPosition.x + 0.5 + 0.05*i) * GRID_CELL_WIDTH_PX,
                 (gridPosition.y + 0.5) * GRID_CELL_HEIGHT_PX),
             enemy_type,
-            vec2((gridPatrolXRange.x + 0.5) * GRID_CELL_WIDTH_PX,
-                (gridPatrolXRange.y + 0.5) * GRID_CELL_HEIGHT_PX)
+            vec2((grid_patrol_point_a.x + 0.5) * GRID_CELL_WIDTH_PX, (grid_patrol_point_a.y + 0.5) * GRID_CELL_HEIGHT_PX),
+            vec2((grid_patrol_point_b.x + 0.5) * GRID_CELL_WIDTH_PX, (grid_patrol_point_b.y + 0.5) * GRID_CELL_HEIGHT_PX)
         );
     }
 }
 
-// LLNOTE
-bool WorldSystem::checkPlayerReachedTile(ivec2 gridCoordinate) {
+// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!
+// Takes:
+// - Enemy Spawn Area
+// - Enemy type/number to spawn
+// - Location to spawn enemy
+// - Patrol area if it's an obstacle
+// Returns:
+// - Handles enemy spawning according to specs.
+void WorldSystem::insertToSpawnMap(ivec2 bottom_left, ivec2 top_right, 
+                                   ENEMY_TYPES enemy_type, int num_enemies, ivec2 spawn_location, 
+                                   ivec2 obstacle_patrol_point_a, ivec2 obstacle_patrol_point_b) {
 
+    // Prep key from "spawn trigger area"
+    std::vector<int> mapKey = { bottom_left.x, bottom_left.y, top_right.x, top_right.y };
+
+    // Prep value from other inputs
+    std::tuple< ENEMY_TYPES,
+                int,
+                bool,
+                bool,			
+                std::vector<int>,
+                std::vector<int>>	
+        mapValue = {enemy_type,
+                    num_enemies,
+                    false,
+                    false,
+                    {spawn_location.x, spawn_location.y},
+                    { obstacle_patrol_point_a.x, obstacle_patrol_point_a.y, 
+                      obstacle_patrol_point_b.x, obstacle_patrol_point_b.y }
+                    };
+
+    // Insert to map
+    spawnMap.insert({mapKey, mapValue});
+
+}
+
+
+bool WorldSystem::checkPlayerReachedArea(ivec2 area_bottom_left, ivec2 area_top_right) {
     // Get player
     Entity player = registry.players.entities[0];
     Motion playerMotion = registry.motions.get(player);
 
+    // trigger area bounds
+    int min_x = area_bottom_left.x;
+    int min_y = area_bottom_left.y;
+    int max_x = area_top_right.x;
+    int max_y = area_top_right.y;
+
     // Player location in terms of grid coordinates
     ivec2 playerLocation = ivec2(playerMotion.position.x / GRID_CELL_WIDTH_PX, playerMotion.position.y / GRID_CELL_HEIGHT_PX);
 
-    // If player is in the same grid as specified, then return true. else false.
-    return playerLocation == gridCoordinate;
+    // check that player location is inside the trigger area
+    bool player_inside_trigger_area = playerLocation.x >= min_x && playerLocation.y >= min_y && playerLocation.x <= max_x && playerLocation.y <= max_y;
+
+    return player_inside_trigger_area;
+}
+
+void WorldSystem::levelHelper(int level) {
+    if (level <= levelMap.size() && level > 0) {
+        level_selection = level;
+    }
+}
+
+int WorldSystem::countEnemiesOnLevel() {
+
+    int num_enemies = 0;
+
+    for (auto& i : spawnMap) {
+        std::vector<int> spawnTile = i.first;
+        std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>>& enemyDataTuple = i.second;
+        ENEMY_TYPES         enemyType = std::get<0>(enemyDataTuple);
+        int                 quantity = std::get<1>(enemyDataTuple);
+        bool& hasPlayerReachedTile = std::get<2>(enemyDataTuple);
+        bool& hasEnemyAlreadySpawned = std::get<3>(enemyDataTuple);
+        std::vector<int>    spawnPosition = std::get<4>(enemyDataTuple);
+        std::vector<int>    patrolRange = std::get<5>(enemyDataTuple);
+
+        // This'll need to be changed if we add more indestructible enemies.
+        if (enemyType != OBSTACLE) {
+            num_enemies += quantity;
+        }
+    }
+
+    return num_enemies;
+}
+
+// NOT NEEDED IF WE JUST FREEZE PHYSICS!!! (in fact it's better if we froze physics as original velocity preserved
+void WorldSystem::freezeMovements() {
+
+    // Get enemy entities
+    auto& enemy_registry = registry.enemies; //list of enemy entities stored in here
+
+    // Get player entity
+    Entity playerEntity = registry.players.entities[0];
+    Motion& playerMotion = registry.motions.get(playerEntity);
+    b2BodyId player_id = registry.physicsBodies.get(playerEntity).bodyId;
+
+    // freeze the player
+    b2Body_SetLinearVelocity(player_id, b2Vec2_zero);
+    playerMotion.velocity = vec2(0, 0);
+    
+    // freeze the enemies
+    // Iterate over each enemy and implement basic logic as commented above.
+    for (int i = 0; i < enemy_registry.entities.size(); i++) {
+
+        // Figure out enemy details
+        Entity enemyEntity = enemy_registry.entities[i];
+        Motion& enemyMotion = registry.motions.get(enemyEntity);
+        Enemy& enemyComponent = registry.enemies.get(enemyEntity);
+
+        // Get Box2D Speed
+        b2BodyId enemy_id = registry.physicsBodies.get(enemyEntity).bodyId;
+    
+        // freeze the enemy
+        b2Body_SetLinearVelocity(enemy_id, b2Vec2_zero);
+        enemyMotion.velocity = vec2(0, 0);
+    }
+
 }

@@ -2,7 +2,58 @@
 #include "tinyECS/registry.hpp"
 #include <iostream>
 
-Entity createBall(b2WorldId worldId)
+
+// Creates tracker component for current screen
+Entity createCurrentScreen() {
+	Entity entity = Entity();
+
+	CurrentScreen& currentScreen = registry.currentScreen.emplace(entity);
+
+	return entity;
+}
+
+// This will create the screens that we are going to be using.
+Entity createScreen(std::string screen_type) {
+	Entity entity = Entity();
+
+	Screen& screen = registry.screens.emplace(entity);
+	screen.screen = screen_type;
+
+	// Configure size
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // Note!!! Screen centers on the player's location so this has to be updated before render.
+	motion.scale = vec2(WORLD_WIDTH_PX / 5, WORLD_HEIGHT_PX / 4); // For some reason image stretches, this is a rough estimate of how to un-stretch it.
+
+	// Figure out which screen to display
+	TEXTURE_ASSET_ID screen_texture{};
+
+	if (screen_type == "MAIN MENU") {
+		screen_texture = TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE;
+	}
+	else if (screen_type == "PLAYING") {
+		screen_texture = TEXTURE_ASSET_ID::PLAYING_TEXTURE;
+	}
+	else if (screen_type == "PAUSE") {
+		screen_texture = TEXTURE_ASSET_ID::PAUSE_TEXTURE;
+	}
+	else if (screen_type == "END OF GAME") {
+		screen_texture = TEXTURE_ASSET_ID::END_OF_GAME_TEXTURE;
+	}
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			screen_texture,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return entity;
+}
+
+
+Entity createBall(b2WorldId worldId, vec2 startPos)
 {
 	Entity entity = Entity();
 
@@ -17,7 +68,7 @@ Entity createBall(b2WorldId worldId)
 	// Define a dynamic body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
-	bodyDef.position = b2Vec2{ BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y };
+	bodyDef.position = b2Vec2{ startPos.x, startPos.y };
 	bodyDef.fixedRotation = false; // Allow rolling
 	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
@@ -37,14 +88,14 @@ Entity createBall(b2WorldId worldId)
 	// Add motion & render request for ECS synchronization
 	auto& motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
-	motion.position = vec2(BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y);
+	motion.position = startPos;
 
 	// The sprite is 64x64 pixels, and 1cm = 1pixel
 	motion.scale = vec2(2 * circle.radius, 2 * circle.radius);
 
 	// Associate player with camera
 	auto& camera = registry.cameras.emplace(entity);
-	camera.position = vec2(BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y);
+	camera.position = startPos;
 
 	registry.renderRequests.insert(
 		entity,
@@ -63,9 +114,10 @@ Entity createBall(b2WorldId worldId)
 // - pos (x, y): position to spawn enemy
 // - ENEMY_TYPES: type of enemy to spawn.
 // - MOVEMENT AREA (min_x, max_x): activity radius of the enemy. set to (-1, -1) if you want enemy to move anywhere on the map.
-Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_area) {
+Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_range_point_a, vec2 movement_range_point_b) {
 
 	// Determine enemy type-based characteristics here.
+ 
 	// If the enemy is an obstacle then they will not be destructable. Can expand w/ more indestructable enemies.
 	bool destructability = enemy_type == OBSTACLE ? false : true; 
 	// Size of enemy. ENEMY_RADIUS is the standard size, and we'll change it for non-common enemies.
@@ -82,7 +134,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 		enemyBounciness = 0;
 	}
 	else if (enemy_type == SWARM) {
-		enemyBounciness = 0.75;
+		enemyBounciness = 0.5;
 	}
 	// Weight of enemy, based on density. Common has default weight ENEMY_DENSITY
 	float enemyWeight = ENEMY_DENSITY;
@@ -97,6 +149,14 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	if (enemy_type == OBSTACLE) {
 		enemyFriction = 0;
 	}
+	// Whether the enemy is affected by gravity, applied using gravity scaling. Only common enemies have gravity.
+	float enemyGravityScaling = 0;
+	if (enemy_type == COMMON) {
+		enemyGravityScaling = 1;
+	}
+	
+
+	// Add enemy to ECS
 	
 	// Enemy entity
 	Entity entity = Entity();
@@ -110,9 +170,13 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	auto& enemy_registry = registry.enemies;
 	Enemy& enemy = registry.enemies.emplace(entity);
 	enemy.enemyType = enemy_type;
-	enemy.movement_area = movement_area;
+	enemy.movement_area_point_a = movement_range_point_a;
+	enemy.movement_area_point_b = movement_range_point_b;
 	enemy.destructable = destructability;
 
+
+	// Make Box2D body for enemy
+	
 	// Define a box2D body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
@@ -137,6 +201,10 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	enemyBody.bodyId = bodyId;
 
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
+
+	// This changes the effect of gravity on an enemy.
+	b2Body_SetGravityScale(bodyId, enemyGravityScaling);
+
 
 	// Add motion & render request for ECS synchronization
 	auto& motion = registry.motions.emplace(entity);
@@ -293,7 +361,7 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos)
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// !!! line segments between arbitrary points
+// !!! line segments between arbitrary enemies_killed
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Entity createLine(vec2 start_pos, vec2 end_pos)
 {
@@ -313,6 +381,30 @@ Entity createLine(vec2 start_pos, vec2 end_pos)
 	);
 
 	registry.colors.insert(entity, vec3(1.0f, 1.0f, 1.0f));
+	return entity;
+}
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!! render the entire level png at once
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId)
+{
+	Entity entity = Entity();
+	LevelLayer& levelLayer = registry.levelLayers.emplace(entity);
+
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 2);
+	motion.scale = vec2(WORLD_WIDTH_PX, WORLD_HEIGHT_PX);
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			textureId,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
 	return entity;
 }
 

@@ -109,6 +109,15 @@ bool collides(const Entity &entity1, const Entity &entity2)
 // Advances physics simulation
 void PhysicsSystem::step(float elapsed_ms)
 {
+    // Current Screen
+    Entity currScreenEntity = registry.currentScreen.entities[0];
+    CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
+
+    // Freeze physics if we're not playing
+    if (currentScreen.current_screen != "PLAYING") {
+        return;
+    }
+
   // To make things clearer, we'll separate player and enemy entities. Can refactor later to group them up.
 
   // Share this
@@ -285,7 +294,7 @@ void PhysicsSystem::step(float elapsed_ms)
   Entity activeGrapplePointEntity;
   b2BodyId activeGrappleBodyId;
 
-  // Loop through all grapple points and find the active one
+  // Loop through all grapple enemies_killed and find the active one
   for (Entity gpEntity : registry.grapplePoints.entities) {
     GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
 		//std::cout << gp.position.x << " " << gp.position.y <<  " " << gp.active << std::endl;

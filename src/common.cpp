@@ -1,5 +1,9 @@
 #include "common.hpp"
 
+// variables for tracking world height.
+int WORLD_WIDTH_TILES = 50;
+int WORLD_HEIGHT_TILES = 20;
+
 // Note, we could also use the functions from GLM but we write the transformations here to show the uderlying math
 void Transform::scale(vec2 scale)
 {

@@ -6,8 +6,15 @@
 
 #include <box2d/box2d.h>
 
+
+// current screen
+Entity createCurrentScreen(); // DEFAULT TO MAIN MENU
+
+// screen
+Entity createScreen(std::string screen_type);
+
 // enemy
-Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_area);
+Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_range_point_a, vec2 movement_range_point_b);
 
 // invaders
 Entity createInvader(RenderSystem* renderer, vec2 position);
@@ -35,7 +42,10 @@ Entity createGrapplePoint(b2WorldId worldId, vec2 position);
 Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBodyId, float distance);
 void removeGrapple();
 
+// level layers
+Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId);
+
 // legacy
 // the player
 Entity createChicken(RenderSystem* renderer, vec2 position);
-Entity createBall(b2WorldId worldId);
+Entity createBall(b2WorldId worldId, vec2 startPos);

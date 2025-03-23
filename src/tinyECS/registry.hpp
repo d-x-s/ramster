@@ -12,6 +12,8 @@ class ECSRegistry
 public:
 	// Manually created list of all components this game has
 	// TODO: A1 add a LightUp component
+	ComponentContainer<CurrentScreen> currentScreen;
+	ComponentContainer<Screen> screens;
 	ComponentContainer<DeathTimer> deathTimers;
 	ComponentContainer<Motion> motions;
 	ComponentContainer<Collision> collisions;
@@ -38,11 +40,14 @@ public:
 	ComponentContainer<Grapple> grapples;
 	ComponentContainer<GrapplePoint> grapplePoints;
 	ComponentContainer<TutorialTile> tutorialTiles;
+	ComponentContainer<LevelLayer> levelLayers;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
 	{
 		// TODO: A1 add a LightUp component
+		registry_list.push_back(&currentScreen);
+		registry_list.push_back(&screens);
 		registry_list.push_back(&deathTimers);
 		registry_list.push_back(&motions);
 		registry_list.push_back(&collisions);
@@ -66,6 +71,9 @@ public:
 		registry_list.push_back(&enemyPhysics);
 		registry_list.push_back(&grapples);
 		registry_list.push_back(&grapplePoints);
+
+		registry_list.push_back(&levelLayers);
+		registry_list.push_back(&cameras);
 	}
 
 	void clear_all_components() {

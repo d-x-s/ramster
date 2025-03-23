@@ -6,6 +6,7 @@
 #include <tuple>
 #include <vector>
 #include <array>
+#include <map>
 
 // glfw (OpenGL)
 #define NOMINMAX
@@ -34,14 +35,58 @@ inline std::string textures_path(const std::string& name) {return data_path() + 
 inline std::string audio_path(const std::string& name) {return data_path() + "/audio/" + std::string(name);};
 inline std::string mesh_path(const std::string& name) {return data_path() + "/meshes/" + std::string(name);};
 
+
+/* All screens that we'll be using in our game.
+const extern enum SCREENS {
+
+    // Level selector 
+    // From: Launching Game, Pause - H, End of Game - ESC
+    // To: Playing - Any level selection + ENTER, Exit - ESC
+    MAIN_MENU = 0,
+
+    // Gameplay here
+    // From: Main menu - any level selection + ENTER, Pause - ESC
+    // To: Pause - ESC
+    PLAYING = MAIN_MENU + 1,
+
+    // Pauses gameplay, lets player resume, return to main menu, or keep playing
+    // From: Playing - ESC
+    // To: Main menu - H, Playing - ESC, (reset) Playing - R
+    PAUSE = PLAYING + 1,
+
+    // When player finishes the level or dies
+    // From: Playing - auto-triggers on win or death.
+    // To: Main Menu - ESC, (reset) Playing - R, (next level) Playing - ENTER
+    END_OF_GAME = PAUSE + 1
+};
+*/
+
+// LEVEL MAP
+// Maps an integer onto the filename of the level.
+const std::map<int, std::string> levelMap =
+{
+    // ADD LEVELS HERE
+    {1, "Demo.tmj"},
+};
+
+//
+// level constants
+// TODO: if we allow levels of varying sizes, this needs to be updated dynamically between levels
+//
+extern int WORLD_WIDTH_TILES;
+extern int WORLD_HEIGHT_TILES;
+
 //
 // game constants
 //
 const int WINDOW_WIDTH_PX = 1280;
 const int WINDOW_HEIGHT_PX = 800;
 
-const int WORLD_WIDTH_PX = 13440;
-const int WORLD_HEIGHT_PX = 3240;
+const int TILE_WIDTH = 128;
+const int TILE_HEIGHT = 128;
+
+const int WORLD_WIDTH_PX = WORLD_WIDTH_TILES * TILE_WIDTH;
+const int WORLD_HEIGHT_PX = WORLD_HEIGHT_TILES * TILE_HEIGHT;
 
 const int GRID_CELL_WIDTH_PX = 128;
 const int GRID_CELL_HEIGHT_PX = 128;
@@ -67,10 +112,13 @@ const int PROJECTILE_DAMAGE = 10;
 
 // Amount of time to stop an enemy after colliding (if player loses collision)
 const float ENEMY_FREEZE_TIME_MS = 3000;
-const float MIN_COLLISION_SPEED = 2.0;
+// Minimum amount of speed the player needs after a collision to "win". Tune down for easier gameplay and vice versa.
+const float MIN_COLLISION_SPEED = 1.5;
 
 // Amount of time before refreshing FPS counter. This will eliminate window flickering from too many updates per second.
 const int FPS_UPDATE_COOLDOWN_MS = 250;
+// Granularity in ms of time
+const int TIME_GRANULARITY = 1000;
 
 // enemy types that we will be supporting.
 const enum ENEMY_TYPES {
@@ -110,15 +158,18 @@ const float BALL_FRICTION = 0.1f;
 const float BALL_RESTITUTION = 0.1f;
 const float BALL_ANGULAR_DAMPING = 0.75f; // 1/s (inverse seconds)
 
+// HP that the player starts with
+const float PLAYER_STARTING_HP = 5;
+
 // ENEMY 2DBODY
 // Shares most of player 2D body but different density, friction, restitution, etc.
-const float ENEMY_GROUNDED_MOVEMENT_FORCE = 7500.0f; // kg�cm/s� (dynes)
+const float ENEMY_GROUNDED_MOVEMENT_FORCE = 1875.0f; // kg�cm/s� (dynes)
 const float ENEMY_JUMP_IMPULSE = 2000.0f; // kg�cm/s (dynes�s)
 
 const float ENEMY_RADIUS = 25.0;
-const float ENEMY_DENSITY = 0.005f; // kg/cm� (kilograms per square centimeter); lower number = less speed lost on collision, less enemy momentum.
+const float ENEMY_DENSITY = 0.00125f; // kg/cm� (kilograms per square centimeter); lower number = less speed lost on collision, less enemy momentum.
 const float ENEMY_FRICTION = 0.1f; //enemy friction. for now we're setting it low so it's less affected by contact with floor slowing it down.
-const float ENEMY_RESTITUTION = 0.25f; //enemy bounciness... increase this number to make things more chaotic.
+const float ENEMY_RESTITUTION = 0.5f; //enemy bounciness... increase this number to make things more chaotic.
 
 // SWARM ENEMY PROXIMITY - MAX DELTA X OR DELTA Y FROM SWARM BEFORE REJOINING
 const float SWARM_ENEMY_PROXIMITY = 1.5 * GRID_CELL_WIDTH_PX;
@@ -158,6 +209,16 @@ const float TOWER_BB_HEIGHT = (float)GRID_CELL_HEIGHT_PX;
 const float PROJECTILE_BB_WIDTH = (float)GRID_CELL_WIDTH_PX*0.5f;
 const float PROJECTILE_BB_HEIGHT = (float)GRID_CELL_HEIGHT_PX*0.5f;
 
+// Level loading
+const int TILED_TO_GRID_PIXEL_SCALE = 1;
+
+const std::string LEVEL_DIR_FILEPATH = "../levels/";
+const std::string JSON_POLYLINE_ATTR = "polyline";
+const std::string JSON_POLYGON_ATTR = "polygon";
+const std::string JSON_BALL_SPAWNPOINT = "ball_spawnpoint";
+const std::string JSON_SWARM_SPAWNPOINT = "swarm_spawnpoint";
+
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846f
 #endif
@@ -171,5 +232,25 @@ struct Transform {
 	void rotate(float radians);
 	void translate(vec2 offset);
 };
+
+
+// rotate enemies_killed
+inline glm::vec2 rotateAroundPoint(const vec2& point, const vec2& origin, float angleRadians) {
+    // Translate point to origin
+    float translatedX = point.x - origin.x;
+    float translatedY = point.y - origin.y;
+
+    // Apply rotation
+    float cosTheta = std::cos(angleRadians);
+    float sinTheta = std::sin(angleRadians);
+    float rotatedX = translatedX * cosTheta - translatedY * sinTheta;
+    float rotatedY = translatedX * sinTheta + translatedY * cosTheta;
+
+    // Translate back
+    vec2 result;
+    result.x = rotatedX + origin.x;
+    result.y = rotatedY + origin.y;
+    return result;
+}
 
 bool gl_has_errors();

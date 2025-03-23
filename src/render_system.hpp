@@ -30,6 +30,15 @@ class RenderSystem
 
   // Make sure these paths remain in sync with the associated enumerators (see TEXTURE_ASSET_ID).
   const std::array<std::string, texture_count> texture_paths = {
+
+      // Screens
+      // LLNOTE: THESE ARE PLACEHOLDERS
+      textures_path("screens/main_menu.png"),
+      textures_path("screens/test_screen.png"), // This one's the playing screen that we will never use.
+      textures_path("screens/pause.png"),
+      textures_path("screens/game_ended_screen.png"),
+
+      // Legacy invaders code
       textures_path("invaders/blue_1.png"),
       textures_path("invaders/blue_2.png"),
       textures_path("invaders/blue_3.png"),
@@ -102,6 +111,9 @@ class RenderSystem
     textures_path("tutorial/move.png"),
     textures_path("tutorial/grapple.png"),
     textures_path("tutorial/destroy.png"),
+
+    // levels
+    textures_path("levels/demo.png")
   };
 
   std::array<GLuint, effect_count> effects;
@@ -119,6 +131,7 @@ class RenderSystem
   std::array<Mesh, geometry_count> meshes;
 
 public:
+
   // Initialize the window
   bool init(GLFWwindow *window);
 
@@ -165,6 +178,7 @@ private:
   GLuint off_screen_render_buffer_depth;
 
   Entity screen_state_entity;
+
 };
 
 bool loadEffectFromFile(

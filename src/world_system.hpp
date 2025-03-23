@@ -7,6 +7,7 @@
 #include <vector>
 #include <random>
 #include <map>
+#include <string>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -53,11 +54,23 @@ public:
 	// vignete fade out control
 	float vignette_timer_ms = 0.0f;
 
+	// M3 content
+
+	// level loading
+	bool load_level(const std::string& filename);
+
 	GLFWwindow* getWindow() {
 		return window;
 	}
 
 private:
+
+	// Selected level
+	int level_selection = 1;
+
+	// Number of (destructible) enemies to kill
+	int num_enemies_to_kill = -1;
+
 	// box2d world instance (shared between systems)
 	b2WorldId worldId;
 
@@ -77,8 +90,22 @@ private:
 
 	// music references
 	Mix_Music* background_music;
+  Mix_Music* background_music_memorybranch;
+  Mix_Music* background_music_oblanka;
+  Mix_Music* background_music_paradrizzle;
+  Mix_Music* background_music_windcatcher;
+
+  // fx references
+  Mix_Chunk* fx_destroy_enemy;
+  Mix_Chunk* fx_destroy_enemy_fail;
+  Mix_Chunk* fx_jump;
+  Mix_Chunk* fx_grapple;
 	Mix_Chunk* chicken_dead_sound;
 	Mix_Chunk* chicken_eat_sound;
+
+  // audio control
+  void WorldSystem::playMusic(MUSIC music);
+  void WorldSystem::playSoundEffect(FX effect);
 
 	// player movement
 	void handle_movement();
@@ -100,7 +127,7 @@ private:
 	bool game_active = true;
 
 	// restart level
-	void restart_game();
+	void restart_game(MUSIC music, std::string level);
 
 	// prototype for generating chain terrain
 	void generateTestTerrain();
@@ -109,19 +136,31 @@ private:
 	// OpenGL window handle
 	GLFWwindow* window;
 
-	// LLNOTE
+	// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!
+	// Takes:
+	// - Enemy Spawn Area
+	// - Enemy type/number to spawn
+	// - Location to spawn enemy
+	// - Patrol area if it's an obstacle
+	// Returns:
+	// - Handles enemy spawning according to specs.
+	void insertToSpawnMap(ivec2 bottom_left, ivec2 top_right, 
+							ENEMY_TYPES enemy_type, int num_enemies, 
+							ivec2 spawn_location, 
+							ivec2 obstacle_patrol_bottom_left, ivec2 obstacle_patrol_top_right);
+
 	// Updated map: 
 	//	key is a vector<int> (tile that triggers spawn), 
 	//	value is a tuple with:
 	// 1. ENEMY_TYPE denoting type of enemy to spawn
 	// 2. Int denoting quantity of enemies to spawn
-	// 3. Boolean denoting hasPlayerReachedTile
+	// 3. Boolean denoting spawnMap
 	// 4. Boolean denoting hasEnemyAlreadySpawned (at this tile)
 	// 5. vector<int> denoting spawn position
 	// 6. vector<int> denoting patrol range on the X-axis
 	std::map<
-		std::vector<int>,			// KEY
-		std::tuple<					// VALUE
+		std::vector<int>,		// KEY
+		std::tuple<				// VALUE
 			ENEMY_TYPES,			// 1
 			int,					// 2
 			bool,					// 3
@@ -129,55 +168,30 @@ private:
 			std::vector<int>,		// 5
 			std::vector<int>		// 6
 		>
-	> 
-	hasPlayerReachedTile = {
-		{ 
-			{17, 6},
-			{	
-				ENEMY_TYPES::OBSTACLE,
-				1,
-				false,
-				false,
-				{26, 5},
-				{23, 28}
-			}
-		},
-		{
-			{33, 6},
-			{
-				ENEMY_TYPES::SWARM,
-				20,
-				false,
-				false,
-				{42, 8},
-				{0, 0}
-			}
-		},
-		{
-			{ 50, 6 },
-			{
-				ENEMY_TYPES::COMMON,
-				3,
-				false,
-				false,
-				{68, 5},
-				{0, 0}
-			}
-		}
-	};
+	> spawnMap;
+	// call map helper to insert into this map.
 
 	int next_enemy_spawn;
 	int enemy_spawn_rate_ms;	// see default value in common.hpp
 
 	int max_towers;	// see default value in common.hpp
 
-	// Number of invaders stopped by the towers, displayed in the window title
-	int points;
+	// Player reached finish line (DEFAULT TO FALSE AND SET TO TRUE IF THEY GOT THERE!!!)
+	int player_reached_finish_line = true; //LLNOTE: Set this to true so game can actually end without finish lines, will set to false later.
+	// Enemies killed.
+	int enemies_killed;
+	// Player hp. 
+	int hp = PLAYER_STARTING_HP;
 
 	// Frames per second
 	int fps = 0; // 0 is default val
 	// Do an FPS cooldown to prevent flickering
 	float fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
+
+	// Time elapsed
+	int time_elapsed = 0; 
+	// Time cooldown to prevent flickering (also determines granularity of time)
+	int time_granularity = TIME_GRANULARITY;
 
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
@@ -191,12 +205,24 @@ private:
 	- position: where to spawn the enemy.
 	- movement_area: this applies to OBSTACLE enemies only. Dictates the upper and lower bounds for x-coordinates on which it can move.
 	*/
-	void handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 gridPatrolXRange);
+	void handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 grid_patrol_point_a, ivec2 grid_patrol_point_b);
 
+	
 	// use this to check if the player has reached a specified grid coordinate. (recall GRID_CELL_WIDTH, GRID_CELL_HEIGHT)
-	bool checkPlayerReachedTile(ivec2 grid_coordinate);
+	// Note that the ivec4
+	bool checkPlayerReachedArea(ivec2 area_bottom_left, ivec2 area_top_right);
 
 	vec2 screenToWorld(vec2 mouse_position);
 	void attachGrapple();
 	void checkGrappleGrounded();
+
+	// Handles logic for level.
+	void levelHelper(int level);
+
+	// Returns total number of (destructible) enemies per level.
+	int countEnemiesOnLevel();
+
+	// NOT NEEDED IF WE JUST FREEZE PHYSICS!!! (in fact it's better if we froze physics as original velocity preserved
+	// Freezes everything when game is paused.
+	void freezeMovements();
 };

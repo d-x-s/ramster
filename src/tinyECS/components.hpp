@@ -4,6 +4,17 @@
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
 
+// Screen component
+struct Screen
+{
+    std::string screen;
+};
+
+// Current Screen Component - used to track current screen.
+struct CurrentScreen {
+    std::string current_screen = "MAIN MENU"; // start on main menu
+};
+
 // Player component
 struct Player
 {
@@ -18,8 +29,10 @@ struct Enemy
 	bool destructable;
 	// We apply the freeze time to destructable enemies upon collision so they stop pursuing the player momentarily after a collision.
 	float freeze_time;
-	// Movement area of the enemy (min x, max x). Set to (-1, -1) for enemy to move anywhere on the map.
-	vec2 movement_area;
+
+	// Patrol boundary for obstacles (a_x, a_y), (b_x, b_y).
+	vec2 movement_area_point_a;
+    vec2 movement_area_point_b;
 };
 
 // Tower
@@ -151,10 +164,16 @@ struct Mesh
  * The final value in each enumeration is both a way to keep track of how many
  * enums there are, and as a default value to represent uninitialized fields.
  */
-
 enum class TEXTURE_ASSET_ID
 {
-  BLUE_INVADER_1 = 0,
+    // Screens
+    MAIN_MENU_TEXTURE = 0,
+    PLAYING_TEXTURE = MAIN_MENU_TEXTURE + 1,
+    PAUSE_TEXTURE = PLAYING_TEXTURE + 1,
+    END_OF_GAME_TEXTURE = PAUSE_TEXTURE + 1,
+
+  // Legacy invaders
+  BLUE_INVADER_1 = END_OF_GAME_TEXTURE + 1,
   BLUE_INVADER_2 = BLUE_INVADER_1 + 1,
   BLUE_INVADER_3 = BLUE_INVADER_2 + 1,
   RED_INVADER_1 = BLUE_INVADER_3 + 1,
@@ -227,9 +246,34 @@ enum class TEXTURE_ASSET_ID
     TUTORIAL_GRAPPLE = TUTORIAL_MOVE + 1,
     TUTORIAL_DESTROY = TUTORIAL_GRAPPLE + 1,
 
-    TEXTURE_COUNT = TUTORIAL_DESTROY + 1,
+    // levels
+    LEVEL_DEMO = TUTORIAL_DESTROY + 1,
+
+    TEXTURE_COUNT = LEVEL_DEMO + 1,
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
+
+enum class MUSIC
+{
+  MENU = 0,
+  LEVEL_1 = MENU + 1,
+  LEVEL_2 = LEVEL_1 + 1,
+  LEVEL_3 = LEVEL_2 + 1,
+
+  MUSIC_COUNT = LEVEL_3 + 1,
+};
+const int music_count = (int)MUSIC::MUSIC_COUNT;
+
+enum class FX
+{
+  FX_DESTROY_ENEMY = 0,
+  FX_DESTROY_ENEMY_FAIL = FX_DESTROY_ENEMY + 1,
+  FX_JUMP = FX_DESTROY_ENEMY_FAIL + 1,
+  FX_GRAPPLE = FX_JUMP + 1,
+  
+  FX_COUNT = FX_GRAPPLE + 1,
+};
+const int fx_count = (int)FX::FX_COUNT;
 
 enum class EFFECT_ASSET_ID
 {
@@ -328,6 +372,11 @@ struct EnemyPhysics
 };
 
 struct TutorialTile
+{
+
+};
+
+struct LevelLayer
 {
 
 };

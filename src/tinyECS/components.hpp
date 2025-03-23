@@ -4,6 +4,17 @@
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
 
+// Screen component
+struct Screen
+{
+    std::string screen;
+};
+
+// Current Screen Component - used to track current screen.
+struct CurrentScreen {
+    std::string current_screen = "MAIN MENU"; // start on main menu
+};
+
 // Player component
 struct Player
 {
@@ -156,7 +167,14 @@ struct Mesh
 
 enum class TEXTURE_ASSET_ID
 {
-  BLUE_INVADER_1 = 0,
+    // Screens
+    MAIN_MENU_TEXTURE = 0,
+    PLAYING_TEXTURE = MAIN_MENU_TEXTURE + 1,
+    PAUSE_TEXTURE = PLAYING_TEXTURE + 1,
+    END_OF_GAME_TEXTURE = PAUSE_TEXTURE + 1,
+
+  // Legacy invaders
+  BLUE_INVADER_1 = END_OF_GAME_TEXTURE + 1,
   BLUE_INVADER_2 = BLUE_INVADER_1 + 1,
   BLUE_INVADER_3 = BLUE_INVADER_2 + 1,
   RED_INVADER_1 = BLUE_INVADER_3 + 1,

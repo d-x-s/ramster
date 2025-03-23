@@ -6,6 +6,13 @@
 
 #include <box2d/box2d.h>
 
+
+// current screen
+Entity createCurrentScreen(); // DEFAULT TO MAIN MENU
+
+// screen
+Entity createScreen(std::string screen_type);
+
 // enemy
 Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_range_point_a, vec2 movement_range_point_b);
 

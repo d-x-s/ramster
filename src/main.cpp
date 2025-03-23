@@ -9,6 +9,7 @@
 
 // internal
 #include "ai_system.hpp"
+#include "world_init.hpp"
 #include "physics_system.hpp"
 #include "render_system.hpp"
 #include "world_system.hpp"
@@ -34,6 +35,10 @@ int main()
 	gravity_vector.x = 0.f;
 	gravity_vector.y = GRAVITY;
 	b2World_SetGravity(worldId, gravity_vector);
+
+
+	// Current Screen tracker
+	createCurrentScreen();
 
 	// global systems
 	WorldSystem   world_system(worldId);

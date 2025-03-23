@@ -55,6 +55,9 @@ public:
 
 	// M3 content
 
+	// Selected level
+	int level_selection;
+
 	// level loading
 	bool load_level(const std::string& filename);
 
@@ -63,6 +66,7 @@ public:
 	}
 
 private:
+
 	// box2d world instance (shared between systems)
 	b2WorldId worldId;
 

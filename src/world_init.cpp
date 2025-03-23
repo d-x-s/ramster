@@ -2,6 +2,57 @@
 #include "tinyECS/registry.hpp"
 #include <iostream>
 
+
+// Creates tracker component for current screen
+Entity createCurrentScreen() {
+	Entity entity = Entity();
+
+	CurrentScreen& currentScreen = registry.currentScreen.emplace(entity);
+
+	return entity;
+}
+
+// This will create the screens that we are going to be using.
+Entity createScreen(std::string screen_type) {
+	Entity entity = Entity();
+
+	Screen& screen = registry.screens.emplace(entity);
+	screen.screen = screen_type;
+
+	// Configure size
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(1183, 240); // Note that these are close approximations by clicking bottom-right, top-left and getting the average.
+	motion.scale = vec2(WORLD_WIDTH_PX/5, WORLD_HEIGHT_PX/4); // For some reason image stretches, this is a rough estimate of how to un-stretch it.
+
+	// Figure out which screen to display
+	TEXTURE_ASSET_ID screen_texture{};
+
+	if (screen_type == "MAIN MENU") {
+		screen_texture = TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE;
+	}
+	else if (screen_type == "PLAYING") {
+		screen_texture = TEXTURE_ASSET_ID::PLAYING_TEXTURE;
+	}
+	else if (screen_type == "PAUSE") {
+		screen_texture = TEXTURE_ASSET_ID::PAUSE_TEXTURE;
+	}
+	else if (screen_type == "END OF GAME") {
+		screen_texture = TEXTURE_ASSET_ID::END_OF_GAME_TEXTURE;
+	}
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return entity;
+}
+
+
 Entity createBall(b2WorldId worldId, vec2 startPos)
 {
 	Entity entity = Entity();

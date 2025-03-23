@@ -5,6 +5,7 @@
 
 // internal
 #include "render_system.hpp"
+#include "world_system.hpp"
 #include "tinyECS/registry.hpp"
 
 void RenderSystem::drawGridLine(Entity entity, const mat3& projection) {
@@ -479,26 +480,51 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 
 	mat3 projection_2D = createProjectionMatrix();
 
-	// draw grid lines first
-	for (Entity entity : registry.renderRequests.entities)
-	{
-		if (registry.gridLines.has(entity)) {
-			drawGridLine(entity, projection_2D);
+
+	// Current Screen
+	Entity currScreenEntity = registry.currentScreen.entities[0];
+	CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
+	// RENDER WHEN PLAYING
+	if (currentScreen.current_screen == "PLAYING") {
+		// draw grid lines first
+		for (Entity entity : registry.renderRequests.entities)
+		{
+			if (registry.gridLines.has(entity)) {
+				drawGridLine(entity, projection_2D);
+			}
+		}
+
+		// draw all entities with a render request to the frame buffer
+		for (Entity entity : registry.renderRequests.entities)
+		{
+			// filter to entities that have a motion component (but not a screen)
+			if (registry.motions.has(entity) && !registry.screens.has(entity)) {
+				// Note, its not very efficient to access elements indirectly via the entity
+				// albeit iterating through all Sprites in sequence. A good point to optimize
+				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+			}
+			// draw terrain lines separately
+			else if (registry.lines.has(entity)) {
+				drawLine(entity, projection_2D);
+			}
 		}
 	}
+	// SCREENS TO RENDER WHEN NOT PLAYING
+	else {
+		for (Entity entity : registry.renderRequests.entities) {
 
-	// draw all entities with a render request to the frame buffer
-	for (Entity entity : registry.renderRequests.entities)
-	{
-		// filter to entities that have a motion component
-		if (registry.motions.has(entity)) {
-			// Note, its not very efficient to access elements indirectly via the entity
-			// albeit iterating through all Sprites in sequence. A good point to optimize
-			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
-		}
-		// draw terrain lines separately
-		else if (registry.lines.has(entity)) {
-			drawLine(entity, projection_2D);
+			// filter to screen entities
+			if (registry.screens.has(entity)) {
+
+				Screen screen = registry.screens.get(entity);
+				
+				// Ensure that we're only rendering the screen that we're on right now
+				if (currentScreen.current_screen == screen.screen) {
+					drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+				}
+
+			}
+
 		}
 	}
 

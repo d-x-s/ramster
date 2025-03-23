@@ -34,6 +34,35 @@ inline std::string textures_path(const std::string& name) {return data_path() + 
 inline std::string audio_path(const std::string& name) {return data_path() + "/audio/" + std::string(name);};
 inline std::string mesh_path(const std::string& name) {return data_path() + "/meshes/" + std::string(name);};
 
+
+/* All screens that we'll be using in our game.
+const extern enum SCREENS {
+
+    // Level selector 
+    // From: Launching Game, Pause - H, End of Game - ESC
+    // To: Playing - Any level selection + ENTER, Exit - ESC
+    MAIN_MENU = 0,
+
+    // Gameplay here
+    // From: Main menu - any level selection + ENTER, Pause - ESC
+    // To: Pause - ESC
+    PLAYING = MAIN_MENU + 1,
+
+    // Pauses gameplay, lets player resume, return to main menu, or keep playing
+    // From: Playing - ESC
+    // To: Main menu - H, Playing - ESC, (reset) Playing - ESC
+    PAUSE = PLAYING + 1,
+
+    // When player finishes the level or dies
+    // From: Playing - auto-triggers on win or death.
+    // To: Main Menu - ESC, (reset) Playing - R, (next level) Playing - ENTER
+    END_OF_GAME = PAUSE + 1
+};
+*/
+
+// Number of levels in the game (this prevents level selector from going too high)
+const int NUM_LEVELS = 1;
+
 //
 // level constants
 // TODO: if we allow levels of varying sizes, this needs to be updated dynamically between levels

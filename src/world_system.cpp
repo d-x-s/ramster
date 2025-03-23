@@ -17,6 +17,8 @@
 
 // Global Variables
 bool grappleActive = false;
+MUSIC current_music = MUSIC::LEVEL_1;
+
 // create the world
 WorldSystem::WorldSystem(b2WorldId worldId) : enemies_killed(0),
                                               max_towers(MAX_TOWERS_START),
@@ -39,6 +41,22 @@ WorldSystem::~WorldSystem()
   // Destroy music components
   if (background_music != nullptr)
     Mix_FreeMusic(background_music);
+  if (background_music_memorybranch != nullptr)
+    Mix_FreeMusic(background_music_memorybranch);
+  if (background_music_oblanka != nullptr)
+    Mix_FreeMusic(background_music_oblanka);
+  if (background_music_paradrizzle != nullptr)
+    Mix_FreeMusic(background_music_paradrizzle);
+  if (background_music_windcatcher != nullptr)
+    Mix_FreeMusic(background_music_windcatcher);
+  if (fx_destroy_enemy != nullptr)
+    Mix_FreeChunk(fx_destroy_enemy);
+  if (fx_destroy_enemy_fail != nullptr)
+    Mix_FreeChunk(fx_destroy_enemy_fail);
+  if (fx_jump != nullptr)
+    Mix_FreeChunk(fx_jump);
+  if (fx_grapple != nullptr)
+    Mix_FreeChunk(fx_grapple);
   if (chicken_dead_sound != nullptr)
     Mix_FreeChunk(chicken_dead_sound);
   if (chicken_eat_sound != nullptr)
@@ -140,14 +158,47 @@ bool WorldSystem::start_and_load_sounds()
     return false;
   }
 
+  // music
   background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
+  background_music_memorybranch = Mix_LoadMUS(audio_path("music_memorybranch.wav").c_str());
+  background_music_oblanka = Mix_LoadMUS(audio_path("music_oblanka.wav").c_str());
+  background_music_paradrizzle = Mix_LoadMUS(audio_path("music_paradrizzle.wav").c_str());
+  background_music_windcatcher = Mix_LoadMUS(audio_path("music_windcatcher.wav").c_str());
+
+  // sound fx
+  fx_destroy_enemy = Mix_LoadWAV(audio_path("fx_destroy_enemy.wav").c_str());
+  fx_destroy_enemy_fail = Mix_LoadWAV(audio_path("fx_destroy_enemy_fail.wav").c_str());
+  fx_jump = Mix_LoadWAV(audio_path("fx_jump.wav").c_str());
+  fx_grapple = Mix_LoadWAV(audio_path("fx_grapple.wav").c_str());
   chicken_dead_sound = Mix_LoadWAV(audio_path("chicken_dead.wav").c_str());
   chicken_eat_sound = Mix_LoadWAV(audio_path("chicken_eat.wav").c_str());
-
-  if (background_music == nullptr || chicken_dead_sound == nullptr || chicken_eat_sound == nullptr)
+  
+  if (
+      background_music == nullptr || 
+      background_music_memorybranch == nullptr ||
+      background_music_oblanka == nullptr ||
+      background_music_paradrizzle == nullptr ||
+      background_music_windcatcher == nullptr ||
+      fx_destroy_enemy == nullptr ||
+      fx_destroy_enemy_fail == nullptr ||
+      fx_jump == nullptr ||
+      fx_grapple == nullptr ||
+      chicken_dead_sound == nullptr || 
+      chicken_eat_sound == nullptr)
   {
     fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
+            // music
             audio_path("music.wav").c_str(),
+            audio_path("music_memorybranch.wav").c_str(),
+            audio_path("music_oblanka.wav").c_str(),
+            audio_path("music_paradrizzle.wav").c_str(),
+            audio_path("music_windcatcher.wav").c_str(),
+
+            // sound fx
+            audio_path("fx_destroy_enemy.wav").c_str(),
+            audio_path("fx_destroy_enemy_fail.wav").c_str(),
+            audio_path("fx_jump.wav").c_str(),
+            audio_path("fx_grapple.wav").c_str(),
             audio_path("chicken_dead.wav").c_str(),
             audio_path("chicken_eat.wav").c_str());
     return false;
@@ -156,17 +207,66 @@ bool WorldSystem::start_and_load_sounds()
   return true;
 }
 
+void WorldSystem::playMusic(MUSIC music)
+{
+  switch (music)
+  {
+    case MUSIC::MENU:
+      Mix_PlayMusic(background_music_memorybranch, -1);
+      current_music = MUSIC::MENU;
+      break;
+    case MUSIC::LEVEL_1:
+      Mix_PlayMusic(background_music_oblanka, -1);
+      current_music = MUSIC::LEVEL_1;
+      break;
+    case MUSIC::LEVEL_2:
+      Mix_PlayMusic(background_music_paradrizzle, -1);
+      current_music = MUSIC::LEVEL_2;
+      break;
+    case MUSIC::LEVEL_3:
+      Mix_PlayMusic(background_music_windcatcher, -1);
+      current_music = MUSIC::LEVEL_3;
+      break;
+    default:
+      Mix_PlayMusic(background_music_memorybranch, -1);
+      current_music = MUSIC::MENU;
+      break;
+  }
+}
+
+void WorldSystem::playSoundEffect(FX effect)
+{
+  switch (effect)
+  {
+    case FX::FX_DESTROY_ENEMY:
+      Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+      break;
+    case FX::FX_DESTROY_ENEMY_FAIL:
+      Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
+      break;
+    case FX::FX_JUMP:
+      Mix_PlayChannel(-1, fx_jump, 0);
+      break;
+    case FX::FX_GRAPPLE:
+      Mix_PlayChannel(-1, fx_grapple, 0);
+      break;
+    default:
+      Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+      break;
+  } 
+}
+
 void WorldSystem::init(RenderSystem *renderer_arg)
 {
 
   this->renderer = renderer_arg;
 
   // start playing background music indefinitely
-  std::cout << "Starting music..." << std::endl;
-  Mix_PlayMusic(background_music, -1);
+  // std::cout << "Starting music..." << std::endl;
+  // Mix_PlayMusic(background_music, -1);
 
   // Set all states to default
-  restart_game(levelMap.find(level_selection)->second);
+  restart_game(current_music, levelMap.find(level_selection)->second);
 }
 
 // Update our game world
@@ -535,7 +635,7 @@ std::vector<b2Vec2> WorldSystem::generateTestPoints()
 }
 
 // Reset the world state to its initial state
-void WorldSystem::restart_game(std::string level)
+void WorldSystem::restart_game(MUSIC music, std::string level)
 {
 
   std::cout << "Restarting..." << std::endl;
@@ -720,7 +820,8 @@ void WorldSystem::restart_game(std::string level)
   }
   else
   {
-    Mix_PlayMusic(background_music, -1);
+    Mix_VolumeMusic(MIX_MAX_VOLUME / 4);
+    playMusic(music);
   }
 
   // reactivate the game
@@ -762,7 +863,7 @@ void WorldSystem::handle_collisions()
         {
           b2DestroyBody(enemyBodyId);
           registry.remove_all_components_of(enemyEntity);
-          Mix_PlayChannel(-1, chicken_dead_sound, 0);
+          playSoundEffect(FX::FX_DESTROY_ENEMY);
           enemies_killed++;
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
@@ -770,9 +871,8 @@ void WorldSystem::handle_collisions()
         else if (enemyComponent.freeze_time <= 0)
         {
           enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
-          Mix_PlayChannel(-1, chicken_eat_sound, 0);
-          // removed now that we have hp enemies_killed -= 3; // small penalty for now
-          hp -= 1; // hp implementation
+          playSoundEffect(FX::FX_DESTROY_ENEMY_FAIL);
+          hp -= 1; // small penalty for now
         }
       }
       else
@@ -792,17 +892,16 @@ void WorldSystem::handle_collisions()
         {
           b2DestroyBody(enemyBodyId);
           registry.remove_all_components_of(other);
-          Mix_PlayChannel(-1, chicken_dead_sound, 0);
-          enemies_killed++;
+          playSoundEffect(FX::FX_DESTROY_ENEMY);
+          hp -= 1;
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.
         else if (enemyComponent.freeze_time <= 0)
         {
           enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
-          Mix_PlayChannel(-1, chicken_eat_sound, 0);
-          // removed now that we have hp enemies_killed -= 3; // small penalty for now
-          hp -= 1; // hp implementation
+          playSoundEffect(FX::FX_DESTROY_ENEMY_FAIL);
+          hp -= 1; // small penalty for now
         }
       }
 
@@ -1012,7 +1111,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
   {
     if (key == GLFW_KEY_R && action == GLFW_RELEASE)
     {
-      restart_game(levelMap.find(level_selection)->second);
+      restart_game(current_music, levelMap.find(level_selection)->second);
     }
     return; // ignore all other inputs when game is inactive
   }
@@ -1045,7 +1144,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
           currentScreen.current_screen = "PLAYING";
           int w, h;
           glfwGetWindowSize(window, &w, &h);
-          restart_game(levelMap.find(level_selection)->second);
+          restart_game(current_music, levelMap.find(level_selection)->second);
       }
   }
 
@@ -1094,13 +1193,13 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
       // Main menu screen - Loads the selected level and starts the game
       if (currentScreen.current_screen == "MAIN MENU") {
           currentScreen.current_screen = "PLAYING";
-          restart_game(levelMap.find(level_selection)->second);
+          restart_game(current_music, levelMap.find(level_selection)->second);
           return;
       }
       // Pause and End of Game screen - back to main menu
       if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "END OF GAME") {
           currentScreen.current_screen = "MAIN MENU";
-          restart_game(levelMap.find(level_selection)->second);
+          restart_game(current_music, levelMap.find(level_selection)->second);
           return;
       }
 
@@ -1174,10 +1273,12 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
     if (!grappleActive && selectedGp != nullptr)
     {
       attachGrapple();
+      playSoundEffect(FX::FX_GRAPPLE);
     }
     else if (grappleActive)
     {
       removeGrapple();
+      playSoundEffect(FX::FX_GRAPPLE);
       grappleActive = false;
     }
   }

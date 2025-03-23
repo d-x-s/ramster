@@ -163,7 +163,7 @@ public:
   Entity get_screen_state_entity() { return screen_state_entity; }
 
   // Window resizing
-  void RenderSystem::resizeScreenTexture(int width, int height);
+  void resizeScreenTexture(int width, int height);
 
 private:
   // Internal drawing functions for each entity type

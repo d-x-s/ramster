@@ -102,8 +102,8 @@ private:
 	Mix_Chunk* chicken_eat_sound;
 
   // audio control
-  void WorldSystem::playMusic(MUSIC music);
-  void WorldSystem::playSoundEffect(FX effect);
+  void playMusic(MUSIC music);
+  void playSoundEffect(FX effect);
 
 	// player movement
 	void handle_movement();

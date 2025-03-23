@@ -21,8 +21,8 @@ Entity createScreen(std::string screen_type) {
 
 	// Configure size
 	auto& motion = registry.motions.emplace(entity);
-	motion.position = vec2(1183, 240); // Note that these are close approximations by clicking bottom-right, top-left and getting the average.
-	motion.scale = vec2(WORLD_WIDTH_PX/5, WORLD_HEIGHT_PX/4); // For some reason image stretches, this is a rough estimate of how to un-stretch it.
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // Note!!! Screen centers on the player's location so this has to be updated before render.
+	motion.scale = vec2(WORLD_WIDTH_PX / 5, WORLD_HEIGHT_PX / 4); // For some reason image stretches, this is a rough estimate of how to un-stretch it.
 
 	// Figure out which screen to display
 	TEXTURE_ASSET_ID screen_texture{};
@@ -43,7 +43,7 @@ Entity createScreen(std::string screen_type) {
 	registry.renderRequests.insert(
 		entity,
 		{
-			TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE,
+			screen_texture,
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE
 		}
@@ -361,7 +361,7 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos)
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// !!! line segments between arbitrary points
+// !!! line segments between arbitrary enemies_killed
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Entity createLine(vec2 start_pos, vec2 end_pos)
 {

@@ -34,9 +34,9 @@ class RenderSystem
       // Screens
       // LLNOTE: THESE ARE PLACEHOLDERS
       textures_path("screens/main_menu.png"),
-      textures_path("screens/test_screen.png"),
-      textures_path("screens/test_screen.png"),
-      textures_path("screens/test_screen.png"),
+      textures_path("screens/test_screen.png"), // This one's the playing screen that we will never use.
+      textures_path("screens/pause.png"),
+      textures_path("screens/game_ended_screen.png"),
 
       // Legacy invaders code
       textures_path("invaders/blue_1.png"),

@@ -124,7 +124,7 @@ void RenderSystem::drawLine(Entity entity, const mat3& projection) {
 	// Translate to midpoint
 	transform.translate((line.start_pos + line.end_pos) * 0.5f);
 
-	// Rotate the line to align with the start and end points
+	// Rotate the line to align with the start and end enemies_killed
 	transform.rotate(angle);
 
 	// Apply scaling: length in X, and line thickness in Y
@@ -511,15 +511,26 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 	}
 	// SCREENS TO RENDER WHEN NOT PLAYING
 	else {
+
+		// Screen centers on the player, so we need to figure out where they are to center screen.
+		Entity playerEntity = registry.players.entities[0];
+		Motion playerMotion = registry.motions.get(playerEntity);
+
 		for (Entity entity : registry.renderRequests.entities) {
 
 			// filter to screen entities
 			if (registry.screens.has(entity)) {
 
 				Screen screen = registry.screens.get(entity);
-				
+				Motion& screenMotion = registry.motions.get(entity);
+
 				// Ensure that we're only rendering the screen that we're on right now
 				if (currentScreen.current_screen == screen.screen) {
+
+					// Re-center screen on player location
+					screenMotion.position = playerMotion.position;
+
+					// Then render
 					drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 				}
 

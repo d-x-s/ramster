@@ -217,7 +217,7 @@ b2BodyId create_chain(b2WorldId worldId, std::vector<vec2> points, bool isLoop, 
             });
     }
 
-    //// render the line segments between points
+    //// render the line segments between enemies_killed
     //auto& lines = linesArrayRef;
     //int count = translatedVertices.size();
     //for (int i = 0; i < count - 1; ++i)

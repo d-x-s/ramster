@@ -6,6 +6,7 @@
 #include <tuple>
 #include <vector>
 #include <array>
+#include <map>
 
 // glfw (OpenGL)
 #define NOMINMAX
@@ -50,7 +51,7 @@ const extern enum SCREENS {
 
     // Pauses gameplay, lets player resume, return to main menu, or keep playing
     // From: Playing - ESC
-    // To: Main menu - H, Playing - ESC, (reset) Playing - ESC
+    // To: Main menu - H, Playing - ESC, (reset) Playing - R
     PAUSE = PLAYING + 1,
 
     // When player finishes the level or dies
@@ -60,8 +61,13 @@ const extern enum SCREENS {
 };
 */
 
-// Number of levels in the game (this prevents level selector from going too high)
-const int NUM_LEVELS = 1;
+// LEVEL MAP
+// Maps an integer onto the filename of the level.
+const std::map<int, std::string> levelMap =
+{
+    // ADD LEVELS HERE
+    {1, "Demo.tmj"},
+};
 
 //
 // level constants
@@ -228,7 +234,7 @@ struct Transform {
 };
 
 
-// rotate points
+// rotate enemies_killed
 inline glm::vec2 rotateAroundPoint(const vec2& point, const vec2& origin, float angleRadians) {
     // Translate point to origin
     float translatedX = point.x - origin.x;

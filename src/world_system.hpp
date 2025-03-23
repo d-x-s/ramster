@@ -7,6 +7,7 @@
 #include <vector>
 #include <random>
 #include <map>
+#include <string>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -55,9 +56,6 @@ public:
 
 	// M3 content
 
-	// Selected level
-	int level_selection;
-
 	// level loading
 	bool load_level(const std::string& filename);
 
@@ -66,6 +64,12 @@ public:
 	}
 
 private:
+
+	// Selected level
+	int level_selection = 1;
+
+	// Number of (destructible) enemies to kill
+	int num_enemies_to_kill = -1;
 
 	// box2d world instance (shared between systems)
 	b2WorldId worldId;
@@ -109,7 +113,7 @@ private:
 	bool game_active = true;
 
 	// restart level
-	void restart_game();
+	void restart_game(std::string level);
 
 	// prototype for generating chain terrain
 	void generateTestTerrain();
@@ -158,8 +162,10 @@ private:
 
 	int max_towers;	// see default value in common.hpp
 
-	// Player score.
-	int points;
+	// Player reached finish line (DEFAULT TO FALSE AND SET TO TRUE IF THEY GOT THERE!!!)
+	int player_reached_finish_line = true; //LLNOTE: Set this to true so game can actually end without finish lines, will set to false later.
+	// Enemies killed.
+	int enemies_killed;
 	// Player hp. 
 	int hp = PLAYER_STARTING_HP;
 
@@ -195,4 +201,14 @@ private:
 	vec2 screenToWorld(vec2 mouse_position);
 	void attachGrapple();
 	void checkGrappleGrounded();
+
+	// Handles logic for level.
+	void levelHelper(int level);
+
+	// Returns total number of (destructible) enemies per level.
+	int countEnemiesOnLevel();
+
+	// NOT NEEDED IF WE JUST FREEZE PHYSICS!!! (in fact it's better if we froze physics as original velocity preserved
+	// Freezes everything when game is paused.
+	void freezeMovements();
 };

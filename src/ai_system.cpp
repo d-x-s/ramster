@@ -4,6 +4,14 @@
 
 void AISystem::step(float elapsed_ms)
 {
+	// Current Screen
+	Entity currScreenEntity = registry.currentScreen.entities[0];
+	CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
+
+	// Freeze AI if we're not playing
+	if (currentScreen.current_screen != "PLAYING") {
+		return;
+	}
 
 	// ENEMY AI
 	// DECISION TREE:

@@ -21,8 +21,8 @@ Entity createScreen(std::string screen_type) {
 
 	// Configure size
 	auto& motion = registry.motions.emplace(entity);
-	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // Note!!! Screen centers on the player's location so this has to be updated before render.
-	motion.scale = vec2(WORLD_WIDTH_PX / 5, WORLD_HEIGHT_PX / 4); // For some reason image stretches, this is a rough estimate of how to un-stretch it.
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // Note!!! Screen centers on the player's location. This is a placeholder.
+	motion.scale = vec2(VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX); // Scale to window size
 
 	// Figure out which screen to display
 	TEXTURE_ASSET_ID screen_texture{};

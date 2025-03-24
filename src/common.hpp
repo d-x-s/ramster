@@ -68,6 +68,9 @@ const extern enum SCREENS {
 extern int WORLD_WIDTH_TILES;
 extern int WORLD_HEIGHT_TILES;
 
+extern int WORLD_WIDTH_PX;
+extern int WORLD_HEIGHT_PX;
+
 //
 // game constants
 //
@@ -80,9 +83,6 @@ const float ASPECT_RATIO = VIEWPORT_WIDTH_PX / VIEWPORT_HEIGHT_PX;
 
 const int TILE_WIDTH = 128;
 const int TILE_HEIGHT = 128;
-
-const int WORLD_WIDTH_PX = WORLD_WIDTH_TILES * TILE_WIDTH;
-const int WORLD_HEIGHT_PX = WORLD_HEIGHT_TILES * TILE_HEIGHT;
 
 const int GRID_CELL_WIDTH_PX = 128;
 const int GRID_CELL_HEIGHT_PX = 128;
@@ -151,7 +151,7 @@ const float BALL_JUMP_IMPULSE = 8000.0f; // kg�cm/s (dynes�s)
 const float BALL_RADIUS = 32.0;
 const float BALL_DENSTIY = 0.01f; // kg/cm� (kilograms per square centimeter)
 const float BALL_FRICTION = 0.1f;
-const float BALL_RESTITUTION = 0.1f;
+const float BALL_RESTITUTION = 0.0f;
 const float BALL_ANGULAR_DAMPING = 0.75f; // 1/s (inverse seconds)
 
 // HP that the player starts with
@@ -250,3 +250,18 @@ inline glm::vec2 rotateAroundPoint(const vec2& point, const vec2& origin, float 
 }
 
 bool gl_has_errors();
+
+// used for delimiting point names
+inline std::vector<std::string> split(std::string s, std::string delimiter) {
+    std::vector<std::string> tokens;
+    size_t pos = 0;
+    std::string token;
+    while ((pos = s.find(delimiter)) != std::string::npos) {
+        token = s.substr(0, pos);
+        tokens.push_back(token);
+        s.erase(0, pos + delimiter.length());
+    }
+    tokens.push_back(s);
+
+    return tokens;
+}

@@ -471,11 +471,9 @@ void WorldSystem::stop_game()
   }
 }
 
-
 bool WorldSystem::load_level(const std::string& filename) {
     const std::string full_filepath = LEVEL_DIR_FILEPATH + filename;
-    Json::Value mapData; 
-
+    Json::Value mapData;
 
     std::ifstream infile(full_filepath);
 
@@ -494,49 +492,89 @@ bool WorldSystem::load_level(const std::string& filename) {
     assert(mapData["layers"][1].find("objects") != nullptr);
 
     // set stage dimensions
-    WORLD_WIDTH_TILES = mapData["width"].asFloat();
-	WORLD_HEIGHT_TILES = mapData["height"].asFloat();
+    WORLD_WIDTH_TILES = mapData["width"].asFloat() / 2;
+    WORLD_HEIGHT_TILES = mapData["height"].asFloat() / 2;
+
+    WORLD_WIDTH_PX = WORLD_WIDTH_TILES * GRID_CELL_WIDTH_PX;
+    WORLD_HEIGHT_PX = WORLD_HEIGHT_TILES * GRID_CELL_HEIGHT_PX;
 
     auto& JsonObjects = mapData["layers"][1]["objects"];
     bool spawnpoint_found = false;
 
-    // std::cout << mapData << std::endl;
+    // Temporary storage for spawn zones and points
+    std::unordered_map<std::string, std::vector<vec2>> spawnZones;
+    std::unordered_map<std::string, std::vector<vec2>> spawnPoints;
+    std::unordered_map<std::string, std::string> enemyType;
+    std::unordered_map<std::string, int> enemyQuantity;
 
     for (const auto& jsonObj : JsonObjects) {
-        // std::cout << jsonObj << std::endl;
-
         // polyline case
         if (jsonObj.find(JSON_POLYLINE_ATTR) != nullptr) {
-
             std::vector<vec2> chainPoints;
-			const float x_offset = jsonObj["x"].asFloat();
-			const float y_offset = jsonObj["y"].asFloat();
-			const float rotation = jsonObj["rotation"].asFloat() * (M_PI / 180.f);
+            const float x_offset = jsonObj["x"].asFloat();
+            const float y_offset = jsonObj["y"].asFloat();
+            const float rotation = jsonObj["rotation"].asFloat() * (M_PI / 180.f);
 
             for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
                 float x = point["x"].asFloat();
                 float y = point["y"].asFloat();
 
-                // rotate enemies_killed 
-				if (rotation != 0.f) {
-					vec2 origin = vec2(0.f, 0.f);
-					vec2 rotatedPoint = rotateAroundPoint(vec2(x, y), origin, rotation);
-					x = rotatedPoint.x;
-					y = rotatedPoint.y;
-				}
+                // rotate points 
+                if (rotation != 0.f) {
+                    vec2 origin = vec2(0.f, 0.f);
+                    vec2 rotatedPoint = rotateAroundPoint(vec2(x, y), origin, rotation);
+                    x = rotatedPoint.x;
+                    y = rotatedPoint.y;
+                }
 
-                chainPoints.push_back(vec2(x + x_offset,
-                                           WORLD_HEIGHT_PX - (y + y_offset)));
+                chainPoints.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
             }
 
-			std::cout << "Creating chain with " << chainPoints.size() << " points." << std::endl;
+            std::string name = jsonObj["name"].asString();
+            if (chainPoints.size() == 2 && name.find("SZ") == 0) {
+                // Process enemy spawn zone
+                std::vector<std::string> parts = split(name, "_");
+                if (parts.size() == 2) {
+                    std::string id = parts[1];
+                    spawnZones[id] = chainPoints;
+                    std::cout << "Found enemy spawn ZONE with id: " << id << std::endl;
+                }
+            }
+            else if (chainPoints.size() == 2 && name.find("ENEMY") == 0) {
+                std::cout << "found obstacle enemy spawnpath." << std::endl;
+                std::vector<std::string> parts = split(name, "_");
+                std::vector<vec2> points;
+                std::string id = parts[3];
 
-            create_chain(worldId, chainPoints, false, lines);
+                const float x_offset = jsonObj["x"].asFloat();
+                const float y_offset = jsonObj["y"].asFloat();
+
+                for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
+                    float x = point["x"].asFloat();
+                    float y = point["y"].asFloat();
+                    points.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
+                }
+
+                spawnPoints[id] = points;
+                enemyType[id] = parts[1];
+                enemyQuantity[id] = std::stoi(parts[2]);
+            }
+            else if (chainPoints.size() == 2 && name == "goal") {
+                // TODO: GOALPOST case.
+                std::cout << "found goalpost, TODO" << std::endl;
+            }
+            else if (chainPoints.size() >= 2) {
+                std::cout << "Creating chainShape with " << chainPoints.size() << " segments." << std::endl;
+                if (name == "ledge") {
+                    create_chain(worldId, chainPoints, false, lines);
+                }
+                else {
+                    create_chain(worldId, chainPoints, true, lines);
+                }
+            }
         }
         // polygon case: polygon = closed-loop chain
-        // polyline case
         else if (jsonObj.find(JSON_POLYGON_ATTR) != nullptr) {
-
             std::vector<vec2> chainPoints;
             const float x_offset = jsonObj["x"].asFloat();
             const float y_offset = jsonObj["y"].asFloat();
@@ -554,15 +592,52 @@ bool WorldSystem::load_level(const std::string& filename) {
                     y = rotatedPoint.y;
                 }
 
-                chainPoints.push_back(vec2(x + x_offset,
-                    WORLD_HEIGHT_PX - (y + y_offset)));
+                chainPoints.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
             }
 
-			std::cout << "Creating chain with " << chainPoints.size() << " enemies_killed." << std::endl;
+            std::string name = jsonObj["name"].asString();
+            if (chainPoints.size() == 2 && name.find("SZ") == 0) {
+                // Process enemy spawn zone
+                std::vector<std::string> parts = split(name, "_");
+                if (parts.size() == 2) {
+                    std::string id = parts[1];
+                    spawnZones[id] = chainPoints;
+                    std::cout << "Found enemy spawn ZONE with id: " << id << std::endl;
+                }
+            }
+            else if (chainPoints.size() == 2 && name.find("ENEMY") == 0) {
+                std::cout << "found obstacle enemy spawnpath." << std::endl;
+                std::vector<std::string> parts = split(name, "_");
+                std::vector<vec2> points;
+                std::string id = parts[3];
 
-            create_chain(worldId, chainPoints, false, lines);
+                const float x_offset = jsonObj["x"].asFloat();
+                const float y_offset = jsonObj["y"].asFloat();
+
+                for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
+                    float x = point["x"].asFloat();
+                    float y = point["y"].asFloat();
+                    points.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
+                }
+
+                spawnPoints[id] = points;
+                enemyType[id] = parts[1];
+                enemyQuantity[id] = std::stoi(parts[2]);
+            }
+            else if (chainPoints.size() == 2 && name == "goal") {
+                // TODO: GOALPOST case.
+                std::cout << "found goalpost, TODO" << std::endl;
+            }
+            else if (chainPoints.size() >= 2) {
+                std::cout << "Creating chainShape with " << chainPoints.size() << " segments." << std::endl;
+                if (name == "ledge") {
+                    create_chain(worldId, chainPoints, false, lines);
+                }
+                else {
+                    create_chain(worldId, chainPoints, true, lines);
+                }
+            }
         }
-
         // ball_spawnpoint case
         else if (jsonObj.find("name") != nullptr && jsonObj["name"] == JSON_BALL_SPAWNPOINT) {
             const float x = jsonObj["x"].asFloat();
@@ -571,11 +646,78 @@ bool WorldSystem::load_level(const std::string& filename) {
             spawnpoint_found = true;
         }
 
+        // enemy spawnpoint case
+        else if (jsonObj.find("name") != nullptr && jsonObj["name"].asString().find("ENEMY") == 0) {
+            std::string name = jsonObj["name"].asString();
+            std::vector<std::string> parts = split(name, "_");
+            if (parts.size() == 4) {
+                std::string id = parts[3];
+                std::vector<vec2> points;
+
+                float x = jsonObj["x"].asFloat();
+                float y = jsonObj["y"].asFloat();
+                points.push_back(vec2(x, WORLD_HEIGHT_PX - y));
+
+
+                std::cout << "Found enemy spawn POINT with id: " << id << std::endl;
+                spawnPoints[id] = points;
+                enemyType[id] = parts[1];
+                enemyQuantity[id] = std::stoi(parts[2]);
+            }
+        }
+        // grapple point case
+        else if (jsonObj.find("name") != nullptr && jsonObj["name"] == "grapple_point") {
+            const float x = jsonObj["x"].asFloat();
+            const float y = jsonObj["y"].asFloat();
+
+			std::cout << "Found grapple point at: " << x << ", " << y << std::endl;
+            createGrapplePoint(worldId, vec2(x, WORLD_HEIGHT_PX - y));
+        }
     }
-	if (!spawnpoint_found) {
-		std::cerr << "No spawnpoint found in map file." << std::endl;
+
+    // Process enemy spawns
+    for (const auto& [id, zone] : spawnZones) {
+        if (spawnPoints.find(id) != spawnPoints.end()) {
+            std::vector<vec2> points = spawnPoints[id];
+            ENEMY_TYPES currEnemyType;
+
+            switch (enemyType[id][0]) {
+            case 'S':
+                currEnemyType = SWARM;
+                break;
+            case 'C':
+                currEnemyType = COMMON;
+                break;
+            case 'O':
+                currEnemyType = OBSTACLE;
+                break;
+            }
+
+            int quantity = enemyQuantity[id];
+
+            ivec2 bottom_left = ivec2(zone[0].x / TILE_WIDTH, zone[0].y / TILE_HEIGHT);
+            ivec2 top_right = ivec2(zone[1].x / TILE_WIDTH, zone[1].y / TILE_HEIGHT);
+
+            if (currEnemyType == OBSTACLE && points.size() == 2) {
+                vec2 start = points[0];
+                vec2 end = points[1];
+                ivec2 spawn_location = ivec2(start.x / TILE_WIDTH, start.y / TILE_HEIGHT);
+                ivec2 obstacle_patrol_bottom_left = ivec2(start.x / TILE_WIDTH, start.y / TILE_HEIGHT);
+                ivec2 obstacle_patrol_top_right = ivec2(end.x / TILE_WIDTH, end.y / TILE_HEIGHT);
+                insertToSpawnMap(bottom_left, top_right, currEnemyType, quantity, spawn_location, obstacle_patrol_bottom_left, obstacle_patrol_top_right);
+            }
+            else if (points.size() == 1) {
+                vec2 point = points[0];
+                ivec2 spawn_location = ivec2(point.x / TILE_WIDTH, point.y / TILE_HEIGHT);
+                insertToSpawnMap(bottom_left, top_right, currEnemyType, quantity, spawn_location, ivec2(0, 0), ivec2(0, 0));
+            }
+        }
+    }
+
+    if (!spawnpoint_found) {
+        std::cerr << "No spawnpoint found in map file." << std::endl;
         return true;
-	}
+    }
 
     return true;
 }
@@ -670,9 +812,9 @@ void WorldSystem::restart_game(int level)
   // Clear spawn map
   spawnMap.clear();
   // Add some spawning to test
-  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 1, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
-  insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
-  insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
+  //insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 1, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
+  //insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
+  //insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
 
   num_enemies_to_kill = countEnemiesOnLevel();
   hp = PLAYER_STARTING_HP;
@@ -693,6 +835,10 @@ void WorldSystem::restart_game(int level)
 
   while (registry.motions.entities.size() > 0) {
       registry.remove_all_components_of(registry.motions.entities.back());
+  }
+
+  while (registry.lines.entities.size() > 0) {
+      registry.remove_all_components_of(registry.lines.entities.back());
   }
 
   if (registry.players.entities.size() > 0) {
@@ -754,91 +900,6 @@ void WorldSystem::restart_game(int level)
 
   createBackgroundLayer(TEXTURE_ASSET_ID::BACKGROUND);
   createLevelTextureLayer(level_texture);
-
-  // tiles
-  // create_single_tile(worldId, vec2(0, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(1, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(2, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(3, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(4, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(5, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-
-  /*
-  // tutorial: WASD movement
-  create_tutorial_tile(worldId, vec2(2, 5), TEXTURE_ASSET_ID::TUTORIAL_MOVE);
-  create_tutorial_tile(worldId, vec2(3, 5), TEXTURE_ASSET_ID::TUTORIAL_SPACEBAR);
-  create_block(worldId, vec2(0, 0), vec2(5, 3));
-  create_block(worldId, vec2(6, 0), vec2(6, 4));
-  create_curve(worldId, vec2(5, 4), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-  create_block(worldId, vec2(7, 0), vec2(9, 5));
-
-  // tutorial: grapple
-  create_tutorial_tile(worldId, vec2(9, 6), TEXTURE_ASSET_ID::TUTORIAL_GRAPPLE);
-  create_block(worldId, vec2(10, 0), vec2(14, 3));
-  create_grapple_tile(worldId, vec2(12, 6), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_block(worldId, vec2(15, 0), vec2(21, 5));
-  create_block(worldId, vec2(17, 8), vec2(21, 20));
-
-  // tutorial: obstacle enemies
-  create_block(worldId, vec2(22, 0), vec2(28, 4));
-  create_block(worldId, vec2(29, 0), vec2(29, 5));
-  create_curve(worldId, vec2(28, 5), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-  create_block(worldId, vec2(30, 0), vec2(34, 5));
-  create_block(worldId, vec2(30, 8), vec2(34, 12));
-
-  // tutorial: swarming enemy room
-  create_tutorial_tile(worldId, vec2(39, 7), TEXTURE_ASSET_ID::TUTORIAL_DESTROY);
-  create_curve(worldId, vec2(38, 6), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-  create_curve(worldId, vec2(46, 6), TEXTURE_ASSET_ID::SMOOTH_RAMP_BL);
-  create_block(worldId, vec2(35, 5), vec2(49, 5));
-  create_block(worldId, vec2(39, 0), vec2(39, 6));
-  create_block(worldId, vec2(45, 0), vec2(45, 6));
-  // Roof left
-  create_block(worldId, vec2(35, 8), vec2(36, 15));
-  create_block(worldId, vec2(37, 9), vec2(37, 15));
-  create_block(worldId, vec2(38, 10), vec2(39, 15));
-  // Roof Middle
-  create_block(worldId, vec2(40, 11), vec2(44, 15));
-  create_block(worldId, vec2(45, 10), vec2(46, 15));
-  // Roof Right
-  create_block(worldId, vec2(47, 9), vec2(47, 15));
-  create_block(worldId, vec2(48, 8), vec2(49, 15));
-  create_grapple_tile(worldId, vec2(42, 8), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  // Exit
-  create_block(worldId, vec2(50, 0), vec2(54, 5));
-  create_block(worldId, vec2(50, 8), vec2(54, 12));
-
-  // tutorial: walking enemy room
-  create_block(worldId, vec2(55, 0), vec2(69, 4));
-  create_curve(worldId, vec2(69, 5), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-
-  // tutorial: long vertical shaft with grapple enemies_killed
-  create_block(worldId, vec2(70, 0), vec2(78, 0));
-  create_block(worldId, vec2(34 + 36, 8), vec2(37 + 36, 20));
-  create_block(worldId, vec2(37 + 36, 2), vec2(37 + 36, 20));
-  create_grapple_tile(worldId, vec2(40 + 36, 3), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_grapple_tile(worldId, vec2(40 + 36, 9), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_grapple_tile(worldId, vec2(40 + 36, 15), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_block(worldId, vec2(37 + 36, 18), vec2(50 + 36, 30));
-  create_block(worldId, vec2(43 + 36, 0), vec2(43 + 36, 15));
-  create_block(worldId, vec2(43 + 36, 18), vec2(43 + 36, 30));
-  create_block(worldId, vec2(43 + 36, 0), vec2(50 + 36, 5));
-  create_block(worldId, vec2(46 + 36, 8), vec2(50 + 36, 30));
-
-  // tutorial: ending straight to the finish line
-  create_block(worldId, vec2(87, 0), vec2(104, 4));
-  */
-
-  // generate the vertices for the terrain formed by the chain and render it
-  // generateTestTerrain();
-
-  // create grapple point
-  //createGrapplePoint(worldId, vec2(1200.0f, 300.0f));
-  //createGrapplePoint(worldId, vec2(900.0f, 300.0f));
-  //createGrapplePoint(worldId, vec2(300.0f, 300.0f));
-
-  // turn off trigger for fadeout shader
-  // registry.screenStates.components[0].fadeout = 0.0f;
 
   // turn the tunes back on
   if (Mix_PausedMusic())

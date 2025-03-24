@@ -150,7 +150,8 @@ private:
 		>> levelMap =
 	{
 		// ADD LEVELS HERE
-		{1, {"Demo.tmj", TEXTURE_ASSET_ID::LEVEL_DEMO, MUSIC::LEVEL_1}}
+		{1, {"tutorial.tmj", TEXTURE_ASSET_ID::LEVEL_TUTORIAL, MUSIC::LEVEL_1}},
+		{2, {"tower.tmj", TEXTURE_ASSET_ID::LEVEL_TOWER, MUSIC::LEVEL_1}}
 	};
 
 	// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!

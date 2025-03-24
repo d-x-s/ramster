@@ -151,7 +151,7 @@ const float BALL_JUMP_IMPULSE = 8000.0f; // kg�cm/s (dynes�s)
 const float BALL_RADIUS = 32.0;
 const float BALL_DENSTIY = 0.01f; // kg/cm� (kilograms per square centimeter)
 const float BALL_FRICTION = 0.1f;
-const float BALL_RESTITUTION = 0.1f;
+const float BALL_RESTITUTION = 0.0f;
 const float BALL_ANGULAR_DAMPING = 0.75f; // 1/s (inverse seconds)
 
 // HP that the player starts with

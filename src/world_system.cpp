@@ -812,9 +812,9 @@ void WorldSystem::restart_game(int level)
   // Clear spawn map
   spawnMap.clear();
   // Add some spawning to test
-  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 1, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
-  insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
-  insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
+  //insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 1, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
+  //insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
+  //insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
 
   num_enemies_to_kill = countEnemiesOnLevel();
   hp = PLAYER_STARTING_HP;
@@ -835,6 +835,10 @@ void WorldSystem::restart_game(int level)
 
   while (registry.motions.entities.size() > 0) {
       registry.remove_all_components_of(registry.motions.entities.back());
+  }
+
+  while (registry.lines.entities.size() > 0) {
+      registry.remove_all_components_of(registry.lines.entities.back());
   }
 
   if (registry.players.entities.size() > 0) {
@@ -896,91 +900,6 @@ void WorldSystem::restart_game(int level)
 
   createBackgroundLayer(TEXTURE_ASSET_ID::BACKGROUND);
   createLevelTextureLayer(level_texture);
-
-  // tiles
-  // create_single_tile(worldId, vec2(0, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(1, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(2, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(3, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(4, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(5, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-
-  /*
-  // tutorial: WASD movement
-  create_tutorial_tile(worldId, vec2(2, 5), TEXTURE_ASSET_ID::TUTORIAL_MOVE);
-  create_tutorial_tile(worldId, vec2(3, 5), TEXTURE_ASSET_ID::TUTORIAL_SPACEBAR);
-  create_block(worldId, vec2(0, 0), vec2(5, 3));
-  create_block(worldId, vec2(6, 0), vec2(6, 4));
-  create_curve(worldId, vec2(5, 4), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-  create_block(worldId, vec2(7, 0), vec2(9, 5));
-
-  // tutorial: grapple
-  create_tutorial_tile(worldId, vec2(9, 6), TEXTURE_ASSET_ID::TUTORIAL_GRAPPLE);
-  create_block(worldId, vec2(10, 0), vec2(14, 3));
-  create_grapple_tile(worldId, vec2(12, 6), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_block(worldId, vec2(15, 0), vec2(21, 5));
-  create_block(worldId, vec2(17, 8), vec2(21, 20));
-
-  // tutorial: obstacle enemies
-  create_block(worldId, vec2(22, 0), vec2(28, 4));
-  create_block(worldId, vec2(29, 0), vec2(29, 5));
-  create_curve(worldId, vec2(28, 5), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-  create_block(worldId, vec2(30, 0), vec2(34, 5));
-  create_block(worldId, vec2(30, 8), vec2(34, 12));
-
-  // tutorial: swarming enemy room
-  create_tutorial_tile(worldId, vec2(39, 7), TEXTURE_ASSET_ID::TUTORIAL_DESTROY);
-  create_curve(worldId, vec2(38, 6), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-  create_curve(worldId, vec2(46, 6), TEXTURE_ASSET_ID::SMOOTH_RAMP_BL);
-  create_block(worldId, vec2(35, 5), vec2(49, 5));
-  create_block(worldId, vec2(39, 0), vec2(39, 6));
-  create_block(worldId, vec2(45, 0), vec2(45, 6));
-  // Roof left
-  create_block(worldId, vec2(35, 8), vec2(36, 15));
-  create_block(worldId, vec2(37, 9), vec2(37, 15));
-  create_block(worldId, vec2(38, 10), vec2(39, 15));
-  // Roof Middle
-  create_block(worldId, vec2(40, 11), vec2(44, 15));
-  create_block(worldId, vec2(45, 10), vec2(46, 15));
-  // Roof Right
-  create_block(worldId, vec2(47, 9), vec2(47, 15));
-  create_block(worldId, vec2(48, 8), vec2(49, 15));
-  create_grapple_tile(worldId, vec2(42, 8), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  // Exit
-  create_block(worldId, vec2(50, 0), vec2(54, 5));
-  create_block(worldId, vec2(50, 8), vec2(54, 12));
-
-  // tutorial: walking enemy room
-  create_block(worldId, vec2(55, 0), vec2(69, 4));
-  create_curve(worldId, vec2(69, 5), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-
-  // tutorial: long vertical shaft with grapple enemies_killed
-  create_block(worldId, vec2(70, 0), vec2(78, 0));
-  create_block(worldId, vec2(34 + 36, 8), vec2(37 + 36, 20));
-  create_block(worldId, vec2(37 + 36, 2), vec2(37 + 36, 20));
-  create_grapple_tile(worldId, vec2(40 + 36, 3), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_grapple_tile(worldId, vec2(40 + 36, 9), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_grapple_tile(worldId, vec2(40 + 36, 15), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_block(worldId, vec2(37 + 36, 18), vec2(50 + 36, 30));
-  create_block(worldId, vec2(43 + 36, 0), vec2(43 + 36, 15));
-  create_block(worldId, vec2(43 + 36, 18), vec2(43 + 36, 30));
-  create_block(worldId, vec2(43 + 36, 0), vec2(50 + 36, 5));
-  create_block(worldId, vec2(46 + 36, 8), vec2(50 + 36, 30));
-
-  // tutorial: ending straight to the finish line
-  create_block(worldId, vec2(87, 0), vec2(104, 4));
-  */
-
-  // generate the vertices for the terrain formed by the chain and render it
-  // generateTestTerrain();
-
-  // create grapple point
-  //createGrapplePoint(worldId, vec2(1200.0f, 300.0f));
-  //createGrapplePoint(worldId, vec2(900.0f, 300.0f));
-  //createGrapplePoint(worldId, vec2(300.0f, 300.0f));
-
-  // turn off trigger for fadeout shader
-  // registry.screenStates.components[0].fadeout = 0.0f;
 
   // turn the tunes back on
   if (Mix_PausedMusic())

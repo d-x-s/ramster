@@ -144,6 +144,26 @@
                 }, 
                 {
                  "height":0,
+                 "id":13,
+                 "name":"goal",
+                 "polyline":[
+                        {
+                         "x":0,
+                         "y":0
+                        }, 
+                        {
+                         "x":128,
+                         "y":-128
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":11520,
+                 "y":2944
+                }, 
+                {
+                 "height":0,
                  "id":17,
                  "name":"ramp",
                  "polygon":[
@@ -1120,6 +1140,26 @@
                 }, 
                 {
                  "height":0,
+                 "id":40,
+                 "name":"SZ_2",
+                 "polyline":[
+                        {
+                         "x":0,
+                         "y":0
+                        }, 
+                        {
+                         "x":128,
+                         "y":-128
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":4160,
+                 "y":1920
+                }, 
+                {
+                 "height":0,
                  "id":41,
                  "name":"ENEMY_S_6_2",
                  "point":true,
@@ -1129,6 +1169,46 @@
                  "width":0,
                  "x":5056,
                  "y":1472
+                }, 
+                {
+                 "height":0,
+                 "id":42,
+                 "name":"SZ_3",
+                 "polyline":[
+                        {
+                         "x":0,
+                         "y":0
+                        }, 
+                        {
+                         "x":128,
+                         "y":-256
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":5248,
+                 "y":1024
+                }, 
+                {
+                 "height":0,
+                 "id":44,
+                 "name":"ENEMY_O_1_3",
+                 "polyline":[
+                        {
+                         "x":0,
+                         "y":0
+                        }, 
+                        {
+                         "x":512,
+                         "y":0
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":7744,
+                 "y":704
                 }, 
                 {
                  "height":0,
@@ -1413,6 +1493,26 @@
                  "width":0,
                  "x":1792,
                  "y":1280
+                }, 
+                {
+                 "height":0,
+                 "id":54,
+                 "name":"SZ_1",
+                 "polyline":[
+                        {
+                         "x":0,
+                         "y":0
+                        }, 
+                        {
+                         "x":128,
+                         "y":-192
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":3072,
+                 "y":1792
                 }],
          "opacity":1,
          "type":"objectgroup",

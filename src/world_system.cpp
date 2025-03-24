@@ -546,16 +546,18 @@ bool WorldSystem::load_level(const std::string& filename) {
                 std::vector<vec2> points;
                 std::string id = parts[3];
 
+                const float x_offset = jsonObj["x"].asFloat();
+                const float y_offset = jsonObj["y"].asFloat();
+
                 for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
                     float x = point["x"].asFloat();
                     float y = point["y"].asFloat();
-                    points.push_back(vec2(x, WORLD_HEIGHT_PX - y));
+                    points.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
                 }
 
                 spawnPoints[id] = points;
                 enemyType[id] = parts[1];
                 enemyQuantity[id] = std::stoi(parts[2]);
-
             }
             else if (chainPoints.size() == 2 && name == "goal") {
                 // TODO: GOALPOST case.
@@ -604,10 +606,13 @@ bool WorldSystem::load_level(const std::string& filename) {
                 std::vector<vec2> points;
                 std::string id = parts[3];
 
+                const float x_offset = jsonObj["x"].asFloat();
+                const float y_offset = jsonObj["y"].asFloat();
+
                 for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
                     float x = point["x"].asFloat();
                     float y = point["y"].asFloat();
-                    points.push_back(vec2(x, WORLD_HEIGHT_PX - y));
+                    points.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
                 }
 
                 spawnPoints[id] = points;

@@ -665,7 +665,7 @@ void WorldSystem::restart_game(MUSIC music, std::string level)
   // Clear spawn map
   spawnMap.clear();
   // Add some spawning to test
-  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 15, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
+  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 1, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
   insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
   insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
 
@@ -694,6 +694,12 @@ void WorldSystem::restart_game(MUSIC music, std::string level)
       // clear player-related stuff.
 	  Entity& playerEntity = registry.players.entities.back();
       registry.remove_all_components_of(playerEntity);
+  }
+
+  if (registry.backgroundLayers.size() > 0) {
+      // clear player-related stuff.
+      Entity& backgroundEntity = registry.backgroundLayers.entities.back();
+      registry.remove_all_components_of(backgroundEntity);
   }
 
   int grid_line_width = GRID_LINE_WIDTH_PX;
@@ -741,6 +747,7 @@ void WorldSystem::restart_game(MUSIC music, std::string level)
   b2BodyId leftWallId = create_vertical_wall(worldId, 0.0f, roomHeight / 2, roomHeight);       // Left Wall
   b2BodyId rightWallId = create_vertical_wall(worldId, roomWidth, roomHeight / 2, roomHeight); // Right Wall
 
+  createBackgroundLayer(TEXTURE_ASSET_ID::BACKGROUND);
   createLevelTextureLayer(TEXTURE_ASSET_ID::LEVEL_DEMO);
 
   // tiles
@@ -927,8 +934,6 @@ void WorldSystem::handle_collisions()
           }
         }
       }
-
-
 
       // LEGACY CODE (Pre-Box2D Collision Handling)
       /*

@@ -355,6 +355,12 @@ void PhysicsSystem::step(float elapsed_ms)
       }
   }
 
+  // also update the parallax background to be in sync with the player
+  auto& background_registry = registry.backgroundLayers;
+  BackgroundLayer& backgroundLayer = background_registry.components.back();
+  Entity background_entity = background_registry.entities.back();
+  Motion& background_motion = registry.motions.get(background_entity);
+  background_motion.position = vec2(camX, camY);
 
   camera.position = vec2(camX, camY);
 

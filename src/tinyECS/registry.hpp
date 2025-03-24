@@ -41,6 +41,7 @@ public:
 	ComponentContainer<GrapplePoint> grapplePoints;
 	ComponentContainer<TutorialTile> tutorialTiles;
 	ComponentContainer<LevelLayer> levelLayers;
+	ComponentContainer<BackgroundLayer> backgroundLayers;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()

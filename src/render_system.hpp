@@ -113,7 +113,8 @@ class RenderSystem
     textures_path("tutorial/destroy.png"),
 
     // levels
-    textures_path("levels/demo.png")
+    textures_path("levels/demo.png"),
+    textures_path("levels/background.png")
   };
 
   std::array<GLuint, effect_count> effects;
@@ -124,6 +125,7 @@ class RenderSystem
       shader_path("chicken"),
       shader_path("textured"),
       shader_path("vignette"),
+      shader_path("parallax"),
   };
 
   std::array<GLuint, geometry_count> vertex_buffers;

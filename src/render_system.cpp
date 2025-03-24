@@ -325,6 +325,48 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 		glBindTexture(GL_TEXTURE_2D, texture_id);
 		gl_has_errors();
 	}
+	else if (render_request.used_effect == EFFECT_ASSET_ID::PARALLAX)
+	{
+		GLint in_position_loc = glGetAttribLocation(program, "in_position");
+		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+		gl_has_errors();
+		assert(in_texcoord_loc >= 0);
+
+		glEnableVertexAttribArray(in_position_loc);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
+			sizeof(TexturedVertex), (void*)0);
+		gl_has_errors();
+
+		glEnableVertexAttribArray(in_texcoord_loc);
+		glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
+			sizeof(TexturedVertex), (void*)sizeof(vec3));
+		gl_has_errors();
+
+		// Enable and bind texture
+		glActiveTexture(GL_TEXTURE0);
+		gl_has_errors();
+
+		GLuint texture_id =
+			texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
+		glBindTexture(GL_TEXTURE_2D, texture_id);
+		gl_has_errors();
+
+		// Parallax-specific uniforms
+		Camera camera = registry.cameras.components[0];
+		GLint camera_pos_loc = glGetUniformLocation(program, "camera_pos");
+		glUniform2fv(camera_pos_loc, 1, (float*)&camera.position);
+		gl_has_errors();
+
+		float parallax_factor = 0.1f;
+		GLint parallax_factor_loc = glGetUniformLocation(program, "parallax_factor");
+		glUniform1f(parallax_factor_loc, parallax_factor);
+		gl_has_errors();
+
+		vec2 texture_size = vec2(640.0f, 564.0f);
+		GLint tex_size_loc = glGetUniformLocation(program, "texture_size");
+		glUniform2fv(tex_size_loc, 1, (float*)&texture_size);
+		gl_has_errors();
+	}
 	// .obj entities
 	else if (render_request.used_effect == EFFECT_ASSET_ID::CHICKEN || render_request.used_effect == EFFECT_ASSET_ID::EGG)
 	{
@@ -496,11 +538,19 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 			}
 		}
 
-		// draw all entities with a render request to the frame buffer
+		// draw the background layer
 		for (Entity entity : registry.renderRequests.entities)
 		{
+			if (registry.motions.has(entity) && registry.backgroundLayers.has(entity)) {
+				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+			}
+		}
+
+		// draw all entities with a render request to the frame buffer
+		for (Entity entity : registry.renderRequests.entities)
+		{			 
 			// filter to entities that have a motion component (but not a screen)
-			if (registry.motions.has(entity) && !registry.screens.has(entity)) {
+			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity)) {
 				// Note, its not very efficient to access elements indirectly via the entity
 				// albeit iterating through all Sprites in sequence. A good point to optimize
 				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);

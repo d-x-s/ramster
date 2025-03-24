@@ -249,7 +249,10 @@ enum class TEXTURE_ASSET_ID
     // levels
     LEVEL_DEMO = TUTORIAL_DESTROY + 1,
 
-    TEXTURE_COUNT = LEVEL_DEMO + 1,
+    // parallax
+    BACKGROUND = LEVEL_DEMO + 1,
+
+    TEXTURE_COUNT = BACKGROUND + 1,
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
@@ -282,7 +285,8 @@ enum class EFFECT_ASSET_ID
   CHICKEN = EGG + 1,
   TEXTURED = CHICKEN + 1,
   VIGNETTE = TEXTURED + 1,
-  EFFECT_COUNT = VIGNETTE + 1
+  PARALLAX = VIGNETTE + 1,
+  EFFECT_COUNT = PARALLAX + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
@@ -377,6 +381,11 @@ struct TutorialTile
 };
 
 struct LevelLayer
+{
+
+};
+
+struct BackgroundLayer
 {
 
 };

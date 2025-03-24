@@ -409,6 +409,30 @@ Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId)
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!! create the entity representing the background layer
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Entity createBackgroundLayer(TEXTURE_ASSET_ID textureId)
+{
+	Entity entity = Entity();
+	BackgroundLayer& backgroundLayer = registry.backgroundLayers.emplace(entity);
+
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(VIEWPORT_WIDTH_PX / 2.f, VIEWPORT_HEIGHT_PX / 2.f);
+	motion.scale = vec2(2560, 2256);
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			textureId,
+			EFFECT_ASSET_ID::PARALLAX,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return entity;
+}
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! {{{ OK }}} TODO A1: createInvader?
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Entity createInvader(RenderSystem* renderer, vec2 position)

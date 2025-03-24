@@ -27,7 +27,7 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 // Global Variables
 bool grappleActive = false;
-MUSIC current_music = MUSIC::LEVEL_1;
+// No longer need this - maps onto current level MUSIC current_music = MUSIC::LEVEL_1;
 
 // create the world
 WorldSystem::WorldSystem(b2WorldId worldId) : enemies_killed(0),
@@ -228,23 +228,23 @@ void WorldSystem::playMusic(MUSIC music)
   {
     case MUSIC::MENU:
       Mix_PlayMusic(background_music_memorybranch, -1);
-      current_music = MUSIC::MENU;
+      //current_music = MUSIC::MENU;
       break;
     case MUSIC::LEVEL_1:
       Mix_PlayMusic(background_music_oblanka, -1);
-      current_music = MUSIC::LEVEL_1;
+      //current_music = MUSIC::LEVEL_1;
       break;
     case MUSIC::LEVEL_2:
       Mix_PlayMusic(background_music_paradrizzle, -1);
-      current_music = MUSIC::LEVEL_2;
+      //current_music = MUSIC::LEVEL_2;
       break;
     case MUSIC::LEVEL_3:
       Mix_PlayMusic(background_music_windcatcher, -1);
-      current_music = MUSIC::LEVEL_3;
+      //current_music = MUSIC::LEVEL_3;
       break;
     default:
       Mix_PlayMusic(background_music_memorybranch, -1);
-      current_music = MUSIC::MENU;
+      //current_music = MUSIC::MENU;
       break;
   }
 }
@@ -281,7 +281,7 @@ void WorldSystem::init(RenderSystem *renderer_arg)
   // Mix_PlayMusic(background_music, -1);
 
   // Set all states to default
-  restart_game(current_music, levelMap.find(level_selection)->second);
+  restart_game(level_selection);
 }
 
 // Update our game world
@@ -650,8 +650,13 @@ std::vector<b2Vec2> WorldSystem::generateTestPoints()
 }
 
 // Reset the world state to its initial state
-void WorldSystem::restart_game(MUSIC music, std::string level)
+void WorldSystem::restart_game(int level)
 {
+    // Figure out what we're using for each level
+    std::tuple<std::string, TEXTURE_ASSET_ID, MUSIC> level_specs = levelMap.find(level_selection)->second;
+    std::string level_path = std::get<0>(level_specs);
+    TEXTURE_ASSET_ID level_texture = std::get<1>(level_specs);
+    MUSIC level_music = std::get<2>(level_specs);
 
   std::cout << "Restarting..." << std::endl;
 
@@ -665,7 +670,7 @@ void WorldSystem::restart_game(MUSIC music, std::string level)
   // Clear spawn map
   spawnMap.clear();
   // Add some spawning to test
-  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 15, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
+  insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 1, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
   insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
   insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
 
@@ -696,9 +701,15 @@ void WorldSystem::restart_game(MUSIC music, std::string level)
       registry.remove_all_components_of(playerEntity);
   }
 
+  if (registry.backgroundLayers.size() > 0) {
+      // clear player-related stuff.
+      Entity& backgroundEntity = registry.backgroundLayers.entities.back();
+      registry.remove_all_components_of(backgroundEntity);
+  }
+
   int grid_line_width = GRID_LINE_WIDTH_PX;
 
-  load_level(level);
+  load_level(level_path);
 
   // create grid lines if they do not already exist
   if (grid_lines.size() == 0)
@@ -741,7 +752,8 @@ void WorldSystem::restart_game(MUSIC music, std::string level)
   b2BodyId leftWallId = create_vertical_wall(worldId, 0.0f, roomHeight / 2, roomHeight);       // Left Wall
   b2BodyId rightWallId = create_vertical_wall(worldId, roomWidth, roomHeight / 2, roomHeight); // Right Wall
 
-  createLevelTextureLayer(TEXTURE_ASSET_ID::LEVEL_DEMO);
+  createBackgroundLayer(TEXTURE_ASSET_ID::BACKGROUND);
+  createLevelTextureLayer(level_texture);
 
   // tiles
   // create_single_tile(worldId, vec2(0, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
@@ -836,7 +848,7 @@ void WorldSystem::restart_game(MUSIC music, std::string level)
   else
   {
     Mix_VolumeMusic(MIX_MAX_VOLUME / 4);
-    playMusic(music);
+    playMusic(level_music);
   }
 
   // reactivate the game
@@ -927,8 +939,6 @@ void WorldSystem::handle_collisions()
           }
         }
       }
-
-
 
       // LEGACY CODE (Pre-Box2D Collision Handling)
       /*
@@ -1134,7 +1144,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
   {
     if (key == GLFW_KEY_R && action == GLFW_RELEASE)
     {
-      restart_game(current_music, levelMap.find(level_selection)->second);
+      restart_game(level_selection);
     }
     return; // ignore all other inputs when game is inactive
   }
@@ -1167,7 +1177,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
           currentScreen.current_screen = "PLAYING";
           int w, h;
           glfwGetWindowSize(window, &w, &h);
-          restart_game(current_music, levelMap.find(level_selection)->second);
+          restart_game(level_selection);
       }
   }
 
@@ -1216,13 +1226,13 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
       // Main menu screen - Loads the selected level and starts the game
       if (currentScreen.current_screen == "MAIN MENU") {
           currentScreen.current_screen = "PLAYING";
-          restart_game(current_music, levelMap.find(level_selection)->second);
+          restart_game(level_selection);
           return;
       }
       // Pause and End of Game screen - back to main menu
       if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "END OF GAME") {
           currentScreen.current_screen = "MAIN MENU";
-          restart_game(current_music, levelMap.find(level_selection)->second);
+          restart_game(level_selection);
           return;
       }
 

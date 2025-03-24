@@ -44,6 +44,7 @@ void removeGrapple();
 
 // level layers
 Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId);
+Entity createBackgroundLayer(TEXTURE_ASSET_ID textureId);
 
 // legacy
 // the player

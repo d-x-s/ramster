@@ -61,14 +61,6 @@ const extern enum SCREENS {
 };
 */
 
-// LEVEL MAP
-// Maps an integer onto the filename of the level.
-const std::map<int, std::string> levelMap =
-{
-    // ADD LEVELS HERE
-    {1, "Demo.tmj"},
-};
-
 //
 // level constants
 // TODO: if we allow levels of varying sizes, this needs to be updated dynamically between levels

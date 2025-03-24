@@ -125,7 +125,7 @@ private:
 	bool game_active = true;
 
 	// restart level
-	void restart_game(MUSIC music, std::string level);
+	void restart_game(int level);
 
 	// prototype for generating chain terrain
 	void generateTestTerrain();
@@ -133,6 +133,25 @@ private:
 
 	// OpenGL window handle
 	GLFWwindow* window;
+
+	// LEVEL MAP
+	// KEY: (int) Level
+	// VALUE: Tuple < (string) levelMapFilePath, (enum) Level_Texture, (enum) Level_Music >
+	// Inside tuple we put:
+	// - File path for the level map
+	// - Texture asset for the level
+	// - Music for the level
+
+	const std::map<int,
+		std::tuple<
+		std::string,
+		TEXTURE_ASSET_ID,
+		MUSIC
+		>> levelMap =
+	{
+		// ADD LEVELS HERE
+		{1, {"Demo.tmj", TEXTURE_ASSET_ID::LEVEL_DEMO, MUSIC::LEVEL_1}}
+	};
 
 	// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!
 	// Takes:
@@ -147,7 +166,7 @@ private:
 							ivec2 spawn_location, 
 							ivec2 obstacle_patrol_bottom_left, ivec2 obstacle_patrol_top_right);
 
-	// Updated map: 
+	// Spawn map: 
 	//	key is a vector<int> (tile that triggers spawn), 
 	//	value is a tuple with:
 	// 1. ENEMY_TYPE denoting type of enemy to spawn

@@ -471,11 +471,9 @@ void WorldSystem::stop_game()
   }
 }
 
-
 bool WorldSystem::load_level(const std::string& filename) {
     const std::string full_filepath = LEVEL_DIR_FILEPATH + filename;
-    Json::Value mapData; 
-
+    Json::Value mapData;
 
     std::ifstream infile(full_filepath);
 
@@ -494,49 +492,82 @@ bool WorldSystem::load_level(const std::string& filename) {
     assert(mapData["layers"][1].find("objects") != nullptr);
 
     // set stage dimensions
-    WORLD_WIDTH_TILES = mapData["width"].asFloat();
-	WORLD_HEIGHT_TILES = mapData["height"].asFloat();
+    WORLD_WIDTH_TILES = mapData["width"].asFloat() / 2;
+    WORLD_HEIGHT_TILES = mapData["height"].asFloat() / 2;
+
+    WORLD_WIDTH_PX = WORLD_WIDTH_TILES * GRID_CELL_WIDTH_PX;
+    WORLD_HEIGHT_PX = WORLD_HEIGHT_TILES * GRID_CELL_HEIGHT_PX;
 
     auto& JsonObjects = mapData["layers"][1]["objects"];
     bool spawnpoint_found = false;
 
-    // std::cout << mapData << std::endl;
+    // Temporary storage for spawn zones and points
+    std::unordered_map<std::string, std::vector<vec2>> spawnZones;
+    std::unordered_map<std::string, std::vector<vec2>> spawnPoints;
+    std::unordered_map<std::string, std::string> enemyType;
+    std::unordered_map<std::string, int> enemyQuantity;
 
     for (const auto& jsonObj : JsonObjects) {
-        // std::cout << jsonObj << std::endl;
-
         // polyline case
         if (jsonObj.find(JSON_POLYLINE_ATTR) != nullptr) {
-
             std::vector<vec2> chainPoints;
-			const float x_offset = jsonObj["x"].asFloat();
-			const float y_offset = jsonObj["y"].asFloat();
-			const float rotation = jsonObj["rotation"].asFloat() * (M_PI / 180.f);
+            const float x_offset = jsonObj["x"].asFloat();
+            const float y_offset = jsonObj["y"].asFloat();
+            const float rotation = jsonObj["rotation"].asFloat() * (M_PI / 180.f);
 
             for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
                 float x = point["x"].asFloat();
                 float y = point["y"].asFloat();
 
-                // rotate enemies_killed 
-				if (rotation != 0.f) {
-					vec2 origin = vec2(0.f, 0.f);
-					vec2 rotatedPoint = rotateAroundPoint(vec2(x, y), origin, rotation);
-					x = rotatedPoint.x;
-					y = rotatedPoint.y;
-				}
+                // rotate points 
+                if (rotation != 0.f) {
+                    vec2 origin = vec2(0.f, 0.f);
+                    vec2 rotatedPoint = rotateAroundPoint(vec2(x, y), origin, rotation);
+                    x = rotatedPoint.x;
+                    y = rotatedPoint.y;
+                }
 
-                chainPoints.push_back(vec2(x + x_offset,
-                                           WORLD_HEIGHT_PX - (y + y_offset)));
+                chainPoints.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
             }
 
-			std::cout << "Creating chain with " << chainPoints.size() << " points." << std::endl;
+            std::string name = jsonObj["name"].asString();
+            if (chainPoints.size() == 2 && name.find("SZ") == 0) {
+                // Process enemy spawn zone
+                std::vector<std::string> parts = split(name, "_");
+                if (parts.size() == 2) {
+                    std::string id = parts[1];
+                    spawnZones[id] = chainPoints;
+                    std::cout << "Found enemy spawn ZONE with id: " << id << std::endl;
+                }
+            }
+            else if (chainPoints.size() == 2 && name.find("ENEMY") == 0) {
+                std::cout << "found obstacle enemy spawnpath." << std::endl;
+                std::vector<std::string> parts = split(name, "_");
+                std::vector<vec2> points;
+                std::string id = parts[3];
 
-            create_chain(worldId, chainPoints, false, lines);
+                for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
+                    float x = point["x"].asFloat();
+                    float y = point["y"].asFloat();
+                    points.push_back(vec2(x, WORLD_HEIGHT_PX - y));
+                }
+
+                spawnPoints[id] = points;
+                enemyType[id] = parts[1];
+                enemyQuantity[id] = std::stoi(parts[2]);
+
+            }
+            else if (chainPoints.size() == 2 && name == "goal") {
+                // TODO: GOALPOST case.
+                std::cout << "found goalpost, TODO" << std::endl;
+            }
+            else if (chainPoints.size() >= 2) {
+                std::cout << "Creating chainShape with " << chainPoints.size() << " segments." << std::endl;
+                create_chain(worldId, chainPoints, true, lines);
+            }
         }
         // polygon case: polygon = closed-loop chain
-        // polyline case
         else if (jsonObj.find(JSON_POLYGON_ATTR) != nullptr) {
-
             std::vector<vec2> chainPoints;
             const float x_offset = jsonObj["x"].asFloat();
             const float y_offset = jsonObj["y"].asFloat();
@@ -554,15 +585,44 @@ bool WorldSystem::load_level(const std::string& filename) {
                     y = rotatedPoint.y;
                 }
 
-                chainPoints.push_back(vec2(x + x_offset,
-                    WORLD_HEIGHT_PX - (y + y_offset)));
+                chainPoints.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
             }
 
-			std::cout << "Creating chain with " << chainPoints.size() << " enemies_killed." << std::endl;
+            std::string name = jsonObj["name"].asString();
+            if (chainPoints.size() == 2 && name.find("SZ") == 0) {
+                // Process enemy spawn zone
+                std::vector<std::string> parts = split(name, "_");
+                if (parts.size() == 2) {
+                    std::string id = parts[1];
+                    spawnZones[id] = chainPoints;
+                    std::cout << "Found enemy spawn ZONE with id: " << id << std::endl;
+                }
+            }
+            else if (chainPoints.size() == 2 && name.find("ENEMY") == 0) {
+                std::cout << "found obstacle enemy spawnpath." << std::endl;
+                std::vector<std::string> parts = split(name, "_");
+                std::vector<vec2> points;
+                std::string id = parts[3];
 
-            create_chain(worldId, chainPoints, false, lines);
+                for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
+                    float x = point["x"].asFloat();
+                    float y = point["y"].asFloat();
+                    points.push_back(vec2(x, WORLD_HEIGHT_PX - y));
+                }
+
+                spawnPoints[id] = points;
+                enemyType[id] = parts[1];
+                enemyQuantity[id] = std::stoi(parts[2]);
+            }
+            else if (chainPoints.size() == 2 && name == "goal") {
+                // TODO: GOALPOST case.
+                std::cout << "found goalpost, TODO" << std::endl;
+            }
+            else if (chainPoints.size() >= 2) {
+                std::cout << "Creating chainShape with " << chainPoints.size() << " segments." << std::endl;
+                create_chain(worldId, chainPoints, true, lines);
+            }
         }
-
         // ball_spawnpoint case
         else if (jsonObj.find("name") != nullptr && jsonObj["name"] == JSON_BALL_SPAWNPOINT) {
             const float x = jsonObj["x"].asFloat();
@@ -571,11 +631,76 @@ bool WorldSystem::load_level(const std::string& filename) {
             spawnpoint_found = true;
         }
 
+        // enemy spawnpoint case
+        else if (jsonObj.find("name") != nullptr && jsonObj["name"].asString().find("ENEMY") == 0) {
+            std::string name = jsonObj["name"].asString();
+            std::vector<std::string> parts = split(name, "_");
+            if (parts.size() == 4) {
+                std::string id = parts[3];
+                std::vector<vec2> points;
+
+                float x = jsonObj["x"].asFloat();
+                float y = jsonObj["y"].asFloat();
+                points.push_back(vec2(x, WORLD_HEIGHT_PX - y));
+
+
+                std::cout << "Found enemy spawn POINT with id: " << id << std::endl;
+                spawnPoints[id] = points;
+                enemyType[id] = parts[1];
+                enemyQuantity[id] = std::stoi(parts[2]);
+            }
+        }
+        // grapple point case
+        else if (jsonObj.find("name") != nullptr && jsonObj["name"] == "GRAPPLE_POINT") {
+            const float x = jsonObj["x"].asFloat();
+            const float y = jsonObj["y"].asFloat();
+            createGrapplePoint(worldId, vec2(x, WORLD_HEIGHT_PX - y));
+        }
     }
-	if (!spawnpoint_found) {
-		std::cerr << "No spawnpoint found in map file." << std::endl;
+
+    // Process enemy spawns
+    for (const auto& [id, zone] : spawnZones) {
+        if (spawnPoints.find(id) != spawnPoints.end()) {
+            std::vector<vec2> points = spawnPoints[id];
+            ENEMY_TYPES currEnemyType;
+
+            switch (enemyType[id][0]) {
+            case 'S':
+                currEnemyType = SWARM;
+                break;
+            case 'C':
+                currEnemyType = COMMON;
+                break;
+            case 'O':
+                currEnemyType = OBSTACLE;
+                break;
+            }
+
+            int quantity = enemyQuantity[id];
+
+            ivec2 bottom_left = ivec2(zone[0].x / TILE_WIDTH, zone[0].y / TILE_HEIGHT);
+            ivec2 top_right = ivec2(zone[1].x / TILE_WIDTH, zone[1].y / TILE_HEIGHT);
+
+            if (currEnemyType == OBSTACLE && points.size() == 2) {
+                vec2 start = points[0];
+                vec2 end = points[1];
+                ivec2 spawn_location = ivec2(start.x / TILE_WIDTH, start.y / TILE_HEIGHT);
+                ivec2 obstacle_patrol_bottom_left = ivec2(start.x / TILE_WIDTH, start.y / TILE_HEIGHT);
+                ivec2 obstacle_patrol_top_right = ivec2(end.x / TILE_WIDTH, end.y / TILE_HEIGHT);
+                insertToSpawnMap(bottom_left, top_right, currEnemyType, quantity, spawn_location, obstacle_patrol_bottom_left, obstacle_patrol_top_right);
+            }
+            else if (points.size() == 1) {
+                vec2 point = points[0];
+                ivec2 spawn_location = ivec2(point.x / TILE_WIDTH, point.y / TILE_HEIGHT);
+                insertToSpawnMap(bottom_left, top_right, currEnemyType, quantity, spawn_location, ivec2(0, 0), ivec2(0, 0));
+            }
+        }
+    }
+
+    if (!spawnpoint_found) {
+        std::cerr << "No spawnpoint found in map file." << std::endl;
         return true;
-	}
+    }
 
     return true;
 }

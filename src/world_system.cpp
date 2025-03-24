@@ -565,7 +565,12 @@ bool WorldSystem::load_level(const std::string& filename) {
             }
             else if (chainPoints.size() >= 2) {
                 std::cout << "Creating chainShape with " << chainPoints.size() << " segments." << std::endl;
-                create_chain(worldId, chainPoints, true, lines);
+                if (name == "ledge") {
+                    create_chain(worldId, chainPoints, false, lines);
+                }
+                else {
+                    create_chain(worldId, chainPoints, true, lines);
+                }
             }
         }
         // polygon case: polygon = closed-loop chain
@@ -625,7 +630,12 @@ bool WorldSystem::load_level(const std::string& filename) {
             }
             else if (chainPoints.size() >= 2) {
                 std::cout << "Creating chainShape with " << chainPoints.size() << " segments." << std::endl;
-                create_chain(worldId, chainPoints, true, lines);
+                if (name == "ledge") {
+                    create_chain(worldId, chainPoints, false, lines);
+                }
+                else {
+                    create_chain(worldId, chainPoints, true, lines);
+                }
             }
         }
         // ball_spawnpoint case
@@ -656,9 +666,11 @@ bool WorldSystem::load_level(const std::string& filename) {
             }
         }
         // grapple point case
-        else if (jsonObj.find("name") != nullptr && jsonObj["name"] == "GRAPPLE_POINT") {
+        else if (jsonObj.find("name") != nullptr && jsonObj["name"] == "grapple_point") {
             const float x = jsonObj["x"].asFloat();
             const float y = jsonObj["y"].asFloat();
+
+			std::cout << "Found grapple point at: " << x << ", " << y << std::endl;
             createGrapplePoint(worldId, vec2(x, WORLD_HEIGHT_PX - y));
         }
     }

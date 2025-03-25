@@ -168,6 +168,9 @@ public:
   // Window resizing
   void resizeScreenTexture(int width, int height);
 
+  int screen_viewport_x = 0, screen_viewport_y = 0;
+  int screen_viewport_w = 1200, screen_viewport_h = 900;
+
 private:
   // Internal drawing functions for each entity type
   void drawGridLine(Entity entity, const mat3 &projection);

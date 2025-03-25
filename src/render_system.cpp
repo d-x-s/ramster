@@ -450,6 +450,11 @@ void RenderSystem::drawToScreen()
 		viewport_y = (win_h - viewport_h) / 2;
 	}
 
+	screen_viewport_x = viewport_x;
+	screen_viewport_y = viewport_y;
+	screen_viewport_w = viewport_w;
+	screen_viewport_h = viewport_h;
+
 	// --- CLEAR & SETUP SCREEN ---
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(viewport_x, viewport_y, viewport_w, viewport_h);

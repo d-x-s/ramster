@@ -289,6 +289,24 @@ Entity createGrapplePoint(b2WorldId worldId, vec2 position){
 		}
 	);
 
+	// Outline
+	Entity entity_grapple_outline = Entity();
+	auto& grapple_outline_motion = registry.motions.emplace(entity_grapple_outline);
+	grapple_outline_motion.position = vec2(position.x, position.y);
+	grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS * 2, GRAPPLE_ATTACH_ZONE_RADIUS * 2);
+
+	// TODO davis fix artificially large attachment zones later LOLOL
+	grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS, GRAPPLE_ATTACH_ZONE_RADIUS);
+
+	registry.renderRequests.insert(
+		entity_grapple_outline,
+		{
+			TEXTURE_ASSET_ID::GRAPPLE_OUTLINE,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
 	return entity;
 }
 

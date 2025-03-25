@@ -1378,33 +1378,55 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
   }
 }
 
-vec2 WorldSystem::screenToWorld(vec2 mouse_position)
+vec2 WorldSystem::screenToWorld(vec2 mouse_screen)
 {
-  for (Entity cameraEntity : registry.cameras.entities)
-  {
-    Camera &camera = registry.cameras.get(cameraEntity);
-    // Calculate the screen center.
-    float centerX = WINDOW_WIDTH_PX / 2.0f;
-    float centerY = WINDOW_HEIGHT_PX / 2.0f;
+    int win_w, win_h;
+    glfwGetWindowSize(window, &win_w, &win_h);
 
-    // Flip the Y coordinate: if the screen's Y=0 is at the top,
-    // convert it so Y increases upward. This example assumes that
-    // your world-space Y increases upward.
-    float flippedY = WINDOW_HEIGHT_PX - mouse_position.y;
+    // Flip Y: mouse origin is top-left, OpenGL is bottom-left
+    mouse_screen.y = win_h - mouse_screen.y;
 
-    // Offset the mouse position relative to the screen center.
-    float offsetX = mouse_position.x - centerX;
-    float offsetY = flippedY - centerY;
+    // Grab viewport from renderer (letterboxed area)
+    int vx = renderer->screen_viewport_x;
+    int vy = renderer->screen_viewport_y;
+    int vw = renderer->screen_viewport_w;
+    int vh = renderer->screen_viewport_h;
 
-    // Now add the camera's world position.
-    // camera.position is the world-space coordinate at the screen center.
-    vec2 worldPos;
-    worldPos.x = offsetX + camera.position.x;
-    worldPos.y = offsetY + camera.position.y;
-    std::cout << "mouse coordinate position: " << worldPos.x << ", " << worldPos.y << std::endl;
-    return worldPos;
-  }
+    // Check if click is outside the visible game area
+    if (mouse_screen.x < vx || mouse_screen.x > vx + vw ||
+        mouse_screen.y < vy || mouse_screen.y > vy + vh)
+    {
+        return { -1, -1 }; // outside the viewport
+    }
+
+    // Normalize to [0,1] within the viewport
+    float norm_x = (mouse_screen.x - vx) / vw;
+    float norm_y = (mouse_screen.y - vy) / vh;
+
+    // Map to virtual game coordinates
+    float virtual_x = norm_x * 1200.f;
+    float virtual_y = norm_y * 900.f;
+
+    // Offset from screen center (in virtual resolution)
+    float offset_x = virtual_x - 1200.f / 2.f;
+    float offset_y = virtual_y - 900.f / 2.f;
+
+    // Add camera position to get world-space coordinate
+    for (Entity cameraEntity : registry.cameras.entities)
+    {
+        Camera& camera = registry.cameras.get(cameraEntity);
+
+        vec2 worldPos;
+        worldPos.x = offset_x + camera.position.x;
+        worldPos.y = offset_y + camera.position.y;
+
+        std::cout << "mouse coordinate world pos: " << worldPos.x << ", " << worldPos.y << std::endl;
+        return worldPos;
+    }
+
+    return { 0.f, 0.f }; // fallback if no camera
 }
+
 
 void WorldSystem::attachGrapple()
 {

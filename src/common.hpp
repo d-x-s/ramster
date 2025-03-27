@@ -160,7 +160,7 @@ const float PLAYER_STARTING_HP = 5;
 // ENEMY 2DBODY
 // Shares most of player 2D body but different density, friction, restitution, etc.
 const float ENEMY_GROUNDED_MOVEMENT_FORCE = 1875.0f; // kg�cm/s� (dynes)
-const float ENEMY_JUMP_IMPULSE = 12000.0f; // kg�cm/s (dynes�s)
+const float ENEMY_JUMP_IMPULSE = 2000.0f; // kg�cm/s (dynes�s)
 
 const float ENEMY_RADIUS = 25.0;
 const float ENEMY_DENSITY = 0.00125f; // kg/cm� (kilograms per square centimeter); lower number = less speed lost on collision, less enemy momentum.

@@ -92,6 +92,7 @@ private:
   Mix_Music* background_music_oblanka;
   Mix_Music* background_music_paradrizzle;
   Mix_Music* background_music_windcatcher;
+  Mix_Music* background_music_promenade;
 
   // fx references
   Mix_Chunk* fx_destroy_enemy;
@@ -150,8 +151,14 @@ private:
 		>> levelMap =
 	{
 		// ADD LEVELS HERE
-		{1, {"tutorial.tmj", TEXTURE_ASSET_ID::LEVEL_TUTORIAL, MUSIC::LEVEL_1}},
-		{2, {"tower.tmj", TEXTURE_ASSET_ID::LEVEL_TOWER, MUSIC::LEVEL_1}}
+		// tmj files
+		{1, {"level1.tmj", TEXTURE_ASSET_ID::LEVEL_1, MUSIC::PROMENADE}},
+		{2, {"level2.tmj", TEXTURE_ASSET_ID::LEVEL_2, MUSIC::PROMENADE}},
+		{3, {"level3.tmj", TEXTURE_ASSET_ID::LEVEL_3, MUSIC::PROMENADE}},
+		{4, {"level4.tmj", TEXTURE_ASSET_ID::LEVEL_4, MUSIC::PROMENADE}},
+		{5, {"level5.tmj", TEXTURE_ASSET_ID::LEVEL_5, MUSIC::PROMENADE}},
+		{6, {"tutorial.tmj", TEXTURE_ASSET_ID::LEVEL_TUTORIAL, MUSIC::PARADRIZZLE}},
+		{7, {"tower.tmj", TEXTURE_ASSET_ID::LEVEL_TOWER, MUSIC::WINDCATCHER}}
 	};
 
 	// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!

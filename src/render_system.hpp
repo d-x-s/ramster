@@ -113,6 +113,11 @@ class RenderSystem
     textures_path("tutorial/destroy.png"),
 
     // levels
+	textures_path("levels/level1.png"),
+    textures_path("levels/level2.png"),
+	textures_path("levels/level3.png"),
+	textures_path("levels/level4.png"),
+	textures_path("levels/level5.png"),
     textures_path("levels/tutorial.png"),
 	textures_path("levels/tower.png"),
     textures_path("levels/background.png")

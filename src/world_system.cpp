@@ -59,6 +59,8 @@ WorldSystem::~WorldSystem()
     Mix_FreeMusic(background_music_paradrizzle);
   if (background_music_windcatcher != nullptr)
     Mix_FreeMusic(background_music_windcatcher);
+  if (background_music_promenade != nullptr)
+	Mix_FreeMusic(background_music_promenade);
   if (fx_destroy_enemy != nullptr)
     Mix_FreeChunk(fx_destroy_enemy);
   if (fx_destroy_enemy_fail != nullptr)
@@ -179,6 +181,7 @@ bool WorldSystem::start_and_load_sounds()
   background_music_oblanka = Mix_LoadMUS(audio_path("music_oblanka.wav").c_str());
   background_music_paradrizzle = Mix_LoadMUS(audio_path("music_paradrizzle.wav").c_str());
   background_music_windcatcher = Mix_LoadMUS(audio_path("music_windcatcher.wav").c_str());
+  background_music_promenade = Mix_LoadMUS(audio_path("music_promenade.wav").c_str());
 
   // sound fx
   fx_destroy_enemy = Mix_LoadWAV(audio_path("fx_destroy_enemy.wav").c_str());
@@ -194,6 +197,7 @@ bool WorldSystem::start_and_load_sounds()
       background_music_oblanka == nullptr ||
       background_music_paradrizzle == nullptr ||
       background_music_windcatcher == nullptr ||
+	  background_music_promenade == nullptr ||
       fx_destroy_enemy == nullptr ||
       fx_destroy_enemy_fail == nullptr ||
       fx_jump == nullptr ||
@@ -208,6 +212,7 @@ bool WorldSystem::start_and_load_sounds()
             audio_path("music_oblanka.wav").c_str(),
             audio_path("music_paradrizzle.wav").c_str(),
             audio_path("music_windcatcher.wav").c_str(),
+		    audio_path("music_promenade.wav").c_str(),
 
             // sound fx
             audio_path("fx_destroy_enemy.wav").c_str(),
@@ -230,18 +235,22 @@ void WorldSystem::playMusic(MUSIC music)
       Mix_PlayMusic(background_music_memorybranch, -1);
       //current_music = MUSIC::MENU;
       break;
-    case MUSIC::LEVEL_1:
+    case MUSIC::OBLANKA:
       Mix_PlayMusic(background_music_oblanka, -1);
       //current_music = MUSIC::LEVEL_1;
       break;
-    case MUSIC::LEVEL_2:
+    case MUSIC::PARADRIZZLE:
       Mix_PlayMusic(background_music_paradrizzle, -1);
       //current_music = MUSIC::LEVEL_2;
       break;
-    case MUSIC::LEVEL_3:
+    case MUSIC::WINDCATCHER:
       Mix_PlayMusic(background_music_windcatcher, -1);
       //current_music = MUSIC::LEVEL_3;
       break;
+	case MUSIC::PROMENADE:
+	  Mix_PlayMusic(background_music_promenade, -1);
+      //current_music = MUSIC::LEVEL_4;
+	  break;
     default:
       Mix_PlayMusic(background_music_memorybranch, -1);
       //current_music = MUSIC::MENU;

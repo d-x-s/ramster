@@ -8,6 +8,11 @@
 struct Screen
 {
     std::string screen;
+
+    //TEXTURE_ASSET_ID texture;
+
+    // Camera entity for screen positioning
+    Entity screen_center;
 };
 
 // Current Screen Component - used to track current screen.

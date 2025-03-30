@@ -24,6 +24,10 @@ Entity createScreen(std::string screen_type) {
 	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // Note!!! Screen centers on the player's location. This is a placeholder.
 	motion.scale = vec2(VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX); // Scale to window size
 
+	// Attach camera to center screen
+	Entity camera = registry.cameras.entities[0];
+	screen.screen_center = camera;
+
 	// Figure out which screen to display
 	TEXTURE_ASSET_ID screen_texture{};
 

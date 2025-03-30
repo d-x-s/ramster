@@ -158,7 +158,15 @@ private:
 		{4, {"level4.tmj", TEXTURE_ASSET_ID::LEVEL_4, MUSIC::PROMENADE}},
 		{5, {"level5.tmj", TEXTURE_ASSET_ID::LEVEL_5, MUSIC::PROMENADE}},
 		{6, {"tutorial.tmj", TEXTURE_ASSET_ID::LEVEL_TUTORIAL, MUSIC::PARADRIZZLE}},
-		{7, {"tower.tmj", TEXTURE_ASSET_ID::LEVEL_TOWER, MUSIC::WINDCATCHER}}
+		{7, {"tower.tmj", TEXTURE_ASSET_ID::LEVEL_TOWER, MUSIC::WINDCATCHER}},
+		{8, {"lab.tmj", TEXTURE_ASSET_ID::LEVEL_LAB, MUSIC::WINDCATCHER}},
+		{9, {"under.tmj", TEXTURE_ASSET_ID::LEVEL_UNDER, MUSIC::WINDCATCHER}}
+
+		// How to Add Levels:
+		// 1. Add both TMJ (/levels) and PNG (/data/textures/levels) to the project
+		// 2. Add TMJ file, asset, and music here
+		// 3. Add ASSET_ID in components.hpp
+		// 3. Load map texture in render_system.hpp
 	};
 
 	// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!

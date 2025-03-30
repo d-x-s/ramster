@@ -10,7 +10,25 @@
 // current screen
 Entity createCurrentScreen(); // DEFAULT TO MAIN MENU
 
+/* Creates an element to dispay on-screen.
+	Takes:
+	- screen: screen that this element is for
+	- texture: texture of this element
+	- width_px: width of this element
+	- height_px: height of this element
+	- pos_relative_center: position of element relative to CENTER of screen.
+	
+	NOTE: for width, height, and pos, make sure to enter values relative to viewport so scaling works!!!
+*/
+Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center);
+
+/* Creates a button to display on-screen.
+	Same logic/inputs as createScreenElement, except this makes a button.
+*/
+Entity createButton(std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center);
+
 // screen
+// NOTE: LEGACY CODE PORTED OVER TO createScreenElement
 Entity createScreen(std::string screen_type);
 
 // enemy

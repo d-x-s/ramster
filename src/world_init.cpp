@@ -12,7 +12,26 @@ Entity createCurrentScreen() {
 	return entity;
 }
 
+// TODO: Port createScreen here.
+Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
+
+
+
+}
+
+
+// Makes button screen element.
+Entity createButton(std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
+
+	Entity screenElement = createScreenElement(screen, texture, width_px, height_px, pos_relative_center);
+	Button& button = registry.buttons.emplace(screenElement);
+
+}
+
+
+
 // This will create the screens that we are going to be using.
+// NOTE: THIS IS LEGACY CODE. PORTED OVER TO createScreenElement
 Entity createScreen(std::string screen_type) {
 	Entity entity = Entity();
 

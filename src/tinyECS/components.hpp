@@ -4,7 +4,34 @@
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
 
+
+// Any element on the screen. Title, Label, Button, Etc. This is what gets rendered.
+struct ScreenElement {
+
+    // Screen that the element belongs to
+    std::string screen;
+
+    // Texture for the screen
+    TEXTURE_ASSET_ID texture;
+
+    // Boundaries/size of the screen element (x1, y1, x2, y2)
+    vec4 boundaries;
+    
+    // Camera entity for screen centering
+    Entity camera;
+
+    // Position of the screen (x, y) relative to camera (center)
+    vec2 position;
+
+};
+
+// Indicates that a screen element is a button.
+struct Button {
+
+};
+
 // Screen component
+// NOTE: LEGACY CODE. MIGRATED TO ScreenElement.
 struct Screen
 {
     std::string screen;

@@ -13,7 +13,9 @@ public:
 	// Manually created list of all components this game has
 	// TODO: A1 add a LightUp component
 	ComponentContainer<CurrentScreen> currentScreen;
-	ComponentContainer<Screen> screens;
+	ComponentContainer<ScreenElement> screenElements;
+	ComponentContainer<Button> buttons;
+	ComponentContainer<Screen> screens; // legacy code. remove support after finishing screen element
 	ComponentContainer<DeathTimer> deathTimers;
 	ComponentContainer<Motion> motions;
 	ComponentContainer<Collision> collisions;
@@ -48,7 +50,9 @@ public:
 	{
 		// TODO: A1 add a LightUp component
 		registry_list.push_back(&currentScreen);
-		registry_list.push_back(&screens);
+		registry_list.push_back(&screenElements);
+		registry_list.push_back(&buttons);
+		registry_list.push_back(&screens); // remove after implementation of screenElement/Button
 		registry_list.push_back(&deathTimers);
 		registry_list.push_back(&motions);
 		registry_list.push_back(&collisions);

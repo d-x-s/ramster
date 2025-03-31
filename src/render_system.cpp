@@ -555,7 +555,7 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 		for (Entity entity : registry.renderRequests.entities)
 		{			 
 			// filter to entities that have a motion component (but not a screen)
-			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity)) {
+			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity) && !registry.screenElements.has(entity)) {
 				// Note, its not very efficient to access elements indirectly via the entity
 				// albeit iterating through all Sprites in sequence. A good point to optimize
 				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);

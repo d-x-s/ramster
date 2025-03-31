@@ -1304,65 +1304,137 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 {
-  if (!game_active)
-  {
+    // Current Screen
+    Entity currScreenEntity = registry.currentScreen.entities[0];
+    CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
+
+    if (!game_active)
+    {
     return;
-  }
-
-  if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-  {
-    // Get mouse position and convert to world coordinates.
-    vec2 mouseScreenPos = {mouse_pos_x, mouse_pos_y};
-    vec2 worldMousePos = screenToWorld(mouseScreenPos);
-    std::cout << "Mouse clicked at world position: ("
-              << worldMousePos.x << ", " << worldMousePos.y << ")" << std::endl;
-    std::cout << "Corresponding tile: ("
-              << worldMousePos.x / GRID_CELL_WIDTH_PX << ", " << worldMousePos.y / GRID_CELL_HEIGHT_PX << ")" << std::endl;
-
-    // Find the grapple point closest to the click that is within the threshold.
-    GrapplePoint *selectedGp = nullptr;
-    float bestDist = GRAPPLE_ATTACH_ZONE_RADIUS; // distance threshold
-
-    for (Entity gpEntity : registry.grapplePoints.entities)
-    {
-      GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
-      float dist = length(gp.position - worldMousePos);
-      if (dist < bestDist)
-      {
-        bestDist = dist;
-        selectedGp = &gp;
-      }
     }
 
-    // Deactivate all grapple enemies_killed.
-    for (Entity gpEntity : registry.grapplePoints.entities)
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
-      GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
-      gp.active = false;
-    }
 
-    // If a valid grapple point is found, mark it as active.
-    if (selectedGp != nullptr)
-    {
-      selectedGp->active = true;
-      std::cout << "Selected grapple point at ("
-                << selectedGp->position.x << ", " << selectedGp->position.y
-                << ") with active = " << selectedGp->active << std::endl;
-    }
+        // Get mouse position and convert to world coordinates.
+        vec2 mouseScreenPos = {mouse_pos_x, mouse_pos_y};
+        vec2 worldMousePos = screenToWorld(mouseScreenPos);
 
-    // Now, if no grapple is currently attached and we found an active point, attach the grapple.
-    if (!grappleActive && selectedGp != nullptr)
-    {
-      attachGrapple();
-      playSoundEffect(FX::FX_GRAPPLE);
+        /*
+        std::cout << "Mouse clicked at world position: ("
+                    << worldMousePos.x << ", " << worldMousePos.y << ")" << std::endl;
+        std::cout << "Corresponding tile: ("
+                    << worldMousePos.x / GRID_CELL_WIDTH_PX << ", " << worldMousePos.y / GRID_CELL_HEIGHT_PX << ")" << std::endl;
+        */
+
+        // For the playing screen specifically, mouse controls grapple
+        if (currentScreen.current_screen == "PLAYING") {
+            // Find the grapple point closest to the click that is within the threshold.
+            GrapplePoint* selectedGp = nullptr;
+            float bestDist = GRAPPLE_ATTACH_ZONE_RADIUS; // distance threshold
+
+            for (Entity gpEntity : registry.grapplePoints.entities)
+            {
+                GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+                float dist = length(gp.position - worldMousePos);
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    selectedGp = &gp;
+                }
+            }
+
+            // Deactivate all grapple enemies_killed.
+            for (Entity gpEntity : registry.grapplePoints.entities)
+            {
+                GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+                gp.active = false;
+            }
+
+            // If a valid grapple point is found, mark it as active.
+            if (selectedGp != nullptr)
+            {
+                selectedGp->active = true;
+                std::cout << "Selected grapple point at ("
+                    << selectedGp->position.x << ", " << selectedGp->position.y
+                    << ") with active = " << selectedGp->active << std::endl;
+            }
+
+            // Now, if no grapple is currently attached and we found an active point, attach the grapple.
+            if (!grappleActive && selectedGp != nullptr)
+            {
+                attachGrapple();
+                playSoundEffect(FX::FX_GRAPPLE);
+            }
+            else if (grappleActive)
+            {
+                removeGrapple();
+                playSoundEffect(FX::FX_GRAPPLE);
+                grappleActive = false;
+            }
+        }
+        // Every other screen, mouse deals with button presses.
+        else {
+
+            // LLNOTE:
+            /*
+            Tried a couple things to get the button click handling working and finally found the source of the issue after a copious amount of sanity checking.
+            The screen elements are rendered at Viewport resolution/scaling, while the mouse click location does not actually correspond to that, which is why the button hitboxes 
+            were not working. 
+            
+            Problem:
+            - Mouse scaled according to WINDOW_WIDTH_PX and WINDOW_HEIGHT_PX, which is 1280 x 800, while the rendering is scaled to 1920 x 1080, meaning the mouse is completely
+            missing quite a lot of stuff including button hitboxes.
+            
+            (Potential) Solution:
+            - Apply a multiple based on VIEWPORT / WINDOW to the mouse, which should get the scaling more or less correct.
+            */
+
+            // Get camera to center on
+            Camera camera = registry.cameras.get(registry.cameras.entities[0]);
+            vec2 center = vec2(camera.position.x, camera.position.y);
+
+            //std::cout << "MOUSE POSITION: " << worldMousePos.x << ", " << worldMousePos.y << std::endl;
+            //std::cout << "CENTER: " << center.x << ", " << center.y << std::endl;
+
+            // Iterate over all buttons to figure out which one was clicked
+            std::vector<Entity> buttonEntities = registry.buttons.entities;
+
+            for (Entity buttonEntity : buttonEntities) {
+
+                ScreenElement screenElement = registry.screenElements.get(buttonEntity);
+
+                // We're only concerned about buttons for the screen we're currently on
+                if (screenElement.screen == currentScreen.current_screen) {
+
+                    Button button = registry.buttons.get(buttonEntity);
+
+                    // Figure out LEFT, RIGHT, TOP, BOTTOM of button
+                    float left = center.x + screenElement.boundaries[0];
+                    float bottom = center.y + screenElement.boundaries[1];
+                    float right = center.x + screenElement.boundaries[2];
+                    float top = center.y + screenElement.boundaries[3];
+
+                    //std::cout << "BUTTON POSITION: " << screenElement.position.x + center.x << ", " << screenElement.position.y + camera.position.y << std::endl;
+                    //std::cout << camera.position.x << ", " << camera.position.y << std::endl;
+                    //std::cout << button.function << " BUTTON BOUNDS: " << "X: " << left << ", " << right << " Y: " << bottom << ", " << top << std::endl;
+
+                    // If the mouse click lies within the button boundaries, it means we clicked it
+                    if (worldMousePos.x > left && worldMousePos.x < right && worldMousePos.y > bottom && worldMousePos.y < top) {
+
+                        //std::cout << "!!!!!! BUTTON PRESSED !!!!!!" << button.function << std::endl;
+
+                        // Handle the button press
+                        handleButtonPress(button.function);
+                        break;
+                    }
+
+                }
+            }
+
+        }
+
     }
-    else if (grappleActive)
-    {
-      removeGrapple();
-      playSoundEffect(FX::FX_GRAPPLE);
-      grappleActive = false;
-    }
-  }
 }
 
 vec2 WorldSystem::screenToWorld(vec2 mouse_screen)
@@ -1604,8 +1676,6 @@ int WorldSystem::countEnemiesOnLevel() {
 
 void WorldSystem::handleGameover(CurrentScreen& currentScreen) {
 
-    std::cout << "ENEMIES TO KILL: " << num_enemies_to_kill << std::endl;
-
     // If player HP reaches 0, game ends.
     if (hp <= 0) {
         currentScreen.current_screen = "END OF GAME";
@@ -1657,6 +1727,56 @@ void WorldSystem::freezeMovements() {
 
 }
 
+// Handles button press based on function. 
+// LLNOTE: SHOULD HAVE A CASE FOR EACH BUTTON CREATED IN createScreenElements().
+void WorldSystem::handleButtonPress(std::string function) {
+
+    // Current Screen
+    Entity currScreenEntity = registry.currentScreen.entities[0];
+    CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
+
+    if (function == "INCREMENT LEVEL") {
+
+        levelHelper(level_selection + 1); 
+
+    }
+    else if (function == "DECREMENT LEVEL") {
+
+        levelHelper(level_selection - 1);
+
+    }
+    else if (function == "EXIT GAME") {
+
+        close_window(); 
+
+    }
+    else if (function == "START GAME") {
+
+        currentScreen.current_screen = "PLAYING";
+        restart_game(level_selection);
+
+    }
+    else if (function == "RESUME") {
+
+        currentScreen.current_screen = "PLAYING";
+
+    }
+    else if (function == "RESTART") {
+
+        int w, h;
+        glfwGetWindowSize(window, &w, &h);
+        restart_game(level_selection);
+
+    }
+    else if (function == "MAIN MENU") {
+
+        currentScreen.current_screen = "MAIN MENU";
+        restart_game(level_selection);
+
+    }
+
+}
+
 
 // LLNOTE: FOR CODE READABILITY, ALL OF THE SCREEN ELEMENT AND BUTTON CREATIONS SHOULD BE IN HERE.
 // create screens if they do not already exist
@@ -1676,19 +1796,20 @@ void WorldSystem::createScreenElements() {
         // 
         // Increase level
         createButton("INCREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLUP,
-            VIEWPORT_WIDTH_PX / 7, VIEWPORT_HEIGHT_PX / 4.25, vec2(-VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
+            VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
 
         // Decrease Level
         createButton("DECREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLDOWN,
-            VIEWPORT_WIDTH_PX / 7, VIEWPORT_HEIGHT_PX / 4.25, vec2(-VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
+            VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
 
         // Start
         createButton("START GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_START,
-            VIEWPORT_WIDTH_PX / 7, VIEWPORT_HEIGHT_PX / 4.25, vec2(VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
+            VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
 
         // Exit
         createButton("EXIT GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_EXITGAME,
-            VIEWPORT_WIDTH_PX / 7, VIEWPORT_HEIGHT_PX / 4.25, vec2(VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
+            VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
+        
 
         // PAUSE:
 
@@ -1701,13 +1822,13 @@ void WorldSystem::createScreenElements() {
         // Buttons
         // 
         // Resume
-        createScreenElement("PAUSE", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton("RESUME", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
 
         // Restart
-        createScreenElement("PAUSE", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton("RESTART", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
 
         // Main Menu
-        createScreenElement("PAUSE", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton("MAIN MENU", "PAUSE", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
 
 
         // NOTE: Need to swap victory/defeat screen's title asset over to appropriate title when game ends.
@@ -1722,13 +1843,13 @@ void WorldSystem::createScreenElements() {
         // Buttons
         // 
         // Resume
-        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton("RESUME", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
 
         // Restart
-        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton("RESTART", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
 
         // Main Menu
-        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton("MAIN MENU", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
 
 
         // These are elements for the ENTIRE screen

@@ -34,10 +34,13 @@ Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int wid
 	screenElement.position = pos_relative_center;
 
 	// Define boundaries based around center (so, center wrapped by boundary walls)
-	// NOTE: MIGHT NEED TO FIX THIS DEPENDING ON HOW OPENGL TREATS POSITIONING, SHOULD BE EASY TO IDENTIFY BUGS BASED ON BUTTON HITBOX
 	screenElement.boundaries = vec4(screenElement.position.x - (width_px / 2), screenElement.position.y - (height_px / 2),
 									screenElement.position.x + (width_px / 2), screenElement.position.y + (height_px / 2));
-
+	// LLNOTE: IDK how it ended up like this but after much trial and error these are the values that I needed for those buttons to get hitboxes right.
+	/*
+	screenElement.boundaries = vec4(screenElement.position.x - (width_px / 3.175), screenElement.position.y - (height_px / 2.05),
+									screenElement.position.x + (width_px / 3.225), screenElement.position.y + (height_px / 2.85));
+	*/
 
 	// Add to render requests with specified texture
 	registry.renderRequests.insert(

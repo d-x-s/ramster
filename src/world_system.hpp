@@ -250,4 +250,7 @@ private:
 	// LLNOTE: FOR CODE READABILITY, ALL OF THE SCREEN ELEMENT AND BUTTON CREATIONS SHOULD BE IN HERE.
 	// Handles the creation of screen elements.
 	void createScreenElements();
+
+	// Handles button presses based on the function of said button.
+	void handleButtonPress(std::string function);
 };

@@ -15,17 +15,53 @@ Entity createCurrentScreen() {
 // TODO: Port createScreen here.
 Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
 
+	Entity entity = Entity(); 
 
+	// Make screen element
+	ScreenElement& screenElement = registry.screenElements.emplace(entity);
+	screenElement.screen = screen;
+
+	// Configure size (for some reason we need motion to render?)
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // This is a placeholder. Actual position computed during runtime.
+	motion.scale = vec2(width_px, height_px); // Scaled to defined width/height
+
+	// Attach camera to center screen
+	Entity camera = registry.cameras.entities[0];
+	screenElement.camera = camera;
+
+	// Set position relative to camera center
+	screenElement.position = pos_relative_center;
+
+	// Define boundaries based around center (so, center wrapped by boundary walls)
+	// NOTE: MIGHT NEED TO FIX THIS DEPENDING ON HOW OPENGL TREATS POSITIONING, SHOULD BE EASY TO IDENTIFY BUGS BASED ON BUTTON HITBOX
+	screenElement.boundaries = vec4(screenElement.position.x - (width_px / 2), screenElement.position.y - (height_px / 2),
+									screenElement.position.x + (width_px / 2), screenElement.position.y + (height_px / 2));
+
+
+	// Add to render requests with specified texture
+	registry.renderRequests.insert(
+		entity,
+		{
+			texture,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return entity;
 
 }
 
 
-// Makes button screen element.
-Entity createButton(std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
+// Makes button and renders as screen element.
+Entity createButton(std::string function, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
 
-	Entity screenElement = createScreenElement(screen, texture, width_px, height_px, pos_relative_center);
-	Button& button = registry.buttons.emplace(screenElement);
+	Entity buttonElement = createScreenElement(screen, texture, width_px, height_px, pos_relative_center);
+	Button& button = registry.buttons.emplace(buttonElement);
+	button.function = function;
 
+	return buttonElement;
 }
 
 
@@ -38,10 +74,10 @@ Entity createScreen(std::string screen_type) {
 	Screen& screen = registry.screens.emplace(entity);
 	screen.screen = screen_type;
 
-	// Configure size
+	// Configure size (for some reason we need motion to render?)
 	auto& motion = registry.motions.emplace(entity);
-	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // Note!!! Screen centers on the player's location. This is a placeholder.
-	motion.scale = vec2(VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX); // Scale to window size
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // This is a placeholder. Actual position computed during runtime.
+	motion.scale = vec2(VIEWPORT_WIDTH_PX/6, VIEWPORT_HEIGHT_PX/2); // Scale to window size
 
 	// Attach camera to center screen
 	Entity camera = registry.cameras.entities[0];

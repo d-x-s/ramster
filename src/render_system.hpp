@@ -31,8 +31,23 @@ class RenderSystem
   // Make sure these paths remain in sync with the associated enumerators (see TEXTURE_ASSET_ID).
   const std::array<std::string, texture_count> texture_paths = {
 
+      // Screen Elements
+      textures_path("screenElements/menu_title.png"),
+      textures_path("screenElements/pause_title.png"),
+      textures_path("screenElements/victory_title.png"),
+      textures_path("screenElements/defeat_title.png"),
+      textures_path("screenElements/menu_text.png"),
+      textures_path("screenElements/pause_text.png"),
+      textures_path("screenElements/gameover_text.png"),
+      textures_path("screenElements/button_lvlUp.png"),
+      textures_path("screenElements/button_lvlDown.png"),
+      textures_path("screenElements/button_start.png"),
+      textures_path("screenElements/button_resume.png"),
+      textures_path("screenElements/button_restart.png"),
+      textures_path("screenElements/button_mainMenu.png"),
+      textures_path("screenElements/button_exit.png"),
+
       // Screens
-      // LLNOTE: THESE ARE PLACEHOLDERS
       textures_path("screens/main_menu.png"),
       textures_path("screens/test_screen.png"), // This one's the playing screen that we will never use.
       textures_path("screens/pause.png"),

@@ -325,15 +325,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
         if (game_active)
         {
-            // If player HP reaches 0, game ends.
-            if (hp <= 0) {
-                currentScreen.current_screen = "END OF GAME";
-            }
-            // If player reached finish line AND killed all enemies, game ends.
-            if (player_reached_finish_line && enemies_killed == num_enemies_to_kill) {
-                currentScreen.current_screen = "END OF GAME";
-            }
 
+            handleGameover(currentScreen);
             update_isGrounded();
             handle_movement();
             checkGrappleGrounded();
@@ -879,12 +872,89 @@ void WorldSystem::restart_game(int level)
     }
   }
 
+  // LLNOTE: FOR CODE READABILITY, ALL OF THE SCREEN ENTITY AND BUTTON CREATIONS SHOULD BE IN HERE.
   // create screens if they do not already exist
   if (registry.screens.entities.size() == 0) {
+
+      // MAIN MENU:
+
+      // Title
+      createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::TITLE_MENU, VIEWPORT_WIDTH_PX/2.5, VIEWPORT_HEIGHT_PX/4.25, vec2(0, VIEWPORT_HEIGHT_PX/4));
+
+      // Text
+      createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::TEXT_MENU, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
+
+      // Buttons
+      // 
+      // Increase level
+      createButton("INCREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLUP, 
+                    VIEWPORT_WIDTH_PX / 7, VIEWPORT_HEIGHT_PX / 4.25, vec2(-VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
+      
+      // Decrease Level
+      createButton("DECREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLDOWN, 
+                    VIEWPORT_WIDTH_PX / 7, VIEWPORT_HEIGHT_PX / 4.25, vec2(-VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
+      
+      // Start
+      createButton("START GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_START,
+                    VIEWPORT_WIDTH_PX / 7, VIEWPORT_HEIGHT_PX / 4.25, vec2(VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
+
+      // Exit
+      createButton("EXIT GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_EXITGAME,
+          VIEWPORT_WIDTH_PX / 7, VIEWPORT_HEIGHT_PX / 4.25, vec2(VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
+
+      // PAUSE:
+      
+      // Title
+      createScreenElement("PAUSE", TEXTURE_ASSET_ID::TITLE_PAUSE, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+
+      // Text
+      createScreenElement("PAUSE", TEXTURE_ASSET_ID::TEXT_PAUSE, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
+
+      // Buttons
+      // 
+      // Resume
+      createScreenElement("PAUSE", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+      // Restart
+      createScreenElement("PAUSE", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
+
+      // Main Menu
+      createScreenElement("PAUSE", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+
+      // NOTE: Need to swap victory/defeat screen's title asset over to appropriate title when game ends.
+      // END OF GAME
+      
+      // Title
+      // NOTE: THIS WILL BE SET IN THE END-OF-GAME CHECK handle_gameover() based on whether the player won or lost.
+
+      // Text
+      createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TEXT_GAMEOVER, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
+
+      // Buttons
+      // 
+      // Resume
+      createScreenElement("END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+      // Restart
+      createScreenElement("END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
+
+      // Main Menu
+      createScreenElement("END OF GAME", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6, VIEWPORT_HEIGHT_PX / 4.25, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+
+      // These are elements for the ENTIRE screen
+      //createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+      //createScreenElement("PLAYING", TEXTURE_ASSET_ID::PLAYING_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+      //createScreenElement("PAUSE", TEXTURE_ASSET_ID::PAUSE_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+      //createScreenElement("END OF GAME", TEXTURE_ASSET_ID::END_OF_GAME_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+
+      /* Legacy screen code using create screen 
       createScreen("MAIN MENU");
       createScreen("PLAYING");
       createScreen("PAUSE");
       createScreen("END OF GAME");
+      */
   }
 
   // Room dimensions
@@ -1596,6 +1666,7 @@ int WorldSystem::countEnemiesOnLevel() {
     int num_enemies = 0;
 
     for (auto& i : spawnMap) {
+
         std::vector<int> spawnTile = i.first;
         std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>>& enemyDataTuple = i.second;
         ENEMY_TYPES         enemyType = std::get<0>(enemyDataTuple);
@@ -1612,6 +1683,27 @@ int WorldSystem::countEnemiesOnLevel() {
     }
 
     return num_enemies;
+}
+
+void WorldSystem::handleGameover(CurrentScreen& currentScreen) {
+
+    std::cout << "ENEMIES TO KILL: " << num_enemies_to_kill << std::endl;
+
+    // If player HP reaches 0, game ends.
+    if (hp <= 0) {
+        currentScreen.current_screen = "END OF GAME";
+
+        // Defeat title
+        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_DEFEAT, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+    }
+    // If player reached finish line AND killed all enemies, game ends.
+    else if (player_reached_finish_line&& enemies_killed > 5) {
+        currentScreen.current_screen = "END OF GAME";
+
+        // Victory title
+        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_VICTORY, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+    }
+
 }
 
 // NOT NEEDED IF WE JUST FREEZE PHYSICS!!! (in fact it's better if we froze physics as original velocity preserved

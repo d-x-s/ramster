@@ -574,6 +574,25 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 
 		for (Entity entity : registry.renderRequests.entities) {
 
+			// We're only interested in screen elements
+			if (registry.screenElements.has(entity)) {
+
+				ScreenElement screenElement = registry.screenElements.get(entity);
+				Motion& screenMotion = registry.motions.get(entity);
+
+				// Ensure that we're only rendering elements belonging to the screen we're currently on
+				if (currentScreen.current_screen == screenElement.screen) {
+
+					// Re-center screen onto camera
+					screenMotion.position = vec2(cameraPosition.x + screenElement.position.x, cameraPosition.y + screenElement.position.y);
+
+					// Then render
+					drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+				}
+
+			}
+
+			/* LEGACY CODE FOR SCREEN RENDERING 
 			// filter to screen entities
 			if (registry.screens.has(entity)) {
 
@@ -591,7 +610,7 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 				}
 
 			}
-
+			*/
 		}
 	}
 

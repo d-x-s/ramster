@@ -11,10 +11,8 @@ struct ScreenElement {
     // Screen that the element belongs to
     std::string screen;
 
-    // Texture for the screen
-    TEXTURE_ASSET_ID texture;
-
     // Boundaries/size of the screen element (x1, y1, x2, y2)
+    // Note: primary use of this is just button hitbox but adding it as part of this component makes more sense because it'd also be render bounds.
     vec4 boundaries;
     
     // Camera entity for screen centering
@@ -28,6 +26,9 @@ struct ScreenElement {
 // Indicates that a screen element is a button.
 struct Button {
 
+    // Identifies the button
+    std::string function;
+
 };
 
 // Screen component
@@ -35,8 +36,6 @@ struct Button {
 struct Screen
 {
     std::string screen;
-
-    //TEXTURE_ASSET_ID texture;
 
     // Camera entity for screen positioning
     Entity screen_center;
@@ -198,11 +197,28 @@ struct Mesh
  */
 enum class TEXTURE_ASSET_ID
 {
+    // Screen Elements
+    TITLE_MENU = 0,
+    TITLE_PAUSE = TITLE_MENU + 1,
+    TITLE_VICTORY = TITLE_PAUSE + 1,
+    TITLE_DEFEAT = TITLE_VICTORY + 1,
+    TEXT_MENU = TITLE_DEFEAT + 1,
+    TEXT_PAUSE = TEXT_MENU + 1,
+    TEXT_GAMEOVER = TEXT_PAUSE + 1,
+    BUTTON_LVLUP = TEXT_GAMEOVER + 1,
+    BUTTON_LVLDOWN = BUTTON_LVLUP + 1,
+    BUTTON_START = BUTTON_LVLDOWN + 1,
+    BUTTON_RESUME = BUTTON_START + 1,
+    BUTTON_RESTART = BUTTON_RESUME + 1,
+    BUTTON_MAINMENU = BUTTON_RESTART + 1,
+    BUTTON_EXITGAME = BUTTON_MAINMENU + 1,
+
     // Screens
-    MAIN_MENU_TEXTURE = 0,
+    MAIN_MENU_TEXTURE = BUTTON_EXITGAME + 1,
     PLAYING_TEXTURE = MAIN_MENU_TEXTURE + 1,
     PAUSE_TEXTURE = PLAYING_TEXTURE + 1,
     END_OF_GAME_TEXTURE = PAUSE_TEXTURE + 1,
+
 
   // Legacy invaders
   BLUE_INVADER_1 = END_OF_GAME_TEXTURE + 1,

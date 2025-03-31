@@ -246,4 +246,8 @@ private:
 
 	// Checks if the game is over and sets the screen as needed based on whether the player won or lost.
 	void handleGameover(CurrentScreen& currentScreen);
+
+	// LLNOTE: FOR CODE READABILITY, ALL OF THE SCREEN ELEMENT AND BUTTON CREATIONS SHOULD BE IN HERE.
+	// Handles the creation of screen elements.
+	void createScreenElements();
 };

@@ -160,7 +160,8 @@ private:
 		{6, {"tutorial.tmj", TEXTURE_ASSET_ID::LEVEL_TUTORIAL, MUSIC::PARADRIZZLE}},
 		{7, {"tower.tmj", TEXTURE_ASSET_ID::LEVEL_TOWER, MUSIC::WINDCATCHER}},
 		{8, {"lab.tmj", TEXTURE_ASSET_ID::LEVEL_LAB, MUSIC::WINDCATCHER}},
-		{9, {"under.tmj", TEXTURE_ASSET_ID::LEVEL_UNDER, MUSIC::WINDCATCHER}}
+		{9, {"under.tmj", TEXTURE_ASSET_ID::LEVEL_UNDER, MUSIC::WINDCATCHER}},
+		{10, {"tunnel.tmj", TEXTURE_ASSET_ID::LEVEL_TUNNEL, MUSIC::WINDCATCHER}}
 
 		// How to Add Levels:
 		// 1. Add both TMJ (/levels) and PNG (/data/textures/levels) to the project

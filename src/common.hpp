@@ -74,8 +74,8 @@ extern int WORLD_HEIGHT_PX;
 //
 // game constants
 //
-const int WINDOW_WIDTH_PX = 1280;
-const int WINDOW_HEIGHT_PX = 800;
+const int WINDOW_WIDTH_PX = 1920;
+const int WINDOW_HEIGHT_PX = 1080;
 
 const float VIEWPORT_WIDTH_PX = 1920.0;
 const float VIEWPORT_HEIGHT_PX = 1080.0;
@@ -182,11 +182,11 @@ const float GRAPPLE_DETRACT_GROUNDED =  20.0f;
 const float GRAPPLE_DETRACT_W = 5.0f;
 const float GRAPPLE_HERTZ_GROUNDED = 1.0f;
 const float GRAPPLE_DAMPING_GROUNDED = 0.5f;
-const float GRAPPLE_MAX_LENGTH = 450.0f;
+const float GRAPPLE_MAX_LENGTH = 225.0f; //450.0f;
 const float GRAPPLE_MIN_LENGTH = 100.0f;
 
 // change this to change the clickable area to attach to a grapple point
-const float GRAPPLE_ATTACH_ZONE_RADIUS = 256.0f;
+const float GRAPPLE_ATTACH_ZONE_RADIUS = 128.0f; //256.0f;
 
 // These are hard coded to the dimensions of the entity's texture
 // invaders are 64x64 px, but cells are 60x60

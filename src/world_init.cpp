@@ -358,7 +358,7 @@ Entity createGrapplePoint(b2WorldId worldId, vec2 position){
 	grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS * 2, GRAPPLE_ATTACH_ZONE_RADIUS * 2);
 
 	// TODO davis fix artificially large attachment zones later LOLOL
-	grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS, GRAPPLE_ATTACH_ZONE_RADIUS);
+	//grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS, GRAPPLE_ATTACH_ZONE_RADIUS);
 
 	registry.renderRequests.insert(
 		entity_grapple_outline,

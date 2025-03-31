@@ -1422,7 +1422,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
                     // If the mouse click lies within the button boundaries, it means we clicked it
                     if (worldMousePos.x > left && worldMousePos.x < right && worldMousePos.y > bottom && worldMousePos.y < top) {
 
-                        //std::cout << "!!!!!! BUTTON PRESSED !!!!!!" << button.function << std::endl;
+                        std::cout << "!!!!!! BUTTON PRESSED !!!!!!" << button.function << std::endl;
 
                         // Handle the button press
                         handleButtonPress(button.function);
@@ -1463,12 +1463,12 @@ vec2 WorldSystem::screenToWorld(vec2 mouse_screen)
     float norm_y = (mouse_screen.y - vy) / vh;
 
     // Map to virtual game coordinates
-    float virtual_x = norm_x * 1200.f;
-    float virtual_y = norm_y * 900.f;
+    float virtual_x = norm_x * VIEWPORT_WIDTH_PX; //1200.f;
+    float virtual_y = norm_y * VIEWPORT_HEIGHT_PX; //900.f;
 
     // Offset from screen center (in virtual resolution)
-    float offset_x = virtual_x - 1200.f / 2.f;
-    float offset_y = virtual_y - 900.f / 2.f;
+    float offset_x = virtual_x - VIEWPORT_WIDTH_PX / 2; //1200.f / 2.f;
+    float offset_y = virtual_y - VIEWPORT_HEIGHT_PX / 2; //900.f / 2.f;
 
     // Add camera position to get world-space coordinate
     for (Entity cameraEntity : registry.cameras.entities)

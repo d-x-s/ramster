@@ -833,7 +833,10 @@ void WorldSystem::restart_game(int level)
   max_towers = MAX_TOWERS_START;
   next_enemy_spawn = 0;
   enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
-  grappleActive = false;
+  if (grappleActive) {
+	  removeGrapple();
+      grappleActive = false;
+  }
 
   // remove all box2d bodies
   while (registry.physicsBodies.entities.size() > 0) {

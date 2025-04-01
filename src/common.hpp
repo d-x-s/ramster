@@ -74,11 +74,11 @@ extern int WORLD_HEIGHT_PX;
 //
 // game constants
 //
-const int WINDOW_WIDTH_PX = 1280;
-const int WINDOW_HEIGHT_PX = 800;
+const int WINDOW_WIDTH_PX = 1366;
+const int WINDOW_HEIGHT_PX = 768;
 
-const float VIEWPORT_WIDTH_PX = 1920.0;
-const float VIEWPORT_HEIGHT_PX = 1080.0;
+const float VIEWPORT_WIDTH_PX = WINDOW_WIDTH_PX;
+const float VIEWPORT_HEIGHT_PX = WINDOW_HEIGHT_PX;
 const float ASPECT_RATIO = VIEWPORT_WIDTH_PX / VIEWPORT_HEIGHT_PX;
 
 const int TILE_WIDTH = 128;

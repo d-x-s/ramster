@@ -123,8 +123,8 @@ class RenderSystem
 	textures_path("levels/tower.png"),
 	textures_path("levels/lab.png"),
 	textures_path("levels/under.png"),
-    textures_path("levels/tunnelsmall.png"),
 	textures_path("levels/snake.png"),
+    textures_path("levels/tunnelsmall.png"),
     // <--- Add Next level here !
     textures_path("levels/background.png")
   };

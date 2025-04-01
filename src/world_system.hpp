@@ -169,7 +169,7 @@ private:
 		// 1. Add both TMJ (/levels) and PNG (/data/textures/levels) to the project
 		// 2. Add TMJ file, asset, and music here
 		// 3. Add ASSET_ID in components.hpp
-		// 3. Load map texture in render_system.hpp
+		// 4. Load map texture in render_system.hpp
 	};
 
 	// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!

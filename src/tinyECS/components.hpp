@@ -350,6 +350,12 @@ struct PhysicsBody
   b2BodyId bodyId;
 };
 
+struct GoalZone
+{
+    vec2 bl_boundary;
+	vec2 tr_boundary;
+};
+
 // TODO remove this?
 struct Grapple
 {

@@ -450,9 +450,20 @@ Entity createBackgroundLayer(TEXTURE_ASSET_ID textureId)
 	return entity;
 }
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// !!! {{{ OK }}} TODO A1: createInvader?
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Entity createGoalZone(vec2 bottom_left_pos, vec2 bottom_right_pos) {
+	// reserve an entity
+	auto entity = Entity();
+
+	std::cout << "creating goal post with bottom left: " << bottom_left_pos.x << ", " << bottom_left_pos.y << " and top right: " << bottom_right_pos.x << ", " << bottom_right_pos.y << std::endl;
+
+	GoalZone& goalZone = registry.goalZones.emplace(entity);
+	goalZone.bl_boundary = bottom_left_pos;
+	goalZone.tr_boundary = bottom_right_pos;
+
+	return entity;
+}
+
+
 Entity createInvader(RenderSystem* renderer, vec2 position)
 {
 	// reserve an entity

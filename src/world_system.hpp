@@ -36,6 +36,8 @@ public:
 	// call to close the window
 	void close_window();
 
+	bool is_in_goal();
+
 	// starts the game
 	void init(RenderSystem* renderer);
 
@@ -99,6 +101,7 @@ private:
   Mix_Chunk* fx_destroy_enemy_fail;
   Mix_Chunk* fx_jump;
   Mix_Chunk* fx_grapple;
+  Mix_Chunk* fx_victory;
 	Mix_Chunk* chicken_dead_sound;
 	Mix_Chunk* chicken_eat_sound;
 

@@ -74,8 +74,8 @@ extern int WORLD_HEIGHT_PX;
 //
 // game constants
 //
-const int WINDOW_WIDTH_PX = 1920;
-const int WINDOW_HEIGHT_PX = 1080;
+const int WINDOW_WIDTH_PX = 1366;
+const int WINDOW_HEIGHT_PX = 768;
 
 const float VIEWPORT_WIDTH_PX = WINDOW_WIDTH_PX;
 const float VIEWPORT_HEIGHT_PX = WINDOW_HEIGHT_PX;

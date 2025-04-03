@@ -536,6 +536,7 @@ bool WorldSystem::load_level(const std::string& filename) {
 
     auto& JsonObjects = mapData["layers"][1]["objects"];
     bool spawnpoint_found = false;
+    bool goalzone_found = false;
 
     // Temporary storage for spawn zones and points
     std::unordered_map<std::string, std::vector<vec2>> spawnZones;
@@ -597,6 +598,7 @@ bool WorldSystem::load_level(const std::string& filename) {
             }
             else if (chainPoints.size() == 2 && name == "goal") {
                 std::cout << "found goalpost!" << std::endl;
+                goalzone_found = true;
 
                 bool first = true;
                 vec2 bl_corner;
@@ -680,6 +682,7 @@ bool WorldSystem::load_level(const std::string& filename) {
             }
             else if (chainPoints.size() == 2 && name == "goal") {
                 std::cout << "found goalpost!" << std::endl;
+                goalzone_found = true;
 
                 bool first = true;
                 vec2 bl_corner;
@@ -788,7 +791,12 @@ bool WorldSystem::load_level(const std::string& filename) {
 
     if (!spawnpoint_found) {
         std::cerr << "No spawnpoint found in map file." << std::endl;
-        return true;
+        return false;
+    }
+
+    if (!goalzone_found) {
+        std::cerr << "No goalzone found in map file." << std::endl;
+        return false;
     }
 
     return true;

@@ -123,6 +123,7 @@ void PhysicsSystem::step(float elapsed_ms)
   // Share this
   // Box2D v3 Upgrade: Use `b2World_Step()` instead of `world.Step()`
   float timeStep = elapsed_ms / 1000.0f;
+
   b2World_Step(worldId, timeStep, 4); // 4 is the recommended substep count
   // collisions and other events detected in b2World_Step()
 
@@ -443,9 +444,13 @@ void PhysicsSystem::step(float elapsed_ms)
   }
 
 
- 	if (grappleActive) {
+  if (grappleActive) {
 		updateGrappleLines();
   }
+
+  update_fireball();
+
+
 }
 
 void PhysicsSystem::updateGrappleLines() {
@@ -463,4 +468,55 @@ void PhysicsSystem::updateGrappleLines() {
             line.end_pos = vec2(grapplePos.x, grapplePos.y);
         }
     }
+}
+
+void PhysicsSystem::update_fireball() {
+    // Check if there is a player entity
+    if (registry.players.entities.empty() || registry.fireballs.entities.empty()) {
+        return;
+    }
+
+    // Get the player entity and its motion and physics components
+    Entity playerEntity = registry.players.entities[0];
+    Motion& playerMotion = registry.motions.get(playerEntity);
+    PhysicsBody& playerPhysics = registry.physicsBodies.get(playerEntity);
+
+    // Get the player's velocity from Box2D
+    b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerPhysics.bodyId);
+    float playerSpeed = b2Length(playerVelocity);
+
+    b2Vec2 playerDirection = b2Normalize(playerVelocity);
+
+    const float fireballAspectRatio = 774.f / 260.f;
+
+    // Check if the player is moving at or above the minimum collision speed
+    if (playerSpeed >= MIN_COLLISION_SPEED) {
+        // Set the fireball render request to visible
+        for (Entity fireballEntity : registry.fireballs.entities) {
+            RenderRequest& fireballRenderRequest = registry.renderRequests.get(fireballEntity);
+            fireballRenderRequest.is_visible = true;
+
+            // Adjust the fireball's position to be slightly behind the ball's current position
+            Motion& fireballMotion = registry.motions.get(fireballEntity);
+            vec2 offset = vec2(-playerDirection.x, -playerDirection.y) * 60.f;
+            fireballMotion.position = playerMotion.position + offset;
+
+            // Rotate the fireball to point in the same direction as the ball's movement
+            float angle = atan2(playerDirection.y, playerDirection.x) * (180.f / M_PI);
+            fireballMotion.angle = angle;
+
+        }
+    }
+    else {
+        // If the ball is not moving or below the threshold, set the fireball's position to the same as the ball
+        for (Entity fireballEntity : registry.fireballs.entities) {
+            Motion& fireballMotion = registry.motions.get(fireballEntity);
+            fireballMotion.position = playerMotion.position;
+
+            // Set the fireball render request to not visible
+            RenderRequest& fireballRenderRequest = registry.renderRequests.get(fireballEntity);
+            fireballRenderRequest.is_visible = false;
+        }
+    }
+
 }

@@ -141,7 +141,21 @@ class RenderSystem
 	textures_path("levels/snake.png"),
     textures_path("levels/tunnelsmall.png"),
     // <--- Add Next level here !
-    textures_path("levels/background.png")
+    textures_path("levels/background.png"),
+
+    // fireball effect frames
+    textures_path("fireball_effect/frame_00_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_01_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_02_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_03_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_04_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_05_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_06_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_07_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_08_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_09_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_10_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_11_delay-0.06s.png"),
   };
 
   std::array<GLuint, effect_count> effects;

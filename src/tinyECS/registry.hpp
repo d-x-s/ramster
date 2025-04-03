@@ -45,6 +45,7 @@ public:
 	ComponentContainer<LevelLayer> levelLayers;
 	ComponentContainer<BackgroundLayer> backgroundLayers;
 	ComponentContainer<GoalZone> goalZones;
+	ComponentContainer<FireBall> fireballs;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -82,6 +83,8 @@ public:
 		registry_list.push_back(&cameras);
 
 		registry_list.push_back(&goalZones);
+		registry_list.push_back(&backgroundLayers);
+		registry_list.push_back(&fireballs);
 	}
 
 	void clear_all_components() {

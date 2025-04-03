@@ -235,11 +235,11 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	// TRANSLATE: Move to the correct position
 	transform.translate(motion.position);
 
-	// SCALE (TODO, remove the arbitrary scale up)
-	transform.scale(motion.scale);
-
 	// ROTATE: Apply Box2D rotation to sprite
 	transform.rotate(glm::radians(motion.angle));
+
+	// SCALE (TODO, remove the arbitrary scale up)
+	transform.scale(motion.scale);
 
 	// SCALE
 	// apply custom scale to each animation frame if scale data is embedded
@@ -259,7 +259,7 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	// handle animation if this render request has animation data embedded
 	assert(registry.renderRequests.has(entity));
 	RenderRequest& render_request = registry.renderRequests.get(entity);
-	if (!render_request.animation_frames.empty() && game_active) {
+	if (!render_request.animation_frames.empty() && game_active && render_request.is_visible) {
 		render_request.animation_elapsed_time += elapsed_ms;
 
 		// if this is not a looping animation and it is already complete, remove it
@@ -554,8 +554,9 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 		// draw all entities with a render request to the frame buffer
 		for (Entity entity : registry.renderRequests.entities)
 		{			 
+			RenderRequest& rr = registry.renderRequests.get(entity);
 			// filter to entities that have a motion component (but not a screen)
-			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity) && !registry.screenElements.has(entity)) {
+			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity) && !registry.screenElements.has(entity) && rr.is_visible) {
 				// Note, its not very efficient to access elements indirectly via the entity
 				// albeit iterating through all Sprites in sequence. A good point to optimize
 				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);

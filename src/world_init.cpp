@@ -168,6 +168,63 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 		}
 	);
 
+	// ========================================================================================================
+	// create new entity for fireball fx
+	// ========================================================================================================
+
+	createFireball(startPos);
+
+	return entity;
+}
+
+Entity createFireball(vec2 startPos) {
+
+	Entity entity = Entity();
+
+	auto& fireball = registry.fireballs.emplace(entity);
+
+	// Add motion
+	auto& fireball_motion = registry.motions.emplace(entity);
+	fireball_motion.scale = vec2(200.f, 75.f);
+	fireball_motion.angle = 0.f;
+	fireball_motion.position = startPos;
+
+
+	std::vector<TEXTURE_ASSET_ID> frames;
+
+
+	frames = { TEXTURE_ASSET_ID::FIREBALL_0, 
+		TEXTURE_ASSET_ID::FIREBALL_1,
+		TEXTURE_ASSET_ID::FIREBALL_2,
+		TEXTURE_ASSET_ID::FIREBALL_3,
+		TEXTURE_ASSET_ID::FIREBALL_4,
+		TEXTURE_ASSET_ID::FIREBALL_5,
+		TEXTURE_ASSET_ID::FIREBALL_6,
+		TEXTURE_ASSET_ID::FIREBALL_7,
+		TEXTURE_ASSET_ID::FIREBALL_8,
+		TEXTURE_ASSET_ID::FIREBALL_9,
+		TEXTURE_ASSET_ID::FIREBALL_10,
+		TEXTURE_ASSET_ID::FIREBALL_11
+	};
+
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			frames[0],
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE,
+			frames,
+			{},
+			true,
+			false,
+			60.0f,
+			0.0f,
+			0
+		}
+	);
+
+
 	return entity;
 }
 
@@ -293,12 +350,13 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	registry.renderRequests.insert(
 		entity,
 		{
-			frames[0],                    
+			frames[0],
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE,
-			frames,                       
-			{},							              
-			true,						             
+			frames,
+			{},
+			true,
+			true,
 			200.0f,                       
 			0.0f,                         
 			0                             
@@ -588,6 +646,7 @@ Entity createInvader(RenderSystem* renderer, vec2 position)
 			frames,                       // store all animation frames
 			{},							              // no custom scale per frame
 			true,						              // loop the animation
+			true,
 			200.0f,                       // frame time (ms)
 			0.0f,                         // elapsed time
 			0                             // current frame index
@@ -635,6 +694,7 @@ Entity createExplosion(RenderSystem* renderer, vec2 position)
 			frames,                       // store all animation frames
 			scales,						  // assign custom scale per frame
 			false,						  // do not loop the animation
+			true,
 			200.0f,                       // frame time (ms)
 			0.0f,                         // elapsed time
 			0                             // current frame index

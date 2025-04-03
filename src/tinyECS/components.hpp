@@ -311,7 +311,21 @@ enum class TEXTURE_ASSET_ID
     // parallax
     BACKGROUND = LEVEL_TUNNELSMALL + 1,
 
-    TEXTURE_COUNT = BACKGROUND + 1,
+    // fireball frames
+    FIREBALL_0 = BACKGROUND + 1,
+	FIREBALL_1 = FIREBALL_0 + 1,
+	FIREBALL_2 = FIREBALL_1 + 1,
+	FIREBALL_3 = FIREBALL_2 + 1,
+	FIREBALL_4 = FIREBALL_3 + 1,
+	FIREBALL_5 = FIREBALL_4 + 1,
+	FIREBALL_6 = FIREBALL_5 + 1,
+	FIREBALL_7 = FIREBALL_6 + 1,
+	FIREBALL_8 = FIREBALL_7 + 1,
+	FIREBALL_9 = FIREBALL_8 + 1,
+	FIREBALL_10 = FIREBALL_9 + 1,
+	FIREBALL_11 = FIREBALL_10 + 1,
+
+    TEXTURE_COUNT = FIREBALL_11 + 1,
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
@@ -384,12 +398,17 @@ struct RenderRequest
   std::vector<TEXTURE_ASSET_ID> animation_frames; // animation frames
   std::vector<float> animation_frames_scale;      // optionally assign scale to each frame independently
   bool is_loop = true;                            // if true, loop the animation
+  bool is_visible = true;                         // if false, do not render this entity
   float animation_frame_time = 0;                 // time per frame in ms
   float animation_elapsed_time = 0;               // relative elapsed time
   int animation_current_frame = 0;                // current frame index
 };
 
 struct Explosion
+{
+};
+
+struct FireBall
 {
 };
 

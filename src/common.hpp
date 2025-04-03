@@ -109,7 +109,7 @@ const int PROJECTILE_DAMAGE = 10;
 // Amount of time to stop an enemy after colliding (if player loses collision)
 const float ENEMY_FREEZE_TIME_MS = 1500;
 // Delay before showing end of game screen after game is over
-const int TIMER_GAME_END = 2500;
+const int TIMER_GAME_END = 1500;
 // Minimum amount of speed the player needs after a collision to "win". Tune down for easier gameplay and vice versa.
 const float MIN_COLLISION_SPEED = 1.5;
 
@@ -184,7 +184,7 @@ const float GRAPPLE_DETRACT_GROUNDED =  20.0f;
 const float GRAPPLE_DETRACT_W = 5.0f;
 const float GRAPPLE_HERTZ_GROUNDED = 1.0f;
 const float GRAPPLE_DAMPING_GROUNDED = 0.5f;
-const float GRAPPLE_MAX_LENGTH = 225.0f; //450.0f;
+const float GRAPPLE_MAX_LENGTH = 450.0f; //450.0f;
 const float GRAPPLE_MIN_LENGTH = 100.0f;
 
 // change this to change the clickable area to attach to a grapple point

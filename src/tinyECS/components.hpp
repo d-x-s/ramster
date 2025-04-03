@@ -402,6 +402,7 @@ struct GoalZone
 {
     vec2 bl_boundary;
 	vec2 tr_boundary;
+    bool hasTriggered;
 };
 
 // TODO remove this?

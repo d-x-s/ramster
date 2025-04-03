@@ -521,6 +521,7 @@ Entity createGoalZone(vec2 bottom_left_pos, vec2 bottom_right_pos) {
 	GoalZone& goalZone = registry.goalZones.emplace(entity);
 	goalZone.bl_boundary = bottom_left_pos;
 	goalZone.tr_boundary = bottom_right_pos;
+	goalZone.hasTriggered = false;
 
 	return entity;
 }

@@ -333,7 +333,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
         if (is_in_goal()) {
             player_reached_finish_line = true;
-            Mix_PlayChannel(-1, fx_victory, 0);
         }
 
         // Remove debug info from the last step
@@ -493,6 +492,13 @@ bool WorldSystem::is_in_goal() {
 
 		// check if player is within goal zone
         if (player_position.x >= bl.x && player_position.x <= tr.x && player_position.y >= bl.y && player_position.y <= tr.y) {
+			if (!goalZone.hasTriggered) {
+                Mix_PlayChannel(-1, fx_victory, 0);
+			}
+
+			goalZone.hasTriggered = true;
+            
+
             return true;
         }
     }
@@ -919,7 +925,7 @@ void WorldSystem::restart_game(int level)
       registry.remove_all_components_of(playerEntity);
   }
 
-  if (registry.players.entities.size() > 0) {
+  if (registry.goalZones.entities.size() > 0) {
       // clear goalZone
       Entity& goalEntity = registry.goalZones.entities.back();
       registry.remove_all_components_of(goalEntity);

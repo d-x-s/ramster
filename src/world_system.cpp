@@ -332,6 +332,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
 
         if (is_in_goal()) {
+            player_reached_finish_line = true;
             Mix_PlayChannel(-1, fx_victory, 0);
         }
 
@@ -867,6 +868,7 @@ void WorldSystem::restart_game(int level)
 
   std::cout << "Restarting..." << std::endl;
 
+
   // Debugging for memory/component leaks
   registry.list_all_components();
 
@@ -881,6 +883,8 @@ void WorldSystem::restart_game(int level)
   //insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
   //insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
 
+  player_reached_finish_line = false;
+  timer_game_end_screen = TIMER_GAME_END;
   num_enemies_to_kill = countEnemiesOnLevel();
   hp = PLAYER_STARTING_HP;
   enemies_killed = 0;
@@ -1457,20 +1461,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
         // Every other screen, mouse deals with button presses.
         else {
 
-            // LLNOTE:
-            /*
-            Tried a couple things to get the button click handling working and finally found the source of the issue after a copious amount of sanity checking.
-            The screen elements are rendered at Viewport resolution/scaling, while the mouse click location does not actually correspond to that, which is why the button hitboxes 
-            were not working. 
-            
-            Problem:
-            - Mouse scaled according to WINDOW_WIDTH_PX and WINDOW_HEIGHT_PX, which is 1280 x 800, while the rendering is scaled to 1920 x 1080, meaning the mouse is completely
-            missing quite a lot of stuff including button hitboxes.
-            
-            (Potential) Solution:
-            - Apply a multiple based on VIEWPORT / WINDOW to the mouse, which should get the scaling more or less correct.
-            */
-
             // Get camera to center on
             Camera camera = registry.cameras.get(registry.cameras.entities[0]);
             vec2 center = vec2(camera.position.x, camera.position.y);
@@ -1503,7 +1493,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
                     // If the mouse click lies within the button boundaries, it means we clicked it
                     if (worldMousePos.x > left && worldMousePos.x < right && worldMousePos.y > bottom && worldMousePos.y < top) {
 
-                        std::cout << "!!!!!! BUTTON PRESSED !!!!!!" << button.function << std::endl;
+                        // std::cout << "!!!!!! BUTTON PRESSED !!!!!!" << button.function << std::endl;
 
                         // Handle the button press
                         handleButtonPress(button.function);
@@ -1851,6 +1841,7 @@ void WorldSystem::handleButtonPress(std::string function) {
     else if (function == "RESTART") {
 
         int w, h;
+        currentScreen.current_screen = "PLAYING";
         glfwGetWindowSize(window, &w, &h);
         restart_game(level_selection);
 

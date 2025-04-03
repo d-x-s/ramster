@@ -109,7 +109,7 @@ const int PROJECTILE_DAMAGE = 10;
 // Amount of time to stop an enemy after colliding (if player loses collision)
 const float ENEMY_FREEZE_TIME_MS = 1500;
 // Delay before showing end of game screen after game is over
-const int TIMER_GAME_END = 5000;
+const int TIMER_GAME_END = 2500;
 // Minimum amount of speed the player needs after a collision to "win". Tune down for easier gameplay and vice versa.
 const float MIN_COLLISION_SPEED = 1.5;
 

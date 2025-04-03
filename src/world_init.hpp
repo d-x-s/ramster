@@ -62,6 +62,8 @@ Entity createGrapplePoint(b2WorldId worldId, vec2 position);
 Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBodyId, float distance);
 void removeGrapple();
 
+Entity createGoalZone(vec2 bottom_left_pos, vec2 bottom_right_pos);
+
 // level layers
 Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId);
 Entity createBackgroundLayer(TEXTURE_ASSET_ID textureId);

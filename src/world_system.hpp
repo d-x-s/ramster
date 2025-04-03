@@ -36,6 +36,8 @@ public:
 	// call to close the window
 	void close_window();
 
+	bool is_in_goal();
+
 	// starts the game
 	void init(RenderSystem* renderer);
 
@@ -92,12 +94,14 @@ private:
   Mix_Music* background_music_oblanka;
   Mix_Music* background_music_paradrizzle;
   Mix_Music* background_music_windcatcher;
+  Mix_Music* background_music_promenade;
 
   // fx references
   Mix_Chunk* fx_destroy_enemy;
   Mix_Chunk* fx_destroy_enemy_fail;
   Mix_Chunk* fx_jump;
   Mix_Chunk* fx_grapple;
+  Mix_Chunk* fx_victory;
 	Mix_Chunk* chicken_dead_sound;
 	Mix_Chunk* chicken_eat_sound;
 
@@ -150,8 +154,25 @@ private:
 		>> levelMap =
 	{
 		// ADD LEVELS HERE
-		{1, {"tutorial.tmj", TEXTURE_ASSET_ID::LEVEL_TUTORIAL, MUSIC::LEVEL_1}},
-		{2, {"tower.tmj", TEXTURE_ASSET_ID::LEVEL_TOWER, MUSIC::LEVEL_1}}
+		// tmj files
+		{1, {"level1.tmj", TEXTURE_ASSET_ID::LEVEL_1, MUSIC::PROMENADE}},
+		{2, {"level2.tmj", TEXTURE_ASSET_ID::LEVEL_2, MUSIC::PROMENADE}},
+		{3, {"level3.tmj", TEXTURE_ASSET_ID::LEVEL_3, MUSIC::PROMENADE}},
+		{4, {"level4.tmj", TEXTURE_ASSET_ID::LEVEL_4, MUSIC::PROMENADE}},
+		{5, {"level5.tmj", TEXTURE_ASSET_ID::LEVEL_5, MUSIC::PROMENADE}},
+		{6, {"level6.tmj", TEXTURE_ASSET_ID::LEVEL_6, MUSIC::PROMENADE}},
+		{7, {"tutorial.tmj", TEXTURE_ASSET_ID::LEVEL_TUTORIAL, MUSIC::PARADRIZZLE}},
+		{8, {"tower.tmj", TEXTURE_ASSET_ID::LEVEL_TOWER, MUSIC::WINDCATCHER}},
+		{9, {"lab.tmj", TEXTURE_ASSET_ID::LEVEL_LAB, MUSIC::WINDCATCHER}},
+		{10, {"under.tmj", TEXTURE_ASSET_ID::LEVEL_UNDER, MUSIC::WINDCATCHER}},
+		{11, {"snake.tmj", TEXTURE_ASSET_ID::LEVEL_SNAKE, MUSIC::WINDCATCHER}},
+		{12, {"tunnelsmall.tmj", TEXTURE_ASSET_ID::LEVEL_TUNNELSMALL, MUSIC::WINDCATCHER}}
+
+		// How to Add Levels:
+		// 1. Add both TMJ (/levels) and PNG (/data/textures/levels) to the project
+		// 2. Add TMJ file, asset, and music here
+		// 3. Add ASSET_ID in components.hpp
+		// 4. Load map texture in render_system.hpp
 	};
 
 	// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!

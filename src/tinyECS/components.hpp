@@ -295,11 +295,21 @@ enum class TEXTURE_ASSET_ID
     TUTORIAL_DESTROY = TUTORIAL_GRAPPLE + 1,
 
     // levels
-	LEVEL_TUTORIAL = TUTORIAL_DESTROY + 1,
+	LEVEL_1 = TUTORIAL_DESTROY + 1,
+	LEVEL_2 = LEVEL_1 + 1,
+	LEVEL_3 = LEVEL_2 + 1,
+	LEVEL_4 = LEVEL_3 + 1,
+	LEVEL_5 = LEVEL_4 + 1,
+	LEVEL_6 = LEVEL_5 + 1,
+	LEVEL_TUTORIAL = LEVEL_6 + 1,
 	LEVEL_TOWER = LEVEL_TUTORIAL + 1,
+	LEVEL_LAB = LEVEL_TOWER + 1,
+	LEVEL_UNDER = LEVEL_LAB + 1,
+	LEVEL_SNAKE = LEVEL_UNDER + 1,
+    LEVEL_TUNNELSMALL = LEVEL_SNAKE + 1,
 
     // parallax
-    BACKGROUND = LEVEL_TOWER + 1,
+    BACKGROUND = LEVEL_TUNNELSMALL + 1,
 
     TEXTURE_COUNT = BACKGROUND + 1,
 };
@@ -308,11 +318,12 @@ const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 enum class MUSIC
 {
   MENU = 0,
-  LEVEL_1 = MENU + 1,
-  LEVEL_2 = LEVEL_1 + 1,
-  LEVEL_3 = LEVEL_2 + 1,
+  OBLANKA = MENU + 1,
+  PARADRIZZLE = OBLANKA + 1,
+  WINDCATCHER = PARADRIZZLE + 1,
+  PROMENADE = WINDCATCHER + 1,
 
-  MUSIC_COUNT = LEVEL_3 + 1,
+  MUSIC_COUNT = PROMENADE + 1,
 };
 const int music_count = (int)MUSIC::MUSIC_COUNT;
 
@@ -385,6 +396,12 @@ struct Explosion
 struct PhysicsBody
 {
   b2BodyId bodyId;
+};
+
+struct GoalZone
+{
+    vec2 bl_boundary;
+	vec2 tr_boundary;
 };
 
 // TODO remove this?

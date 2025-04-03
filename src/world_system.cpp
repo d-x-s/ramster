@@ -59,6 +59,8 @@ WorldSystem::~WorldSystem()
     Mix_FreeMusic(background_music_paradrizzle);
   if (background_music_windcatcher != nullptr)
     Mix_FreeMusic(background_music_windcatcher);
+  if (background_music_promenade != nullptr)
+	Mix_FreeMusic(background_music_promenade);
   if (fx_destroy_enemy != nullptr)
     Mix_FreeChunk(fx_destroy_enemy);
   if (fx_destroy_enemy_fail != nullptr)
@@ -67,6 +69,8 @@ WorldSystem::~WorldSystem()
     Mix_FreeChunk(fx_jump);
   if (fx_grapple != nullptr)
     Mix_FreeChunk(fx_grapple);
+  if (fx_victory != nullptr)
+      Mix_FreeChunk(fx_victory);
   if (chicken_dead_sound != nullptr)
     Mix_FreeChunk(chicken_dead_sound);
   if (chicken_eat_sound != nullptr)
@@ -179,12 +183,14 @@ bool WorldSystem::start_and_load_sounds()
   background_music_oblanka = Mix_LoadMUS(audio_path("music_oblanka.wav").c_str());
   background_music_paradrizzle = Mix_LoadMUS(audio_path("music_paradrizzle.wav").c_str());
   background_music_windcatcher = Mix_LoadMUS(audio_path("music_windcatcher.wav").c_str());
+  background_music_promenade = Mix_LoadMUS(audio_path("music_promenade.wav").c_str());
 
   // sound fx
   fx_destroy_enemy = Mix_LoadWAV(audio_path("fx_destroy_enemy.wav").c_str());
   fx_destroy_enemy_fail = Mix_LoadWAV(audio_path("fx_destroy_enemy_fail.wav").c_str());
   fx_jump = Mix_LoadWAV(audio_path("fx_jump.wav").c_str());
   fx_grapple = Mix_LoadWAV(audio_path("fx_grapple.wav").c_str());
+  fx_victory = Mix_LoadWAV(audio_path("fx_victory.wav").c_str());
   chicken_dead_sound = Mix_LoadWAV(audio_path("chicken_dead.wav").c_str());
   chicken_eat_sound = Mix_LoadWAV(audio_path("chicken_eat.wav").c_str());
   
@@ -194,6 +200,7 @@ bool WorldSystem::start_and_load_sounds()
       background_music_oblanka == nullptr ||
       background_music_paradrizzle == nullptr ||
       background_music_windcatcher == nullptr ||
+	  background_music_promenade == nullptr ||
       fx_destroy_enemy == nullptr ||
       fx_destroy_enemy_fail == nullptr ||
       fx_jump == nullptr ||
@@ -208,6 +215,7 @@ bool WorldSystem::start_and_load_sounds()
             audio_path("music_oblanka.wav").c_str(),
             audio_path("music_paradrizzle.wav").c_str(),
             audio_path("music_windcatcher.wav").c_str(),
+		    audio_path("music_promenade.wav").c_str(),
 
             // sound fx
             audio_path("fx_destroy_enemy.wav").c_str(),
@@ -230,18 +238,22 @@ void WorldSystem::playMusic(MUSIC music)
       Mix_PlayMusic(background_music_memorybranch, -1);
       //current_music = MUSIC::MENU;
       break;
-    case MUSIC::LEVEL_1:
+    case MUSIC::OBLANKA:
       Mix_PlayMusic(background_music_oblanka, -1);
       //current_music = MUSIC::LEVEL_1;
       break;
-    case MUSIC::LEVEL_2:
+    case MUSIC::PARADRIZZLE:
       Mix_PlayMusic(background_music_paradrizzle, -1);
       //current_music = MUSIC::LEVEL_2;
       break;
-    case MUSIC::LEVEL_3:
+    case MUSIC::WINDCATCHER:
       Mix_PlayMusic(background_music_windcatcher, -1);
       //current_music = MUSIC::LEVEL_3;
       break;
+	case MUSIC::PROMENADE:
+	  Mix_PlayMusic(background_music_promenade, -1);
+      //current_music = MUSIC::LEVEL_4;
+	  break;
     default:
       Mix_PlayMusic(background_music_memorybranch, -1);
       //current_music = MUSIC::MENU;
@@ -318,6 +330,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             time_granularity -= elapsed_ms_since_last_update;
         }
 
+
+        if (is_in_goal()) {
+            Mix_PlayChannel(-1, fx_victory, 0);
+        }
 
         // Remove debug info from the last step
         while (registry.debugComponents.entities.size() > 0)
@@ -464,6 +480,26 @@ void WorldSystem::stop_game()
   }
 }
 
+bool WorldSystem::is_in_goal() {
+    if (registry.goalZones.entities.size() >= 1) {
+		GoalZone& goalZone = registry.goalZones.get(registry.goalZones.entities[0]);
+        Entity& playerEntity = registry.players.entities[0];
+
+		vec2 player_position = registry.motions.get(playerEntity).position;
+
+		vec2 bl = goalZone.bl_boundary;
+		vec2 tr = goalZone.tr_boundary;
+
+		// check if player is within goal zone
+        if (player_position.x >= bl.x && player_position.x <= tr.x && player_position.y >= bl.y && player_position.y <= tr.y) {
+            return true;
+        }
+    }
+    else {
+		return false;
+    }
+}
+
 bool WorldSystem::load_level(const std::string& filename) {
     const std::string full_filepath = LEVEL_DIR_FILEPATH + filename;
     Json::Value mapData;
@@ -553,8 +589,26 @@ bool WorldSystem::load_level(const std::string& filename) {
                 enemyQuantity[id] = std::stoi(parts[2]);
             }
             else if (chainPoints.size() == 2 && name == "goal") {
-                // TODO: GOALPOST case.
-                std::cout << "found goalpost, TODO" << std::endl;
+                std::cout << "found goalpost!" << std::endl;
+
+                bool first = true;
+                vec2 bl_corner;
+                vec2 tr_corner;
+                for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
+                    float x = point["x"].asFloat();
+                    float y = point["y"].asFloat();
+
+                    if (first) {
+						bl_corner = vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset));
+						first = false;
+					}
+                    else {
+                        tr_corner = vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset));
+                    }
+
+                }
+
+                createGoalZone(bl_corner, tr_corner);
             }
             else if (chainPoints.size() >= 2) {
                 std::cout << "Creating chainShape with " << chainPoints.size() << " segments." << std::endl;
@@ -618,8 +672,26 @@ bool WorldSystem::load_level(const std::string& filename) {
                 enemyQuantity[id] = std::stoi(parts[2]);
             }
             else if (chainPoints.size() == 2 && name == "goal") {
-                // TODO: GOALPOST case.
-                std::cout << "found goalpost, TODO" << std::endl;
+                std::cout << "found goalpost!" << std::endl;
+
+                bool first = true;
+                vec2 bl_corner;
+                vec2 tr_corner;
+                for (auto& point : jsonObj[JSON_POLYLINE_ATTR]) {
+                    float x = point["x"].asFloat();
+                    float y = point["y"].asFloat();
+
+                    if (first) {
+                        bl_corner = vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset));
+                        first = false;
+                    }
+                    else {
+                        tr_corner = vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset));
+                    }
+
+                }
+
+                createGoalZone(bl_corner, tr_corner);
             }
             else if (chainPoints.size() >= 2) {
                 std::cout << "Creating chainShape with " << chainPoints.size() << " segments." << std::endl;
@@ -817,7 +889,10 @@ void WorldSystem::restart_game(int level)
   max_towers = MAX_TOWERS_START;
   next_enemy_spawn = 0;
   enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
-  grappleActive = false;
+  if (grappleActive) {
+	  removeGrapple();
+      grappleActive = false;
+  }
 
   // remove all box2d bodies
   while (registry.physicsBodies.entities.size() > 0) {
@@ -838,6 +913,12 @@ void WorldSystem::restart_game(int level)
       // clear player-related stuff.
 	  Entity& playerEntity = registry.players.entities.back();
       registry.remove_all_components_of(playerEntity);
+  }
+
+  if (registry.players.entities.size() > 0) {
+      // clear goalZone
+      Entity& goalEntity = registry.goalZones.entities.back();
+      registry.remove_all_components_of(goalEntity);
   }
 
   if (registry.backgroundLayers.size() > 0) {

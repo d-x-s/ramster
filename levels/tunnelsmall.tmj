@@ -164,12 +164,12 @@
                          "y":640
                         }, 
                         {
-                         "x":-5759.81818181818,
-                         "y":609.090909090909
+                         "x":-5759.82,
+                         "y":609.091
                         }, 
                         {
                          "x":-5952,
-                         "y":608.086956521739
+                         "y":608.087
                         }, 
                         {
                          "x":-5952,
@@ -297,15 +297,35 @@
                  "width":0,
                  "x":12160,
                  "y":2240
+                }, 
+                {
+                 "height":0,
+                 "id":29,
+                 "name":"goal",
+                 "polyline":[
+                        {
+                         "x":0,
+                         "y":0
+                        }, 
+                        {
+                         "x":128,
+                         "y":-128
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":11776,
+                 "y":512
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }],
  "nextlayerid":3,
- "nextobjectid":29,
+ "nextobjectid":30,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",

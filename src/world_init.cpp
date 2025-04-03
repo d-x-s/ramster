@@ -12,17 +12,79 @@ Entity createCurrentScreen() {
 	return entity;
 }
 
+// TODO: Port createScreen here.
+Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
+
+	Entity entity = Entity(); 
+
+	// Make screen element
+	ScreenElement& screenElement = registry.screenElements.emplace(entity);
+	screenElement.screen = screen;
+
+	// Configure size (for some reason we need motion to render?)
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // This is a placeholder. Actual position computed during runtime.
+	motion.scale = vec2(width_px, height_px); // Scaled to defined width/height
+
+	// Attach camera to center screen
+	Entity camera = registry.cameras.entities[0];
+	screenElement.camera = camera;
+
+	// Set position relative to camera center
+	screenElement.position = pos_relative_center;
+
+	// Define boundaries based around center (so, center wrapped by boundary walls)
+	screenElement.boundaries = vec4(screenElement.position.x - (width_px / 2), screenElement.position.y - (height_px / 2),
+									screenElement.position.x + (width_px / 2), screenElement.position.y + (height_px / 2));
+	// LLNOTE: IDK how it ended up like this but after much trial and error these are the values that I needed for those buttons to get hitboxes right.
+	/*
+	screenElement.boundaries = vec4(screenElement.position.x - (width_px / 3.175), screenElement.position.y - (height_px / 2.05),
+									screenElement.position.x + (width_px / 3.225), screenElement.position.y + (height_px / 2.85));
+	*/
+
+	// Add to render requests with specified texture
+	registry.renderRequests.insert(
+		entity,
+		{
+			texture,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return entity;
+
+}
+
+
+// Makes button and renders as screen element.
+Entity createButton(std::string function, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
+
+	Entity buttonElement = createScreenElement(screen, texture, width_px, height_px, pos_relative_center);
+	Button& button = registry.buttons.emplace(buttonElement);
+	button.function = function;
+
+	return buttonElement;
+}
+
+
+
 // This will create the screens that we are going to be using.
+// NOTE: THIS IS LEGACY CODE. PORTED OVER TO createScreenElement
 Entity createScreen(std::string screen_type) {
 	Entity entity = Entity();
 
 	Screen& screen = registry.screens.emplace(entity);
 	screen.screen = screen_type;
 
-	// Configure size
+	// Configure size (for some reason we need motion to render?)
 	auto& motion = registry.motions.emplace(entity);
-	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // Note!!! Screen centers on the player's location. This is a placeholder.
-	motion.scale = vec2(VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX); // Scale to window size
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // This is a placeholder. Actual position computed during runtime.
+	motion.scale = vec2(VIEWPORT_WIDTH_PX/6, VIEWPORT_HEIGHT_PX/2); // Scale to window size
+
+	// Attach camera to center screen
+	Entity camera = registry.cameras.entities[0];
+	screen.screen_center = camera;
 
 	// Figure out which screen to display
 	TEXTURE_ASSET_ID screen_texture{};
@@ -296,7 +358,7 @@ Entity createGrapplePoint(b2WorldId worldId, vec2 position){
 	grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS * 2, GRAPPLE_ATTACH_ZONE_RADIUS * 2);
 
 	// TODO davis fix artificially large attachment zones later LOLOL
-	grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS, GRAPPLE_ATTACH_ZONE_RADIUS);
+	//grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS, GRAPPLE_ATTACH_ZONE_RADIUS);
 
 	registry.renderRequests.insert(
 		entity_grapple_outline,

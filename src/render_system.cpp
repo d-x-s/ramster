@@ -555,7 +555,7 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 		for (Entity entity : registry.renderRequests.entities)
 		{			 
 			// filter to entities that have a motion component (but not a screen)
-			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity)) {
+			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity) && !registry.screenElements.has(entity)) {
 				// Note, its not very efficient to access elements indirectly via the entity
 				// albeit iterating through all Sprites in sequence. A good point to optimize
 				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
@@ -569,29 +569,30 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 	// SCREENS TO RENDER WHEN NOT PLAYING
 	else {
 
-		// Screen centers on the player, so we need to figure out where they are to center screen.
-		Entity playerEntity = registry.players.entities[0];
-		Motion& playerMotion = registry.motions.get(playerEntity);
-
-		// If the player is too close to the left-hand-side, apply a correction
-		// Padding outside of world bounds. Too small of a number will cause it to trigger prematurely, too large of a number limits padding.
-		// Still need to fine-tune, saving for M4
-		int padding_left = 690;//469;
-		int playerPosition_x = playerMotion.position.x;
-
-		// Correction:
-		// middle_x - (padding + position)
-
-		// Corrections to apply. For now it's enough to put it back onto the screen.
-		int correction_left = max((int)(VIEWPORT_WIDTH_PX / 2 - (padding_left + playerMotion.position.x)), 0);
-		//std::cout << correction_left << std::endl;
-		// Placeholders
-		int correction_right = 0;
-		int correction_top = 0;
-		int correction_bottom = 0;
+		Entity cameraEntity = registry.players.entities[0];
+		vec2 cameraPosition = registry.cameras.get(cameraEntity).position;
 
 		for (Entity entity : registry.renderRequests.entities) {
 
+			// We're only interested in screen elements
+			if (registry.screenElements.has(entity)) {
+
+				ScreenElement screenElement = registry.screenElements.get(entity);
+				Motion& screenMotion = registry.motions.get(entity);
+
+				// Ensure that we're only rendering elements belonging to the screen we're currently on
+				if (currentScreen.current_screen == screenElement.screen) {
+
+					// Re-center screen onto camera
+					screenMotion.position = vec2(cameraPosition.x + screenElement.position.x, cameraPosition.y + screenElement.position.y);
+
+					// Then render
+					drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+				}
+
+			}
+
+			/* LEGACY CODE FOR SCREEN RENDERING 
 			// filter to screen entities
 			if (registry.screens.has(entity)) {
 
@@ -601,15 +602,15 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 				// Ensure that we're only rendering the screen that we're on right now
 				if (currentScreen.current_screen == screen.screen) {
 
-					// Re-center screen on player location, PLUS CORRECTIONS IF PLAYER TO CLOSE TO EDGE OF WORLD
-					screenMotion.position = vec2(playerMotion.position.x + correction_left, playerMotion.position.y);
+					// Re-center screen onto camera
+					screenMotion.position = vec2(cameraPosition.x, cameraPosition.y);
 
 					// Then render
 					drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 				}
 
 			}
-
+			*/
 		}
 	}
 

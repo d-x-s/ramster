@@ -1684,11 +1684,17 @@ void WorldSystem::handleGameover(CurrentScreen& currentScreen) {
         createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_DEFEAT, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
     }
     // If player reached finish line AND killed all enemies, game ends.
-    else if (player_reached_finish_line&& enemies_killed > 5) {
-        currentScreen.current_screen = "END OF GAME";
+    else if (player_reached_finish_line) {
 
-        // Victory title
-        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_VICTORY, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+        if (timer_game_end_screen <= 0) {
+            // Victory title
+            createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_VICTORY, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+
+            currentScreen.current_screen = "END OF GAME";
+        }
+        else {
+            timer_game_end_screen -= time_elapsed;
+        }
     }
 
 }

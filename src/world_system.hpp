@@ -195,7 +195,9 @@ private:
 	int max_towers;	// see default value in common.hpp
 
 	// Player reached finish line (DEFAULT TO FALSE AND SET TO TRUE IF THEY GOT THERE!!!)
-	int player_reached_finish_line = true; //LLNOTE: Need to implement finish line check or else game never ends. Swap this to true to test out game end by killing all enemies.
+	bool player_reached_finish_line = false; //LLNOTE: make sure to set this to true once player reaches finish line.
+	// Timer before end of game screen is displayed
+	int timer_game_end_screen = TIMER_GAME_END;
 	// Enemies killed.
 	int enemies_killed = 0;
 	// Player hp. 

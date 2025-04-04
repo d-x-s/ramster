@@ -61,6 +61,14 @@ WorldSystem::~WorldSystem()
     Mix_FreeMusic(background_music_windcatcher);
   if (background_music_promenade != nullptr)
 	Mix_FreeMusic(background_music_promenade);
+  if (background_music_spaba != nullptr)
+	  Mix_FreeMusic(background_music_spaba);
+  if (background_music_cottonplanes != nullptr)
+	  Mix_FreeMusic(background_music_cottonplanes);
+  if (background_music_pencilcrayons != nullptr)
+	  Mix_FreeMusic(background_music_pencilcrayons);
+  if (background_music_moontownshores != nullptr)
+	  Mix_FreeMusic(background_music_moontownshores);
   if (fx_destroy_enemy != nullptr)
     Mix_FreeChunk(fx_destroy_enemy);
   if (fx_destroy_enemy_fail != nullptr)
@@ -184,6 +192,10 @@ bool WorldSystem::start_and_load_sounds()
   background_music_paradrizzle = Mix_LoadMUS(audio_path("music_paradrizzle.wav").c_str());
   background_music_windcatcher = Mix_LoadMUS(audio_path("music_windcatcher.wav").c_str());
   background_music_promenade = Mix_LoadMUS(audio_path("music_promenade.wav").c_str());
+  background_music_spaba = Mix_LoadMUS(audio_path("music_spaba.wav").c_str());
+  background_music_cottonplanes = Mix_LoadMUS(audio_path("music_cottonplanes.wav").c_str());
+  background_music_pencilcrayons = Mix_LoadMUS(audio_path("music_pencilcrayons.wav").c_str());
+  background_music_moontownshores = Mix_LoadMUS(audio_path("music_moontownshores.wav").c_str());
 
   // sound fx
   fx_destroy_enemy = Mix_LoadWAV(audio_path("fx_destroy_enemy.wav").c_str());
@@ -201,6 +213,10 @@ bool WorldSystem::start_and_load_sounds()
       background_music_paradrizzle == nullptr ||
       background_music_windcatcher == nullptr ||
 	  background_music_promenade == nullptr ||
+	  background_music_spaba == nullptr ||
+	  background_music_cottonplanes == nullptr ||
+	  background_music_pencilcrayons == nullptr ||
+	  background_music_moontownshores == nullptr ||
       fx_destroy_enemy == nullptr ||
       fx_destroy_enemy_fail == nullptr ||
       fx_jump == nullptr ||
@@ -216,6 +232,10 @@ bool WorldSystem::start_and_load_sounds()
             audio_path("music_paradrizzle.wav").c_str(),
             audio_path("music_windcatcher.wav").c_str(),
 		    audio_path("music_promenade.wav").c_str(),
+		    audio_path("music_spaba.wav").c_str(),
+		    audio_path("music_cottonplanes.wav").c_str(),
+		    audio_path("music_pencilcrayons.wav").c_str(),
+		    audio_path("music_moontownshores.wav").c_str(),
 
             // sound fx
             audio_path("fx_destroy_enemy.wav").c_str(),
@@ -236,27 +256,33 @@ void WorldSystem::playMusic(MUSIC music)
   {
     case MUSIC::MENU:
       Mix_PlayMusic(background_music_memorybranch, -1);
-      //current_music = MUSIC::MENU;
       break;
     case MUSIC::OBLANKA:
       Mix_PlayMusic(background_music_oblanka, -1);
-      //current_music = MUSIC::LEVEL_1;
       break;
     case MUSIC::PARADRIZZLE:
       Mix_PlayMusic(background_music_paradrizzle, -1);
-      //current_music = MUSIC::LEVEL_2;
       break;
     case MUSIC::WINDCATCHER:
       Mix_PlayMusic(background_music_windcatcher, -1);
-      //current_music = MUSIC::LEVEL_3;
       break;
 	case MUSIC::PROMENADE:
 	  Mix_PlayMusic(background_music_promenade, -1);
-      //current_music = MUSIC::LEVEL_4;
 	  break;
+	case MUSIC::SPABA:
+		Mix_PlayMusic(background_music_spaba, -1);
+		break;
+	case MUSIC::COTTONPLANES:
+		Mix_PlayMusic(background_music_cottonplanes, -1);
+		break;
+	case MUSIC::PENCILCRAYONS:
+		Mix_PlayMusic(background_music_pencilcrayons, -1);
+		break;
+	case MUSIC::MOONTOWNSHORES:
+		Mix_PlayMusic(background_music_moontownshores, -1);
+		break;
     default:
       Mix_PlayMusic(background_music_memorybranch, -1);
-      //current_music = MUSIC::MENU;
       break;
   }
 }

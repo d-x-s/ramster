@@ -1758,6 +1758,8 @@ void WorldSystem::checkGrappleGrounded()
         float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
         if (isGrounded)
         {
+          b2DistanceJoint_EnableLimit(grapple.jointId, true);
+          b2DistanceJoint_SetLengthRange(grapple.jointId, 0, GRAPPLE_MAX_LENGTH);
           b2DistanceJoint_EnableSpring(grapple.jointId, true);
           b2DistanceJoint_SetSpringHertz(grapple.jointId, GRAPPLE_HERTZ_GROUNDED);
           b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, GRAPPLE_DAMPING_GROUNDED);

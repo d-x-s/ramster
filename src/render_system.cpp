@@ -296,7 +296,9 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	gl_has_errors();
 
 	// texture-mapped entities - use data location as in the vertex buffer
-	if (render_request.used_effect == EFFECT_ASSET_ID::TEXTURED || render_request.used_effect == EFFECT_ASSET_ID::TRANSLUCENT)
+	if (render_request.used_effect == EFFECT_ASSET_ID::TEXTURED || 
+		render_request.used_effect == EFFECT_ASSET_ID::TRANSLUCENT ||
+		render_request.used_effect == EFFECT_ASSET_ID::FIREBALL)
 	{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
@@ -325,9 +327,14 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 		glBindTexture(GL_TEXTURE_2D, texture_id);
 		gl_has_errors();
 
-		float translucency_factor = 0.25f;
+		float translucency_factor = 0.40f;
 		GLint translucency_factor_loc = glGetUniformLocation(program, "translucent_alpha");
 		glUniform1f(translucency_factor_loc, translucency_factor);
+		gl_has_errors();
+
+		float fireball_factor = 0.60f;
+		GLint fireball_factor_loc = glGetUniformLocation(program, "fireball_alpha");
+		glUniform1f(fireball_factor_loc, fireball_factor);
 		gl_has_errors();
 	}
 	else if (render_request.used_effect == EFFECT_ASSET_ID::PARALLAX)

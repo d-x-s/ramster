@@ -213,7 +213,8 @@ Entity createFireball(vec2 startPos) {
 
 	std::vector<TEXTURE_ASSET_ID> frames;
 
-	frames = { TEXTURE_ASSET_ID::FIREBALL_0, 
+	frames = { 
+		TEXTURE_ASSET_ID::FIREBALL_0, 
 		TEXTURE_ASSET_ID::FIREBALL_1,
 		TEXTURE_ASSET_ID::FIREBALL_2,
 		TEXTURE_ASSET_ID::FIREBALL_3,
@@ -231,7 +232,7 @@ Entity createFireball(vec2 startPos) {
 		entity,
 		{
 			frames[0],
-			EFFECT_ASSET_ID::TEXTURED,
+			EFFECT_ASSET_ID::FIREBALL,
 			GEOMETRY_BUFFER_ID::SPRITE,
 			frames,
 			{},

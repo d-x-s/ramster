@@ -167,7 +167,7 @@ class RenderSystem
     // Fireball
     textures_path("fireball_effect/frame_00_delay-0.06s.png"),
     textures_path("fireball_effect/frame_01_delay-0.06s.png"),
-	  textures_path("fireball_effect/frame_02_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_02_delay-0.06s.png"),
     textures_path("fireball_effect/frame_03_delay-0.06s.png"),
     textures_path("fireball_effect/frame_04_delay-0.06s.png"),
     textures_path("fireball_effect/frame_05_delay-0.06s.png"),
@@ -189,6 +189,7 @@ class RenderSystem
       shader_path("vignette"),
       shader_path("parallax"),
       shader_path("translucent"),
+      shader_path("fireball"),
   };
 
   std::array<GLuint, geometry_count> vertex_buffers;

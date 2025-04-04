@@ -914,7 +914,7 @@ void WorldSystem::restart_game(int level)
 
   // remove all box2d bodies
   while (registry.physicsBodies.entities.size() > 0) {
-	  PhysicsBody& physicsBody = registry.physicsBodies.get(registry.physicsBodies.entities.back());
+	    PhysicsBody& physicsBody = registry.physicsBodies.get(registry.physicsBodies.entities.back());
       b2DestroyBody(physicsBody.bodyId);
       registry.physicsBodies.remove(registry.physicsBodies.entities.back());
   }
@@ -929,7 +929,7 @@ void WorldSystem::restart_game(int level)
 
   if (registry.players.entities.size() > 0) {
       // clear player-related stuff.
-	  Entity& playerEntity = registry.players.entities.back();
+	    Entity& playerEntity = registry.players.entities.back();
       registry.remove_all_components_of(playerEntity);
   }
 
@@ -939,10 +939,19 @@ void WorldSystem::restart_game(int level)
       registry.remove_all_components_of(goalEntity);
   }
 
-  if (registry.backgroundLayers.size() > 0) {
-      // clear player-related stuff.
-      Entity& backgroundEntity = registry.backgroundLayers.entities.back();
-      registry.remove_all_components_of(backgroundEntity);
+  // if (registry.backgroundLayers.size() > 0) {
+  //     // clear parallax entities
+  //     Entity& backgroundEntity = registry.backgroundLayers.entities.back();
+  //     registry.remove_all_components_of(backgroundEntity);
+  //     registry.backgroundLayers.remove(backgroundEntity);
+  // }
+
+  while (registry.backgroundLayers.entities.size() > 0) {
+    registry.backgroundLayers.remove(registry.backgroundLayers.entities.back());
+  }
+
+  while (registry.playerVisualLayers.entities.size() > 0) {
+    registry.playerVisualLayers.remove(registry.playerVisualLayers.entities.back());
   }
 
   int grid_line_width = GRID_LINE_WIDTH_PX;
@@ -1764,17 +1773,11 @@ void WorldSystem::handleGameover(CurrentScreen& currentScreen) {
     // If player HP reaches 0, game ends.
     if (hp <= 0) {
         currentScreen.current_screen = "END OF GAME";
-
-        // Defeat title
-        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_DEFEAT, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
     }
     // If player reached finish line AND killed all enemies, game ends.
     else if (player_reached_finish_line) {
 
         if (timer_game_end_screen <= 0) {
-            // Victory title
-            createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_VICTORY, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
-
             currentScreen.current_screen = "END OF GAME";
         }
         else {
@@ -1876,73 +1879,196 @@ void WorldSystem::createScreenElements() {
     
     if (registry.screens.entities.size() == 0) {
 
-        // MAIN MENU:
+        // MAIN MENU ////////////////////////////////////////////////////////
 
         // Title
-        createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::TITLE_MENU, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
-
-        // Text
-        createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::TEXT_MENU, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
-
-        // Buttons
-        // 
-        // Increase level
-        createButton("INCREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLUP,
-            VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
-
-        // Decrease Level
-        createButton("DECREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLDOWN,
-            VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
+        createScreenElement(
+           "MAIN MENU", TEXTURE_ASSET_ID::TITLE_MENU, 
+           900, 400, 
+           vec2(0, 100)
+        );
 
         // Start
-        createButton("START GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_START,
-            VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton(
+           "START GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_START,
+           350, 150, 
+           vec2(-200, -200)
+        );
 
         // Exit
-        createButton("EXIT GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_EXITGAME,
-            VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton(
+           "EXIT GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_EXITGAME,
+           350, 150, 
+           vec2(200, -200)
+        );
+
+        // LEVEL SELECT ////////////////////////////////////////////////////////
+
+        // Row 1
+        createButton(
+            "LEVEL 1", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL1,
+            128, 128,
+            vec2(-375, 250)
+        );
+
+        createButton(
+            "LEVEL 2", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL2,
+            128, 128,
+            vec2(-125, 250)
+        );
+
+        createButton(
+            "LEVEL 3", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL3,
+            128, 128,
+            vec2(125, 250)
+        );
+
+        createButton(
+            "LEVEL 4", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL4,
+            128, 128,
+            vec2(375, 250)
+        );
+
+        // Row 2
+        createButton(
+            "LEVEL 5", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL5,
+            128, 128,
+            vec2(-375, 0)
+        );
+
+        createButton(
+            "LEVEL 6", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL6,
+            128, 128,
+            vec2(-125, 0)
+        );
+
+        createButton(
+            "LEVEL 7", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL7,
+            128, 128,
+            vec2(125, 0)
+        );
+
+        createButton(
+            "LEVEL 8", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL8,
+            128, 128,
+            vec2(375, 0)
+        );
+
+        // Row 3
+        createButton(
+            "LEVEL 9", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL9,
+            128, 128,
+            vec2(-375, -250)
+        );
+
+        createButton(
+            "LEVEL 10", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL10,
+            128, 128,
+            vec2(-125, -250)
+        );
+
+        createButton(
+            "LEVEL 11", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL11,
+            128, 128,
+            vec2(125, -250)
+        );
+
+        createButton(
+            "LEVEL 12", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL12,
+            128, 128,
+            vec2(375, -250)
+        );
         
-
-        // PAUSE:
+        // PAUSE ////////////////////////////////////////////////////////
 
         // Title
-        createScreenElement("PAUSE", TEXTURE_ASSET_ID::TITLE_PAUSE, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
-
-        // Text
-        createScreenElement("PAUSE", TEXTURE_ASSET_ID::TEXT_PAUSE, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
+        createScreenElement(
+            "PAUSE", TEXTURE_ASSET_ID::TITLE_PAUSE, 
+            900, 400,
+            vec2(0, 100)
+        );
 
         // Buttons
         // 
         // Resume
-        createButton("RESUME", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton(
+            "RESUME", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESUME, 
+            350, 150,
+            vec2(-400, -200)
+        );
 
         // Restart
-        createButton("RESTART", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton(
+            "RESTART", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESTART, 
+            350, 150,
+            vec2(0, -200)
+        );
 
         // Main Menu
-        createButton("MAIN MENU", "PAUSE", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton(
+            "MAIN MENU", "PAUSE", TEXTURE_ASSET_ID::BUTTON_MAINMENU, 
+            350, 150,
+            vec2(400, -200)
+        );
 
-
+        // END OF GAME (VICTORY) ////////////////////////////////////////////////////////
         // NOTE: Need to swap victory/defeat screen's title asset over to appropriate title when game ends.
-        // END OF GAME
 
         // Title
-        // NOTE: THIS WILL BE SET IN THE END-OF-GAME CHECK handle_gameover() based on whether the player won or lost.
+        createScreenElement(
+            "END OF GAME", TEXTURE_ASSET_ID::TITLE_VICTORY,
+            900, 400,
+            vec2(0, 100)
+        );
 
-        // Text
-        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TEXT_GAMEOVER, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
+        // Buttons
+        // 
+        // Main Menu
+        createButton(
+            "MAIN MENU", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_MAINMENU,
+            350, 150,
+            vec2(-200, -200)
+        );
+
+        // Restart
+        createButton(
+            "NEXT LEVEL", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_LVLUP,
+            350, 150,
+            vec2(200, -200)
+        );
+
+        // DEFEAT ////////////////////////////////////////////////////////
+        // NOTE: Need to swap victory/defeat screen's title asset over to appropriate title when game ends.
+
+        // Title
+        createScreenElement(
+            "DEFEAT", TEXTURE_ASSET_ID::TITLE_VICTORY,
+            900, 400,
+            vec2(0, 100)
+        );
 
         // Buttons
         // 
         // Resume
-        createButton("RESUME", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton(
+            "RESUME", "DEFEAT", TEXTURE_ASSET_ID::BUTTON_RESUME,
+            350, 150,
+            vec2(-400, -200)
+        );
 
         // Restart
-        createButton("RESTART", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
+        createButton(
+            "RESTART", "DEFEAT", TEXTURE_ASSET_ID::BUTTON_RESTART,
+            350, 150,
+            vec2(0, -200)
+        );
 
         // Main Menu
-        createButton("MAIN MENU", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
-
+        createButton(
+            "MAIN MENU", "DEFEAT", TEXTURE_ASSET_ID::BUTTON_MAINMENU,
+            350, 150,
+            vec2(400, -200)
+        );
 
         // These are elements for the ENTIRE screen
         //createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));

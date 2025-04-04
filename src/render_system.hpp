@@ -30,70 +30,90 @@ class RenderSystem
 
   // Make sure these paths remain in sync with the associated enumerators (see TEXTURE_ASSET_ID).
   const std::array<std::string, texture_count> texture_paths = {
+    // Ramster
+    textures_path("projectiles/gold_bubble.png"),
+    textures_path("projectiles/ramster-glass-front.png"),
+    textures_path("projectiles/ramster-glass-back.png"),
+    textures_path("projectiles/ramster-glass-wall.png"),
 
-      // Screen Elements
-      textures_path("screenElements/menu_title.png"),
-      textures_path("screenElements/pause_title.png"),
-      textures_path("screenElements/victory_title.png"),
-      textures_path("screenElements/defeat_title.png"),
-      textures_path("screenElements/menu_text.png"),
-      textures_path("screenElements/pause_text.png"),
-      textures_path("screenElements/gameover_text.png"),
-      textures_path("screenElements/button_lvlUp.png"),
-      textures_path("screenElements/button_lvlDown.png"),
-      textures_path("screenElements/button_start.png"),
-      textures_path("screenElements/button_resume.png"),
-      textures_path("screenElements/button_restart.png"),
-      textures_path("screenElements/button_mainMenu.png"),
-      textures_path("screenElements/button_exit.png"),
+    // Grapple
+    textures_path("projectiles/grapple_point.png"),
+    textures_path("projectiles/grapple_outline.png"),
 
-      // Screens
-      textures_path("screens/main_menu.png"),
-      textures_path("screens/test_screen.png"), // This one's the playing screen that we will never use.
-      textures_path("screens/pause.png"),
-      textures_path("screens/game_ended_screen.png"),
+    // Screen Elements
+    textures_path("screenElements/menu_title.png"),
+    textures_path("screenElements/pause_title.png"),
+    textures_path("screenElements/victory_title.png"),
+    textures_path("screenElements/defeat_title.png"),
+    textures_path("screenElements/menu_text.png"),
+    textures_path("screenElements/pause_text.png"),
+    textures_path("screenElements/gameover_text.png"),
 
-      // Legacy invaders code
-      textures_path("invaders/blue_1.png"),
-      textures_path("invaders/blue_2.png"),
-      textures_path("invaders/blue_3.png"),
-      textures_path("invaders/red_1.png"),
-      textures_path("invaders/red_2.png"),
-      textures_path("invaders/red_3.png"),
-      textures_path("invaders/green_1.png"),
-      textures_path("invaders/green_2.png"),
-      textures_path("invaders/green_3.png"),
-      textures_path("invaders/grey_1.png"),
-      textures_path("invaders/grey_2.png"),
-      textures_path("invaders/grey_3.png"),
-      textures_path("towers/tower01.png"),
-      textures_path("projectiles/gold_bubble.png"),
-      textures_path("projectiles/grapple_point.png"),
-      textures_path("projectiles/grapple_outline.png"),
-      textures_path("effects/explosion1.png"),
-      textures_path("effects/explosion2.png"),
-      textures_path("effects/explosion3.png"),
-      textures_path("invaders/floater_1.png"),
-      textures_path("invaders/floater_2.png"),
-      textures_path("invaders/floater_3.png"),
+    textures_path("screenElements/button_lvlUp.png"),
+    textures_path("screenElements/button_lvlDown.png"),
+    textures_path("screenElements/button_start.png"),
+    textures_path("screenElements/button_resume.png"),
+    textures_path("screenElements/button_restart.png"),
+    textures_path("screenElements/button_mainMenu.png"),
+    textures_path("screenElements/button_exit.png"),
 
-      textures_path("invaders/common_1.png"),
-      textures_path("invaders/common_2.png"),
-      textures_path("invaders/common_3.png"),
-      textures_path("invaders/common_4.png"),
-      textures_path("invaders/common_5.png"),
+    textures_path("screenElements/button_lvl1.png"),
+    textures_path("screenElements/button_lvl2.png"),
+    textures_path("screenElements/button_lvl3.png"),
+    textures_path("screenElements/button_lvl4.png"),
+    textures_path("screenElements/button_lvl5.png"),
+    textures_path("screenElements/button_lvl6.png"),
+    textures_path("screenElements/button_lvl7.png"),
+    textures_path("screenElements/button_lvl8.png"),
+    textures_path("screenElements/button_lvl9.png"),
+    textures_path("screenElements/button_lvl10.png"),
+    textures_path("screenElements/button_lvl11.png"),
+    textures_path("screenElements/button_lvl12.png"),
 
-      textures_path("invaders/swarm_1.png"),
-      textures_path("invaders/swarm_2.png"),
-      textures_path("invaders/swarm_3.png"),
-      textures_path("invaders/swarm_4.png"),
+    // Screens
+    textures_path("screens/main_menu.png"),
+    textures_path("screens/test_screen.png"), // This one's the playing screen that we will never use.
+    textures_path("screens/pause.png"),
+    textures_path("screens/game_ended_screen.png"),
 
-      textures_path("invaders/obstacle_1.png"),
-      textures_path("invaders/obstacle_2.png"),
-      textures_path("invaders/obstacle_3.png"),
-      textures_path("invaders/obstacle_4.png"),
+    // Legacy invaders code
+    textures_path("invaders/blue_1.png"),
+    textures_path("invaders/blue_2.png"),
+    textures_path("invaders/blue_3.png"),
+    textures_path("invaders/red_1.png"),
+    textures_path("invaders/red_2.png"),
+    textures_path("invaders/red_3.png"),
+    textures_path("invaders/green_1.png"),
+    textures_path("invaders/green_2.png"),
+    textures_path("invaders/green_3.png"),
+    textures_path("invaders/grey_1.png"),
+    textures_path("invaders/grey_2.png"),
+    textures_path("invaders/grey_3.png"),
+    textures_path("towers/tower01.png"),
+    textures_path("effects/explosion1.png"),
+    textures_path("effects/explosion2.png"),
+    textures_path("effects/explosion3.png"),
+    textures_path("invaders/floater_1.png"),
+    textures_path("invaders/floater_2.png"),
+    textures_path("invaders/floater_3.png"),
 
-      // tiles
+    textures_path("invaders/common_1.png"),
+    textures_path("invaders/common_2.png"),
+    textures_path("invaders/common_3.png"),
+    textures_path("invaders/common_4.png"),
+    textures_path("invaders/common_5.png"),
+
+    textures_path("invaders/swarm_1.png"),
+    textures_path("invaders/swarm_2.png"),
+    textures_path("invaders/swarm_3.png"),
+    textures_path("invaders/swarm_4.png"),
+
+    textures_path("invaders/obstacle_1.png"),
+    textures_path("invaders/obstacle_2.png"),
+    textures_path("invaders/obstacle_3.png"),
+    textures_path("invaders/obstacle_4.png"),
+
+    // Tiles
     textures_path("tiles/half-ramp-bl.png"),
     textures_path("tiles/half-ramp-br.png"),
     textures_path("tiles/half-ramp-tl.png"),
@@ -121,41 +141,42 @@ class RenderSystem
     textures_path("tiles/tesla-trap-1-right.png"),
     textures_path("tiles/tesla-trap-1-top.png"),
 
-    // tutorial
+    // Tutorial
     textures_path("tutorial/space.png"),
     textures_path("tutorial/move.png"),
     textures_path("tutorial/grapple.png"),
     textures_path("tutorial/destroy.png"),
 
-    // levels
-	textures_path("levels/level1.png"),
+    // Levels
+    textures_path("levels/level1.png"),
     textures_path("levels/level2.png"),
-	textures_path("levels/level3.png"),
-	textures_path("levels/level4.png"),
-	textures_path("levels/level5.png"),
+    textures_path("levels/level3.png"),
+    textures_path("levels/level4.png"),
+    textures_path("levels/level5.png"),
     textures_path("levels/level6.png"),
     textures_path("levels/tutorial.png"),
-	textures_path("levels/tower.png"),
-	textures_path("levels/lab.png"),
-	textures_path("levels/under.png"),
-	textures_path("levels/snake.png"),
+    textures_path("levels/tower.png"),
+    textures_path("levels/lab.png"),
+    textures_path("levels/under.png"),
+    textures_path("levels/snake.png"),
     textures_path("levels/tunnelsmall.png"),
-    // <--- Add Next level here !
+
+    // Parallax
     textures_path("levels/background.png"),
 
-    // fireball effect frames
+    // Fireball
     textures_path("fireball_effect/frame_00_delay-0.06s.png"),
     textures_path("fireball_effect/frame_01_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_02_delay-0.06s.png"),
+	  textures_path("fireball_effect/frame_02_delay-0.06s.png"),
     textures_path("fireball_effect/frame_03_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_04_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_05_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_06_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_07_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_08_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_09_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_10_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_11_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_04_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_05_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_06_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_07_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_08_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_09_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_10_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_11_delay-0.06s.png"),
   };
 
   std::array<GLuint, effect_count> effects;
@@ -167,6 +188,7 @@ class RenderSystem
       shader_path("textured"),
       shader_path("vignette"),
       shader_path("parallax"),
+      shader_path("translucent"),
   };
 
   std::array<GLuint, geometry_count> vertex_buffers;

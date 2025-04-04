@@ -114,24 +114,22 @@ Entity createScreen(std::string screen_type) {
 	return entity;
 }
 
-
 Entity createBall(b2WorldId worldId, vec2 startPos)
 {
-	Entity entity = Entity();
+	Entity mainEntity = Entity();
 
 	// Add physics and player components
-	PhysicsBody& ball = registry.physicsBodies.emplace(entity);
-	PlayerPhysics& ball_physics = registry.playerPhysics.emplace(entity);
+	PhysicsBody& ball = registry.physicsBodies.emplace(mainEntity);
+	PlayerPhysics& ball_physics = registry.playerPhysics.emplace(mainEntity);
 	ball_physics.isGrounded = false;
 
-	auto& player_registry = registry.players;
-	Player& player = registry.players.emplace(entity);
+	Player& player = registry.players.emplace(mainEntity);
 
 	// Define a dynamic body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
 	bodyDef.position = b2Vec2{ startPos.x, startPos.y };
-	bodyDef.fixedRotation = false; // Allow rolling
+	bodyDef.fixedRotation = false;
 	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
 	// Associate the body with a shape
@@ -144,25 +142,48 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 	circle.radius = BALL_RADIUS;
 	b2ShapeId shapeId = b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	ball.bodyId = bodyId;
-	
+
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 
-	// Add motion & render request for ECS synchronization
-	auto& motion = registry.motions.emplace(entity);
+	// Add motion & render request
+	auto& motion = registry.motions.emplace(mainEntity);
 	motion.angle = 0.f;
 	motion.position = startPos;
-
-	// The sprite is 64x64 pixels, and 1cm = 1pixel
 	motion.scale = vec2(2 * circle.radius, 2 * circle.radius);
 
-	// Associate player with camera
-	auto& camera = registry.cameras.emplace(entity);
+	auto& camera = registry.cameras.emplace(mainEntity);
 	camera.position = startPos;
 
+	// Helper to create additional visual layer entities
+	auto createVisualLayer = [&](TEXTURE_ASSET_ID textureId, EFFECT_ASSET_ID effectId) {
+		Entity visualEntity = Entity();
+
+		auto& m = registry.motions.emplace(visualEntity);
+		m.angle = 0.f;
+		m.position = startPos;
+		m.scale = vec2(2 * circle.radius, 2 * circle.radius);
+
+		registry.playerVisualLayers.emplace(visualEntity);
+
+		registry.renderRequests.insert(
+			visualEntity,
+			{
+				textureId,
+				effectId,
+				GEOMETRY_BUFFER_ID::SPRITE
+			}
+		);
+		};
+
+	// Extra visual sprite layers
+	createVisualLayer(TEXTURE_ASSET_ID::RAMSTER_GLASS_WALL, EFFECT_ASSET_ID::TRANSLUCENT);
+	createVisualLayer(TEXTURE_ASSET_ID::RAMSTER_GLASS_BACK, EFFECT_ASSET_ID::TEXTURED);
+
+	// Main render layer
 	registry.renderRequests.insert(
-		entity,
+		mainEntity,
 		{
-			TEXTURE_ASSET_ID::RAMSTER_1,
+			TEXTURE_ASSET_ID::RAMSTER_GLASS_FRONT,
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE
 		}
@@ -174,7 +195,7 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 
 	createFireball(startPos);
 
-	return entity;
+	return mainEntity;
 }
 
 Entity createFireball(vec2 startPos) {
@@ -192,7 +213,6 @@ Entity createFireball(vec2 startPos) {
 
 	std::vector<TEXTURE_ASSET_ID> frames;
 
-
 	frames = { TEXTURE_ASSET_ID::FIREBALL_0, 
 		TEXTURE_ASSET_ID::FIREBALL_1,
 		TEXTURE_ASSET_ID::FIREBALL_2,
@@ -206,7 +226,6 @@ Entity createFireball(vec2 startPos) {
 		TEXTURE_ASSET_ID::FIREBALL_10,
 		TEXTURE_ASSET_ID::FIREBALL_11
 	};
-
 
 	registry.renderRequests.insert(
 		entity,
@@ -223,7 +242,6 @@ Entity createFireball(vec2 startPos) {
 			0
 		}
 	);
-
 
 	return entity;
 }
@@ -779,7 +797,7 @@ Entity createProjectile(vec2 pos, vec2 size, vec2 velocity)
 	registry.renderRequests.insert(
 		entity,
 		{
-			TEXTURE_ASSET_ID::RAMSTER_1,
+			TEXTURE_ASSET_ID::RAMSTER_DEBUG,
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE
 		}

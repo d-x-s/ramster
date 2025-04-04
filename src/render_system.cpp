@@ -296,7 +296,7 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	gl_has_errors();
 
 	// texture-mapped entities - use data location as in the vertex buffer
-	if (render_request.used_effect == EFFECT_ASSET_ID::TEXTURED)
+	if (render_request.used_effect == EFFECT_ASSET_ID::TEXTURED || render_request.used_effect == EFFECT_ASSET_ID::TRANSLUCENT)
 	{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
@@ -323,6 +323,11 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 			texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
 
 		glBindTexture(GL_TEXTURE_2D, texture_id);
+		gl_has_errors();
+
+		float translucency_factor = 0.25f;
+		GLint translucency_factor_loc = glGetUniformLocation(program, "translucent_alpha");
+		glUniform1f(translucency_factor_loc, translucency_factor);
 		gl_has_errors();
 	}
 	else if (render_request.used_effect == EFFECT_ASSET_ID::PARALLAX)
@@ -529,7 +534,6 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 
 	mat3 projection_2D = createProjectionMatrix();
 
-
 	// Current Screen
 	Entity currScreenEntity = registry.currentScreen.entities[0];
 	CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
@@ -551,10 +555,18 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 			}
 		}
 
-		// draw all entities with a render request to the frame buffer
+		// draw all entities (except player entities) with a render request to the frame buffer
+		std::vector<Entity> player_entities;
 		for (Entity entity : registry.renderRequests.entities)
 		{			 
 			RenderRequest& rr = registry.renderRequests.get(entity);
+
+			// collect player related entity for processing last
+			if (registry.players.has(entity) || registry.playerVisualLayers.has(entity))
+			{
+				player_entities.push_back(entity);
+				continue;
+			}
 			// filter to entities that have a motion component (but not a screen)
 			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity) && !registry.screenElements.has(entity) && rr.is_visible) {
 				// Note, its not very efficient to access elements indirectly via the entity
@@ -565,6 +577,12 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 			else if (registry.lines.has(entity)) {
 				drawLine(entity, projection_2D);
 			}
+		}
+
+		// draw player layers last
+		for (Entity entity : player_entities)
+		{
+			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 		}
 	}
 	// SCREENS TO RENDER WHEN NOT PLAYING
@@ -632,14 +650,13 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 mat3 RenderSystem::createProjectionMatrix() {
 	Camera camera = registry.cameras.components[0];
 
-	
-  // Fixed camera view centered around player
+    // Fixed camera view centered around player
 	float left = camera.position.x - VIEWPORT_WIDTH_PX / 2.f;
 	float right = camera.position.x + VIEWPORT_WIDTH_PX / 2.f;
 	float bottom = camera.position.y - VIEWPORT_HEIGHT_PX / 2.f;
 	float top = camera.position.y + VIEWPORT_HEIGHT_PX / 2.f;
 
-  // Scale factors, to scale to [-1, 1] OpenGl coordinate space
+    // Scale factors, to scale to [-1, 1] OpenGl coordinate space
 	float sx = 2.f / (right - left);
 	float sy = 2.f / (top - bottom);
 

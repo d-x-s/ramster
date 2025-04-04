@@ -144,7 +144,16 @@ void PhysicsSystem::step(float elapsed_ms)
   Motion &playerComponent_motion = registry.motions.get(playerEntity_physicsBody);
   playerComponent_motion.position = vec2(playerPosition.x, playerPosition.y);
 
-  // ENEMY ENTITIES.
+  // Update all sprite layers related to the player
+  for (int i = 0; i < registry.playerVisualLayers.entities.size(); i++)
+  {
+      Entity playerVisualLayer = registry.playerVisualLayers.entities[i];
+      Motion& visualMotion = registry.motions.get(playerVisualLayer);
+      visualMotion.position = vec2(playerPosition.x, playerPosition.y);
+      visualMotion.angle = playerComponent_motion.angle;
+  }
+
+  // ENEMY ENTITIES
   //
   auto &enemy_registry = registry.enemies; // list of enemy entities stored in here
 

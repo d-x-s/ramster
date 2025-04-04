@@ -44,6 +44,7 @@ public:
 	ComponentContainer<TutorialTile> tutorialTiles;
 	ComponentContainer<LevelLayer> levelLayers;
 	ComponentContainer<BackgroundLayer> backgroundLayers;
+	ComponentContainer<PlayerVisualLayer> playerVisualLayers;
 	ComponentContainer<GoalZone> goalZones;
 	ComponentContainer<FireBall> fireballs;
 

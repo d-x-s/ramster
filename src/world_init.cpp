@@ -2,7 +2,120 @@
 #include "tinyECS/registry.hpp"
 #include <iostream>
 
-Entity createBall(b2WorldId worldId)
+
+// Creates tracker component for current screen
+Entity createCurrentScreen() {
+	Entity entity = Entity();
+
+	CurrentScreen& currentScreen = registry.currentScreen.emplace(entity);
+
+	return entity;
+}
+
+// TODO: Port createScreen here.
+Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
+
+	Entity entity = Entity(); 
+
+	// Make screen element
+	ScreenElement& screenElement = registry.screenElements.emplace(entity);
+	screenElement.screen = screen;
+
+	// Configure size (for some reason we need motion to render?)
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // This is a placeholder. Actual position computed during runtime.
+	motion.scale = vec2(width_px, height_px); // Scaled to defined width/height
+
+	// Attach camera to center screen
+	Entity camera = registry.cameras.entities[0];
+	screenElement.camera = camera;
+
+	// Set position relative to camera center
+	screenElement.position = pos_relative_center;
+
+	// Define boundaries based around center (so, center wrapped by boundary walls)
+	screenElement.boundaries = vec4(screenElement.position.x - (width_px / 2), screenElement.position.y - (height_px / 2),
+									screenElement.position.x + (width_px / 2), screenElement.position.y + (height_px / 2));
+	// LLNOTE: IDK how it ended up like this but after much trial and error these are the values that I needed for those buttons to get hitboxes right.
+	/*
+	screenElement.boundaries = vec4(screenElement.position.x - (width_px / 3.175), screenElement.position.y - (height_px / 2.05),
+									screenElement.position.x + (width_px / 3.225), screenElement.position.y + (height_px / 2.85));
+	*/
+
+	// Add to render requests with specified texture
+	registry.renderRequests.insert(
+		entity,
+		{
+			texture,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return entity;
+
+}
+
+
+// Makes button and renders as screen element.
+Entity createButton(std::string function, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
+
+	Entity buttonElement = createScreenElement(screen, texture, width_px, height_px, pos_relative_center);
+	Button& button = registry.buttons.emplace(buttonElement);
+	button.function = function;
+
+	return buttonElement;
+}
+
+
+
+// This will create the screens that we are going to be using.
+// NOTE: THIS IS LEGACY CODE. PORTED OVER TO createScreenElement
+Entity createScreen(std::string screen_type) {
+	Entity entity = Entity();
+
+	Screen& screen = registry.screens.emplace(entity);
+	screen.screen = screen_type;
+
+	// Configure size (for some reason we need motion to render?)
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // This is a placeholder. Actual position computed during runtime.
+	motion.scale = vec2(VIEWPORT_WIDTH_PX/6, VIEWPORT_HEIGHT_PX/2); // Scale to window size
+
+	// Attach camera to center screen
+	Entity camera = registry.cameras.entities[0];
+	screen.screen_center = camera;
+
+	// Figure out which screen to display
+	TEXTURE_ASSET_ID screen_texture{};
+
+	if (screen_type == "MAIN MENU") {
+		screen_texture = TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE;
+	}
+	else if (screen_type == "PLAYING") {
+		screen_texture = TEXTURE_ASSET_ID::PLAYING_TEXTURE;
+	}
+	else if (screen_type == "PAUSE") {
+		screen_texture = TEXTURE_ASSET_ID::PAUSE_TEXTURE;
+	}
+	else if (screen_type == "END OF GAME") {
+		screen_texture = TEXTURE_ASSET_ID::END_OF_GAME_TEXTURE;
+	}
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			screen_texture,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return entity;
+}
+
+
+Entity createBall(b2WorldId worldId, vec2 startPos)
 {
 	Entity entity = Entity();
 
@@ -17,7 +130,7 @@ Entity createBall(b2WorldId worldId)
 	// Define a dynamic body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
-	bodyDef.position = b2Vec2{ BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y };
+	bodyDef.position = b2Vec2{ startPos.x, startPos.y };
 	bodyDef.fixedRotation = false; // Allow rolling
 	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
@@ -37,14 +150,14 @@ Entity createBall(b2WorldId worldId)
 	// Add motion & render request for ECS synchronization
 	auto& motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
-	motion.position = vec2(BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y);
+	motion.position = startPos;
 
 	// The sprite is 64x64 pixels, and 1cm = 1pixel
 	motion.scale = vec2(2 * circle.radius, 2 * circle.radius);
 
 	// Associate player with camera
 	auto& camera = registry.cameras.emplace(entity);
-	camera.position = vec2(BALL_INITIAL_POSITION_X, BALL_INITIAL_POSITION_Y);
+	camera.position = startPos;
 
 	registry.renderRequests.insert(
 		entity,
@@ -55,6 +168,63 @@ Entity createBall(b2WorldId worldId)
 		}
 	);
 
+	// ========================================================================================================
+	// create new entity for fireball fx
+	// ========================================================================================================
+
+	createFireball(startPos);
+
+	return entity;
+}
+
+Entity createFireball(vec2 startPos) {
+
+	Entity entity = Entity();
+
+	auto& fireball = registry.fireballs.emplace(entity);
+
+	// Add motion
+	auto& fireball_motion = registry.motions.emplace(entity);
+	fireball_motion.scale = vec2(200.f, 75.f);
+	fireball_motion.angle = 0.f;
+	fireball_motion.position = startPos;
+
+
+	std::vector<TEXTURE_ASSET_ID> frames;
+
+
+	frames = { TEXTURE_ASSET_ID::FIREBALL_0, 
+		TEXTURE_ASSET_ID::FIREBALL_1,
+		TEXTURE_ASSET_ID::FIREBALL_2,
+		TEXTURE_ASSET_ID::FIREBALL_3,
+		TEXTURE_ASSET_ID::FIREBALL_4,
+		TEXTURE_ASSET_ID::FIREBALL_5,
+		TEXTURE_ASSET_ID::FIREBALL_6,
+		TEXTURE_ASSET_ID::FIREBALL_7,
+		TEXTURE_ASSET_ID::FIREBALL_8,
+		TEXTURE_ASSET_ID::FIREBALL_9,
+		TEXTURE_ASSET_ID::FIREBALL_10,
+		TEXTURE_ASSET_ID::FIREBALL_11
+	};
+
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			frames[0],
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE,
+			frames,
+			{},
+			true,
+			false,
+			60.0f,
+			0.0f,
+			0
+		}
+	);
+
+
 	return entity;
 }
 
@@ -63,9 +233,10 @@ Entity createBall(b2WorldId worldId)
 // - pos (x, y): position to spawn enemy
 // - ENEMY_TYPES: type of enemy to spawn.
 // - MOVEMENT AREA (min_x, max_x): activity radius of the enemy. set to (-1, -1) if you want enemy to move anywhere on the map.
-Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_area) {
+Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_range_point_a, vec2 movement_range_point_b) {
 
 	// Determine enemy type-based characteristics here.
+ 
 	// If the enemy is an obstacle then they will not be destructable. Can expand w/ more indestructable enemies.
 	bool destructability = enemy_type == OBSTACLE ? false : true; 
 	// Size of enemy. ENEMY_RADIUS is the standard size, and we'll change it for non-common enemies.
@@ -82,7 +253,7 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 		enemyBounciness = 0;
 	}
 	else if (enemy_type == SWARM) {
-		enemyBounciness = 0.75;
+		enemyBounciness = 0.5;
 	}
 	// Weight of enemy, based on density. Common has default weight ENEMY_DENSITY
 	float enemyWeight = ENEMY_DENSITY;
@@ -97,6 +268,14 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	if (enemy_type == OBSTACLE) {
 		enemyFriction = 0;
 	}
+	// Whether the enemy is affected by gravity, applied using gravity scaling. Only common enemies have gravity.
+	float enemyGravityScaling = 0;
+	if (enemy_type == COMMON) {
+		enemyGravityScaling = 1;
+	}
+	
+
+	// Add enemy to ECS
 	
 	// Enemy entity
 	Entity entity = Entity();
@@ -110,9 +289,13 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	auto& enemy_registry = registry.enemies;
 	Enemy& enemy = registry.enemies.emplace(entity);
 	enemy.enemyType = enemy_type;
-	enemy.movement_area = movement_area;
+	enemy.movement_area_point_a = movement_range_point_a;
+	enemy.movement_area_point_b = movement_range_point_b;
 	enemy.destructable = destructability;
 
+
+	// Make Box2D body for enemy
+	
 	// Define a box2D body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
@@ -140,6 +323,10 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 
+	// This changes the effect of gravity on an enemy.
+	b2Body_SetGravityScale(bodyId, enemyGravityScaling);
+
+
 	// Add motion & render request for ECS synchronization
 	auto& motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
@@ -165,12 +352,13 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	registry.renderRequests.insert(
 		entity,
 		{
-			frames[0],                    
+			frames[0],
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE,
-			frames,                       
-			{},							              
-			true,						             
+			frames,
+			{},
+			true,
+			true,
 			200.0f,                       
 			0.0f,                         
 			0                             
@@ -218,6 +406,24 @@ Entity createGrapplePoint(b2WorldId worldId, vec2 position){
 		entity,
 		{
 			TEXTURE_ASSET_ID::GRAPPLE_POINT,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	// Outline
+	Entity entity_grapple_outline = Entity();
+	auto& grapple_outline_motion = registry.motions.emplace(entity_grapple_outline);
+	grapple_outline_motion.position = vec2(position.x, position.y);
+	grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS * 2, GRAPPLE_ATTACH_ZONE_RADIUS * 2);
+
+	// TODO davis fix artificially large attachment zones later LOLOL
+	//grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS, GRAPPLE_ATTACH_ZONE_RADIUS);
+
+	registry.renderRequests.insert(
+		entity_grapple_outline,
+		{
+			TEXTURE_ASSET_ID::GRAPPLE_OUTLINE,
 			EFFECT_ASSET_ID::TEXTURED,
 			GEOMETRY_BUFFER_ID::SPRITE
 		}
@@ -296,7 +502,7 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos)
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// !!! line segments between arbitrary points
+// !!! line segments between arbitrary enemies_killed
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Entity createLine(vec2 start_pos, vec2 end_pos)
 {
@@ -320,8 +526,68 @@ Entity createLine(vec2 start_pos, vec2 end_pos)
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// !!! {{{ OK }}} TODO A1: createInvader?
+// !!! render the entire level png at once
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId)
+{
+	Entity entity = Entity();
+	LevelLayer& levelLayer = registry.levelLayers.emplace(entity);
+
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 2);
+	motion.scale = vec2(WORLD_WIDTH_PX, WORLD_HEIGHT_PX);
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			textureId,
+			EFFECT_ASSET_ID::TEXTURED,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return entity;
+}
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!! create the entity representing the background layer
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Entity createBackgroundLayer(TEXTURE_ASSET_ID textureId)
+{
+	Entity entity = Entity();
+	BackgroundLayer& backgroundLayer = registry.backgroundLayers.emplace(entity);
+
+	auto& motion = registry.motions.emplace(entity);
+	motion.position = vec2(VIEWPORT_WIDTH_PX / 2.f, VIEWPORT_HEIGHT_PX / 2.f);
+	motion.scale = vec2(2560, 2256);
+
+	registry.renderRequests.insert(
+		entity,
+		{
+			textureId,
+			EFFECT_ASSET_ID::PARALLAX,
+			GEOMETRY_BUFFER_ID::SPRITE
+		}
+	);
+
+	return entity;
+}
+
+Entity createGoalZone(vec2 bottom_left_pos, vec2 bottom_right_pos) {
+	// reserve an entity
+	auto entity = Entity();
+
+	std::cout << "creating goal post with bottom left: " << bottom_left_pos.x << ", " << bottom_left_pos.y << " and top right: " << bottom_right_pos.x << ", " << bottom_right_pos.y << std::endl;
+
+	GoalZone& goalZone = registry.goalZones.emplace(entity);
+	goalZone.bl_boundary = bottom_left_pos;
+	goalZone.tr_boundary = bottom_right_pos;
+	goalZone.hasTriggered = false;
+
+	return entity;
+}
+
+
 Entity createInvader(RenderSystem* renderer, vec2 position)
 {
 	// reserve an entity
@@ -383,6 +649,7 @@ Entity createInvader(RenderSystem* renderer, vec2 position)
 			frames,                       // store all animation frames
 			{},							              // no custom scale per frame
 			true,						              // loop the animation
+			true,
 			200.0f,                       // frame time (ms)
 			0.0f,                         // elapsed time
 			0                             // current frame index
@@ -430,6 +697,7 @@ Entity createExplosion(RenderSystem* renderer, vec2 position)
 			frames,                       // store all animation frames
 			scales,						  // assign custom scale per frame
 			false,						  // do not loop the animation
+			true,
 			200.0f,                       // frame time (ms)
 			0.0f,                         // elapsed time
 			0                             // current frame index

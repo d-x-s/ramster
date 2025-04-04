@@ -4,6 +4,48 @@
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
 
+
+// Any element on the screen. Title, Label, Button, Etc. This is what gets rendered.
+struct ScreenElement {
+
+    // Screen that the element belongs to
+    std::string screen;
+
+    // Boundaries/size of the screen element (x1, y1, x2, y2)
+    // Note: primary use of this is just button hitbox but adding it as part of this component makes more sense because it'd also be render bounds.
+    vec4 boundaries;
+    
+    // Camera entity for screen centering
+    Entity camera;
+
+    // Position of the screen (x, y) relative to camera (center)
+    vec2 position;
+
+};
+
+// Indicates that a screen element is a button.
+struct Button {
+
+    // Identifies the button
+    std::string function;
+
+};
+
+// Screen component
+// NOTE: LEGACY CODE. MIGRATED TO ScreenElement.
+struct Screen
+{
+    std::string screen;
+
+    // Camera entity for screen positioning
+    Entity screen_center;
+};
+
+// Current Screen Component - used to track current screen.
+struct CurrentScreen {
+    std::string current_screen = "MAIN MENU"; // start on main menu
+};
+
 // Player component
 struct Player
 {
@@ -18,8 +60,10 @@ struct Enemy
 	bool destructable;
 	// We apply the freeze time to destructable enemies upon collision so they stop pursuing the player momentarily after a collision.
 	float freeze_time;
-	// Movement area of the enemy (min x, max x). Set to (-1, -1) for enemy to move anywhere on the map.
-	vec2 movement_area;
+
+	// Patrol boundary for obstacles (a_x, a_y), (b_x, b_y).
+	vec2 movement_area_point_a;
+    vec2 movement_area_point_b;
 };
 
 // Tower
@@ -151,10 +195,33 @@ struct Mesh
  * The final value in each enumeration is both a way to keep track of how many
  * enums there are, and as a default value to represent uninitialized fields.
  */
-
 enum class TEXTURE_ASSET_ID
 {
-  BLUE_INVADER_1 = 0,
+    // Screen Elements
+    TITLE_MENU = 0,
+    TITLE_PAUSE = TITLE_MENU + 1,
+    TITLE_VICTORY = TITLE_PAUSE + 1,
+    TITLE_DEFEAT = TITLE_VICTORY + 1,
+    TEXT_MENU = TITLE_DEFEAT + 1,
+    TEXT_PAUSE = TEXT_MENU + 1,
+    TEXT_GAMEOVER = TEXT_PAUSE + 1,
+    BUTTON_LVLUP = TEXT_GAMEOVER + 1,
+    BUTTON_LVLDOWN = BUTTON_LVLUP + 1,
+    BUTTON_START = BUTTON_LVLDOWN + 1,
+    BUTTON_RESUME = BUTTON_START + 1,
+    BUTTON_RESTART = BUTTON_RESUME + 1,
+    BUTTON_MAINMENU = BUTTON_RESTART + 1,
+    BUTTON_EXITGAME = BUTTON_MAINMENU + 1,
+
+    // Screens
+    MAIN_MENU_TEXTURE = BUTTON_EXITGAME + 1,
+    PLAYING_TEXTURE = MAIN_MENU_TEXTURE + 1,
+    PAUSE_TEXTURE = PLAYING_TEXTURE + 1,
+    END_OF_GAME_TEXTURE = PAUSE_TEXTURE + 1,
+
+
+  // Legacy invaders
+  BLUE_INVADER_1 = END_OF_GAME_TEXTURE + 1,
   BLUE_INVADER_2 = BLUE_INVADER_1 + 1,
   BLUE_INVADER_3 = BLUE_INVADER_2 + 1,
   RED_INVADER_1 = BLUE_INVADER_3 + 1,
@@ -227,9 +294,67 @@ enum class TEXTURE_ASSET_ID
     TUTORIAL_GRAPPLE = TUTORIAL_MOVE + 1,
     TUTORIAL_DESTROY = TUTORIAL_GRAPPLE + 1,
 
-    TEXTURE_COUNT = TUTORIAL_DESTROY + 1,
+    // levels
+	LEVEL_1 = TUTORIAL_DESTROY + 1,
+	LEVEL_2 = LEVEL_1 + 1,
+	LEVEL_3 = LEVEL_2 + 1,
+	LEVEL_4 = LEVEL_3 + 1,
+	LEVEL_5 = LEVEL_4 + 1,
+	LEVEL_6 = LEVEL_5 + 1,
+	LEVEL_TUTORIAL = LEVEL_6 + 1,
+	LEVEL_TOWER = LEVEL_TUTORIAL + 1,
+	LEVEL_LAB = LEVEL_TOWER + 1,
+	LEVEL_UNDER = LEVEL_LAB + 1,
+	LEVEL_SNAKE = LEVEL_UNDER + 1,
+    LEVEL_TUNNELSMALL = LEVEL_SNAKE + 1,
+
+    // parallax
+    BACKGROUND = LEVEL_TUNNELSMALL + 1,
+
+    // fireball frames
+    FIREBALL_0 = BACKGROUND + 1,
+	FIREBALL_1 = FIREBALL_0 + 1,
+	FIREBALL_2 = FIREBALL_1 + 1,
+	FIREBALL_3 = FIREBALL_2 + 1,
+	FIREBALL_4 = FIREBALL_3 + 1,
+	FIREBALL_5 = FIREBALL_4 + 1,
+	FIREBALL_6 = FIREBALL_5 + 1,
+	FIREBALL_7 = FIREBALL_6 + 1,
+	FIREBALL_8 = FIREBALL_7 + 1,
+	FIREBALL_9 = FIREBALL_8 + 1,
+	FIREBALL_10 = FIREBALL_9 + 1,
+	FIREBALL_11 = FIREBALL_10 + 1,
+
+    TEXTURE_COUNT = FIREBALL_11 + 1,
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
+
+enum class MUSIC
+{
+  MENU = 0,
+  OBLANKA = MENU + 1,
+  PARADRIZZLE = OBLANKA + 1,
+  WINDCATCHER = PARADRIZZLE + 1,
+  PROMENADE = WINDCATCHER + 1,
+  SPABA = PROMENADE + 1,
+  COTTONPLANES = SPABA + 1,
+  PENCILCRAYONS = COTTONPLANES + 1,
+  MOONTOWNSHORES = PENCILCRAYONS + 1,
+
+  MUSIC_COUNT = MOONTOWNSHORES + 1,
+};
+const int music_count = (int)MUSIC::MUSIC_COUNT;
+
+enum class FX
+{
+  FX_DESTROY_ENEMY = 0,
+  FX_DESTROY_ENEMY_FAIL = FX_DESTROY_ENEMY + 1,
+  FX_JUMP = FX_DESTROY_ENEMY_FAIL + 1,
+  FX_GRAPPLE = FX_JUMP + 1,
+  
+  FX_COUNT = FX_GRAPPLE + 1,
+};
+const int fx_count = (int)FX::FX_COUNT;
 
 enum class EFFECT_ASSET_ID
 {
@@ -238,7 +363,8 @@ enum class EFFECT_ASSET_ID
   CHICKEN = EGG + 1,
   TEXTURED = CHICKEN + 1,
   VIGNETTE = TEXTURED + 1,
-  EFFECT_COUNT = VIGNETTE + 1
+  PARALLAX = VIGNETTE + 1,
+  EFFECT_COUNT = PARALLAX + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
@@ -276,6 +402,7 @@ struct RenderRequest
   std::vector<TEXTURE_ASSET_ID> animation_frames; // animation frames
   std::vector<float> animation_frames_scale;      // optionally assign scale to each frame independently
   bool is_loop = true;                            // if true, loop the animation
+  bool is_visible = true;                         // if false, do not render this entity
   float animation_frame_time = 0;                 // time per frame in ms
   float animation_elapsed_time = 0;               // relative elapsed time
   int animation_current_frame = 0;                // current frame index
@@ -285,9 +412,20 @@ struct Explosion
 {
 };
 
+struct FireBall
+{
+};
+
 struct PhysicsBody
 {
   b2BodyId bodyId;
+};
+
+struct GoalZone
+{
+    vec2 bl_boundary;
+	vec2 tr_boundary;
+    bool hasTriggered;
 };
 
 // TODO remove this?
@@ -328,6 +466,16 @@ struct EnemyPhysics
 };
 
 struct TutorialTile
+{
+
+};
+
+struct LevelLayer
+{
+
+};
+
+struct BackgroundLayer
 {
 
 };

@@ -8,17 +8,31 @@
 #include <iostream>
 #include <tuple>
 #include <vector>
+#include <json/json.h>
+#include <box2d/box2d.h>
 
 // internal
 #include "physics_system.hpp"
 #include "terrain.hpp"
 
+static void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+{
+  glViewport(0, 0, width, height);
+
+  WorldSystem *world = (WorldSystem *)glfwGetWindowUserPointer(window);
+  if (world && world->renderer)
+  {
+    world->renderer->resizeScreenTexture(width, height);
+  }
+}
+
 // Global Variables
 bool grapplePointActive = false;
 bool grappleActive = false;
+// No longer need this - maps onto current level MUSIC current_music = MUSIC::LEVEL_1;
 
 // create the world
-WorldSystem::WorldSystem(b2WorldId worldId) : points(0),
+WorldSystem::WorldSystem(b2WorldId worldId) : enemies_killed(0),
                                               max_towers(MAX_TOWERS_START),
                                               next_enemy_spawn(0),
                                               enemy_spawn_rate_ms(ENEMY_SPAWN_RATE_MS),
@@ -39,6 +53,34 @@ WorldSystem::~WorldSystem()
   // Destroy music components
   if (background_music != nullptr)
     Mix_FreeMusic(background_music);
+  if (background_music_memorybranch != nullptr)
+    Mix_FreeMusic(background_music_memorybranch);
+  if (background_music_oblanka != nullptr)
+    Mix_FreeMusic(background_music_oblanka);
+  if (background_music_paradrizzle != nullptr)
+    Mix_FreeMusic(background_music_paradrizzle);
+  if (background_music_windcatcher != nullptr)
+    Mix_FreeMusic(background_music_windcatcher);
+  if (background_music_promenade != nullptr)
+    Mix_FreeMusic(background_music_promenade);
+  if (background_music_spaba != nullptr)
+    Mix_FreeMusic(background_music_spaba);
+  if (background_music_cottonplanes != nullptr)
+    Mix_FreeMusic(background_music_cottonplanes);
+  if (background_music_pencilcrayons != nullptr)
+    Mix_FreeMusic(background_music_pencilcrayons);
+  if (background_music_moontownshores != nullptr)
+    Mix_FreeMusic(background_music_moontownshores);
+  if (fx_destroy_enemy != nullptr)
+    Mix_FreeChunk(fx_destroy_enemy);
+  if (fx_destroy_enemy_fail != nullptr)
+    Mix_FreeChunk(fx_destroy_enemy_fail);
+  if (fx_jump != nullptr)
+    Mix_FreeChunk(fx_jump);
+  if (fx_grapple != nullptr)
+    Mix_FreeChunk(fx_grapple);
+  if (fx_victory != nullptr)
+    Mix_FreeChunk(fx_victory);
   if (chicken_dead_sound != nullptr)
     Mix_FreeChunk(chicken_dead_sound);
   if (chicken_eat_sound != nullptr)
@@ -92,18 +134,21 @@ GLFWwindow *WorldSystem::create_window()
 #if __APPLE__
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
-  glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+  glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
   // CK: setting GLFW_SCALE_TO_MONITOR to true will rescale window but then you must handle different scalings
-  // glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);		// GLFW 3.3+
-  glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_FALSE); // GLFW 3.3+
+  glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE); // GLFW 3.3+
+  // glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_FALSE); // GLFW 3.3+
 
   // Create the main window (for rendering, keyboard, and mouse input)
-  window = glfwCreateWindow(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX, "Towers vs Invaders Assignment", nullptr, nullptr);
+  window = glfwCreateWindow(WINDOW_WIDTH_PX, WINDOW_HEIGHT_PX, "Ramster", nullptr, nullptr);
   if (window == nullptr)
   {
     std::cerr << "ERROR: Failed to glfwCreateWindow in world_system.cpp" << std::endl;
     return nullptr;
   }
+
+  // Fill the whole monitor
+  glfwMaximizeWindow(window);
 
   // Setting callbacks to member functions (that's why the redirect is needed)
   // Input is handled using GLFW, for more info see
@@ -115,6 +160,8 @@ GLFWwindow *WorldSystem::create_window()
   { ((WorldSystem *)glfwGetWindowUserPointer(wnd))->on_mouse_move({_0, _1}); };
   auto mouse_button_pressed_redirect = [](GLFWwindow *wnd, int _button, int _action, int _mods)
   { ((WorldSystem *)glfwGetWindowUserPointer(wnd))->on_mouse_button_pressed(_button, _action, _mods); };
+
+  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
   glfwSetKeyCallback(window, key_redirect);
   glfwSetCursorPosCallback(window, cursor_pos_redirect);
@@ -140,14 +187,63 @@ bool WorldSystem::start_and_load_sounds()
     return false;
   }
 
+  // music
   background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
+  background_music_memorybranch = Mix_LoadMUS(audio_path("music_memorybranch.wav").c_str());
+  background_music_oblanka = Mix_LoadMUS(audio_path("music_oblanka.wav").c_str());
+  background_music_paradrizzle = Mix_LoadMUS(audio_path("music_paradrizzle.wav").c_str());
+  background_music_windcatcher = Mix_LoadMUS(audio_path("music_windcatcher.wav").c_str());
+  background_music_promenade = Mix_LoadMUS(audio_path("music_promenade.wav").c_str());
+  background_music_spaba = Mix_LoadMUS(audio_path("music_spaba.wav").c_str());
+  background_music_cottonplanes = Mix_LoadMUS(audio_path("music_cottonplanes.wav").c_str());
+  background_music_pencilcrayons = Mix_LoadMUS(audio_path("music_pencilcrayons.wav").c_str());
+  background_music_moontownshores = Mix_LoadMUS(audio_path("music_moontownshores.wav").c_str());
+
+  // sound fx
+  fx_destroy_enemy = Mix_LoadWAV(audio_path("fx_destroy_enemy.wav").c_str());
+  fx_destroy_enemy_fail = Mix_LoadWAV(audio_path("fx_destroy_enemy_fail.wav").c_str());
+  fx_jump = Mix_LoadWAV(audio_path("fx_jump.wav").c_str());
+  fx_grapple = Mix_LoadWAV(audio_path("fx_grapple.wav").c_str());
+  fx_victory = Mix_LoadWAV(audio_path("fx_victory.wav").c_str());
   chicken_dead_sound = Mix_LoadWAV(audio_path("chicken_dead.wav").c_str());
   chicken_eat_sound = Mix_LoadWAV(audio_path("chicken_eat.wav").c_str());
 
-  if (background_music == nullptr || chicken_dead_sound == nullptr || chicken_eat_sound == nullptr)
+  if (
+      background_music == nullptr ||
+      background_music_memorybranch == nullptr ||
+      background_music_oblanka == nullptr ||
+      background_music_paradrizzle == nullptr ||
+      background_music_windcatcher == nullptr ||
+      background_music_promenade == nullptr ||
+      background_music_spaba == nullptr ||
+      background_music_cottonplanes == nullptr ||
+      background_music_pencilcrayons == nullptr ||
+      background_music_moontownshores == nullptr ||
+      fx_destroy_enemy == nullptr ||
+      fx_destroy_enemy_fail == nullptr ||
+      fx_jump == nullptr ||
+      fx_grapple == nullptr ||
+      chicken_dead_sound == nullptr ||
+      chicken_eat_sound == nullptr)
   {
     fprintf(stderr, "Failed to load sounds\n %s\n %s\n %s\n make sure the data directory is present",
+            // music
             audio_path("music.wav").c_str(),
+            audio_path("music_memorybranch.wav").c_str(),
+            audio_path("music_oblanka.wav").c_str(),
+            audio_path("music_paradrizzle.wav").c_str(),
+            audio_path("music_windcatcher.wav").c_str(),
+            audio_path("music_promenade.wav").c_str(),
+            audio_path("music_spaba.wav").c_str(),
+            audio_path("music_cottonplanes.wav").c_str(),
+            audio_path("music_pencilcrayons.wav").c_str(),
+            audio_path("music_moontownshores.wav").c_str(),
+
+            // sound fx
+            audio_path("fx_destroy_enemy.wav").c_str(),
+            audio_path("fx_destroy_enemy_fail.wav").c_str(),
+            audio_path("fx_jump.wav").c_str(),
+            audio_path("fx_grapple.wav").c_str(),
             audio_path("chicken_dead.wav").c_str(),
             audio_path("chicken_eat.wav").c_str());
     return false;
@@ -156,153 +252,238 @@ bool WorldSystem::start_and_load_sounds()
   return true;
 }
 
+void WorldSystem::playMusic(MUSIC music)
+{
+  switch (music)
+  {
+  case MUSIC::MENU:
+    Mix_PlayMusic(background_music_memorybranch, -1);
+    break;
+  case MUSIC::OBLANKA:
+    Mix_PlayMusic(background_music_oblanka, -1);
+    break;
+  case MUSIC::PARADRIZZLE:
+    Mix_PlayMusic(background_music_paradrizzle, -1);
+    break;
+  case MUSIC::WINDCATCHER:
+    Mix_PlayMusic(background_music_windcatcher, -1);
+    break;
+  case MUSIC::PROMENADE:
+    Mix_PlayMusic(background_music_promenade, -1);
+    break;
+  case MUSIC::SPABA:
+    Mix_PlayMusic(background_music_spaba, -1);
+    break;
+  case MUSIC::COTTONPLANES:
+    Mix_PlayMusic(background_music_cottonplanes, -1);
+    break;
+  case MUSIC::PENCILCRAYONS:
+    Mix_PlayMusic(background_music_pencilcrayons, -1);
+    break;
+  case MUSIC::MOONTOWNSHORES:
+    Mix_PlayMusic(background_music_moontownshores, -1);
+    break;
+  default:
+    Mix_PlayMusic(background_music_memorybranch, -1);
+    break;
+  }
+}
+
+void WorldSystem::playSoundEffect(FX effect)
+{
+  switch (effect)
+  {
+  case FX::FX_DESTROY_ENEMY:
+    Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+    break;
+  case FX::FX_DESTROY_ENEMY_FAIL:
+    Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
+    break;
+  case FX::FX_JUMP:
+    Mix_PlayChannel(-1, fx_jump, 0);
+    break;
+  case FX::FX_GRAPPLE:
+    Mix_PlayChannel(-1, fx_grapple, 0);
+    break;
+  default:
+    Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+    break;
+  }
+}
+
 void WorldSystem::init(RenderSystem *renderer_arg)
 {
 
   this->renderer = renderer_arg;
 
   // start playing background music indefinitely
-  std::cout << "Starting music..." << std::endl;
-  Mix_PlayMusic(background_music, -1);
+  // std::cout << "Starting music..." << std::endl;
+  // Mix_PlayMusic(background_music, -1);
 
   // Set all states to default
-  restart_game();
-  createBall(worldId);
+  restart_game(level_selection);
 }
 
 // Update our game world
 bool WorldSystem::step(float elapsed_ms_since_last_update)
 {
 
-  // Updating window title with points (and remaining towers)
+  // Current Screen
+  Entity currScreenEntity = registry.currentScreen.entities[0];
+  CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
+
+  // Updating window title with enemies_killed (and remaining towers)
   std::stringstream title_ss;
-  title_ss << "Ramster | Points: " << points << " | FPS: " << fps;
+  title_ss << "Ramster | Level : " << level_selection << " | Time : " << time_elapsed << "s | Kills : " << enemies_killed << " | HP : " << hp << " | FPS : " << fps;
   glfwSetWindowTitle(window, title_ss.str().c_str());
 
-  // FPS counter
-  if (fps_update_cooldown_ms <= 0)
+  // Game logic only runs when playing
+  if (currentScreen.current_screen == "PLAYING")
   {
-    fps = 1 / (elapsed_ms_since_last_update / 1000);
-    fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
-  }
-  else
-  {
-    fps_update_cooldown_ms -= elapsed_ms_since_last_update;
-  }
+    // FPS counter
+    if (fps_update_cooldown_ms <= 0)
+    {
+      fps = 1 / (elapsed_ms_since_last_update / 1000);
+      fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
+    }
+    else
+    {
+      fps_update_cooldown_ms -= elapsed_ms_since_last_update;
+    }
+    // Time elapsed
+    if (time_granularity <= 0)
+    {
+      time_elapsed += 1; // note: this only works if granularity is 1000 ms and time is in seconds
+      time_granularity = TIME_GRANULARITY;
+    }
+    else
+    {
+      time_granularity -= elapsed_ms_since_last_update;
+    }
 
-  // Remove debug info from the last step
-  while (registry.debugComponents.entities.size() > 0)
-    registry.remove_all_components_of(registry.debugComponents.entities.back());
+    if (is_in_goal())
+    {
+      player_reached_finish_line = true;
+    }
 
-  if (game_active)
-  {
-    update_isGrounded();
-    handle_movement(elapsed_ms_since_last_update);
-    checkGrappleGrounded();
+    // Remove debug info from the last step
+    while (registry.debugComponents.entities.size() > 0)
+      registry.remove_all_components_of(registry.debugComponents.entities.back());
 
-    //        // LLNOTE
-    //        // Check if player reached spawn points of enemies.
-    //        // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
-    //        for (auto& i : hasPlayerReachedTile)
-    //        {
-    //            if (!i.second)
-    //            {
-    //
-    //                i.second = playerReachedTile(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
-    //                // debug
-    //// if (playerReachedTile(ivec2(i.first[0], i.first[1]))) {
-    ////     std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
-    ////     std::cout << "WHAT MAP SAYS: " << hasPlayerReachedTile[i.first] << std::endl;
-    //// }
-    //            }
-    //        }
+    if (game_active)
+    {
 
-    // Removing out of screen entities
-    auto &motions_registry = registry.motions;
+      handleGameover(currentScreen);
+      update_isGrounded();
+      handle_movement();
+      checkGrappleGrounded();
 
-    /* Given that stuff bounce off map walls we will not need this..
-    // {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
-    // Remove entities that leave the screen on the left side
-    // Iterate backwards to be able to remove without interfering with the next object to visit
-    // (the containers exchange the last element with the current)
-    for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
-      Motion& motion = motions_registry.components[i];
+      //        // LLNOTE
+      //        // Check if player reached spawn enemies_killed of enemies.
+      //        // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
+      //        for (auto& i : spawnMap)
+      //        {
+      //            if (!i.second)
+      //            {
+      //
+      //                i.second = playerReachedTile(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
+      //                // debug
+      //// if (playerReachedTile(ivec2(i.first[0], i.first[1]))) {
+      ////     std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
+      ////     std::cout << "WHAT MAP SAYS: " << spawnMap[i.first] << std::endl;
+      //// }
+      //            }
+      //        }
 
-      float right_edge = motion.position.x + abs(motion.scale.x);  // Rightmost x-coordinate
-      float left_edge = motion.position.x - motion.scale.x * 0.5f; // Leftmost x-coordinate
+      // Removing out of screen entities
+      auto &motions_registry = registry.motions;
 
-      if (right_edge < 0.f || left_edge > WINDOW_WIDTH_PX) {
-        if (!registry.players.has(motions_registry.entities[i])) { // don't remove the player (outdated?)
-          // if it is an invader that has exited the screen, trigger game over
-          if (registry.invaders.has(motions_registry.entities[i])) { stop_game(); };
-          registry.remove_all_components_of(motions_registry.entities[i]);
+      /* Given that stuff bounce off map walls we will not need this..
+      // {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
+      // Remove entities that leave the screen on the left side
+      // Iterate backwards to be able to remove without interfering with the next object to visit
+      // (the containers exchange the last element with the current)
+      for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
+        Motion& motion = motions_registry.components[i];
+
+        float right_edge = motion.position.x + abs(motion.scale.x);  // Rightmost x-coordinate
+        float left_edge = motion.position.x - motion.scale.x * 0.5f; // Leftmost x-coordinate
+
+        if (right_edge < 0.f || left_edge > WINDOW_WIDTH_PX) {
+          if (!registry.players.has(motions_registry.entities[i])) { // don't remove the player (outdated?)
+            // if it is an invader that has exited the screen, trigger game over
+            if (registry.invaders.has(motions_registry.entities[i])) { stop_game(); };
+            registry.remove_all_components_of(motions_registry.entities[i]);
+          }
         }
       }
-    }
-    */
+      */
 
-    // Spawns new enemies. borrows code from invader spawning.
-    next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-    if (next_enemy_spawn <= 0.f)
-    {
+      // Spawns new enemies. borrows code from invader spawning.
+      next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
+      if (next_enemy_spawn <= 0.f)
+      {
 
-      // reset timer
-      next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
+        // reset timer
+        next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
 
-      // figure out x and y coordinates
-      float max_x = WORLD_WIDTH_PX * 3.0;  // this is also the room width
-      float max_y = WORLD_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
+        // figure out x and y coordinates
+        float max_x = WORLD_WIDTH_PX * 3.0;  // this is also the room width
+        float max_y = WORLD_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
 
-      // random x and y coordinates on the map to spawn enemy
-      float pos_x = uniform_dist(rng) * max_x;
-      float pos_y = max_y; // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
+        // random x and y coordinates on the map to spawn enemy
+        float pos_x = uniform_dist(rng) * max_x;
+        float pos_y = max_y; // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
 
-      // create enemy at random position
-      // setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
-      // handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
-      // handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+        // create enemy at random position
+        // setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
+        // handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
+        // handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
 
-      // LLNOTE
-      // example of spawning using player-reached-point map:
-      // note: there might be a delay before this happens because of next_enemy_spawn
-      // handleEnemySpawning(hasPlayerReachedTile[{9, 6}], OBSTACLE, 1, vec2(9, 6), vec2(9, 11));
-      // hasPlayerReachedTile[{9, 6}] = false;
-    }
-  }
-
-  // Updated map:
-  //	key is a vector<int> (tile that triggers spawn),
-  //	value is a tuple with:
-  // 1. ENEMY_TYPE denoting type of enemy to spawn
-  // 2. Int denoting quantity of enemies to spawn
-  // 3. Boolean denoting hasPlayerReachedTile
-  // 4. Boolean denoting hasEnemyAlreadySpawned (at this tile)
-  // 5. vector<int> denoting spawn position
-  // 6. vector<int> denoting patrol range on the X-axis
-  for (auto &i : hasPlayerReachedTile)
-  {
-    std::vector<int> spawnTile = i.first;
-    std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>> &enemyDataTuple = i.second;
-    ENEMY_TYPES enemyType = std::get<0>(enemyDataTuple);
-    int quantity = std::get<1>(enemyDataTuple);
-    bool &hasPlayerReachedTile = std::get<2>(enemyDataTuple);
-    bool &hasEnemyAlreadySpawned = std::get<3>(enemyDataTuple);
-    std::vector<int> spawnPosition = std::get<4>(enemyDataTuple);
-    std::vector<int> patrolRange = std::get<5>(enemyDataTuple);
-
-    if (!hasPlayerReachedTile)
-    {
-      hasPlayerReachedTile = checkPlayerReachedTile(ivec2(spawnTile[0], spawnTile[1]));
+        // LLNOTE
+        // example of spawning using player-reached-point map:
+        // note: there might be a delay before this happens because of next_enemy_spawn
+        // handleEnemySpawning(spawnMap[{9, 6}], OBSTACLE, 1, vec2(9, 6), vec2(9, 11));
+        // spawnMap[{9, 6}] = false;
+      }
     }
 
-    if (hasPlayerReachedTile && !hasEnemyAlreadySpawned)
+    // This handles the enemy spawning. Refer copied comment from spawn map in header file:
+    // Updated map:
+    //	key is a vector<int> (tile that triggers spawn),
+    //	value is a tuple with:
+    // 1. ENEMY_TYPE denoting type of enemy to spawn
+    // 2. Int denoting quantity of enemies to spawn
+    // 3. Boolean denoting spawnMap
+    // 4. Boolean denoting hasEnemyAlreadySpawned (at this tile)
+    // 5. vector<int> denoting spawn position
+    // 6. vector<int> denoting patrol range on the X-axis
+    for (auto &i : spawnMap)
     {
-      hasEnemyAlreadySpawned = true;
-      handleEnemySpawning(
-          enemyType,
-          quantity,
-          ivec2(spawnPosition[0], spawnPosition[1]),
-          ivec2(patrolRange[0], patrolRange[1]));
+      std::vector<int> spawnTile = i.first;
+      std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>> &enemyDataTuple = i.second;
+      ENEMY_TYPES enemyType = std::get<0>(enemyDataTuple);
+      int quantity = std::get<1>(enemyDataTuple);
+      bool &hasPlayerReachedTile = std::get<2>(enemyDataTuple);
+      bool &hasEnemyAlreadySpawned = std::get<3>(enemyDataTuple);
+      std::vector<int> spawnPosition = std::get<4>(enemyDataTuple);
+      std::vector<int> patrolRange = std::get<5>(enemyDataTuple);
+
+      if (!hasPlayerReachedTile)
+      {
+        hasPlayerReachedTile = checkPlayerReachedArea(ivec2(spawnTile[0], spawnTile[1]), ivec2(spawnTile[2], spawnTile[3]));
+      }
+
+      if (hasPlayerReachedTile && !hasEnemyAlreadySpawned)
+      {
+        hasEnemyAlreadySpawned = true;
+        handleEnemySpawning(
+            enemyType,
+            quantity,
+            ivec2(spawnPosition[0], spawnPosition[1]),
+            ivec2(patrolRange[0], patrolRange[1]),
+            ivec2(patrolRange[2], patrolRange[3]));
+      }
     }
   }
 
@@ -332,6 +513,371 @@ void WorldSystem::stop_game()
   }
 }
 
+bool WorldSystem::is_in_goal()
+{
+  if (registry.goalZones.entities.size() >= 1)
+  {
+    GoalZone &goalZone = registry.goalZones.get(registry.goalZones.entities[0]);
+    Entity &playerEntity = registry.players.entities[0];
+
+    vec2 player_position = registry.motions.get(playerEntity).position;
+
+    vec2 bl = goalZone.bl_boundary;
+    vec2 tr = goalZone.tr_boundary;
+
+    // check if player is within goal zone
+    if (player_position.x >= bl.x && player_position.x <= tr.x && player_position.y >= bl.y && player_position.y <= tr.y)
+    {
+      if (!goalZone.hasTriggered)
+      {
+        Mix_PlayChannel(-1, fx_victory, 0);
+      }
+
+      goalZone.hasTriggered = true;
+
+      return true;
+    }
+  }
+  else
+  {
+    return false;
+  }
+}
+
+bool WorldSystem::load_level(const std::string &filename)
+{
+  const std::string full_filepath = LEVEL_DIR_FILEPATH + filename;
+  Json::Value mapData;
+
+  std::ifstream infile(full_filepath);
+
+  if (infile.fail())
+  {
+    return false;
+  }
+
+  infile >> mapData;
+
+  // checks to ensure JSON data is the expected format.
+  assert(mapData.find("height") != nullptr);
+  assert(mapData.find("width") != nullptr);
+  assert(mapData.find("layers") != nullptr);
+  assert(mapData["layers"].size() >= 2);
+  assert(mapData["layers"][1]["name"] == "Chain"); // this assert fails if map doesn't have at least 1 chainShape.
+  assert(mapData["layers"][1].find("objects") != nullptr);
+
+  // set stage dimensions
+  WORLD_WIDTH_TILES = mapData["width"].asFloat() / 2;
+  WORLD_HEIGHT_TILES = mapData["height"].asFloat() / 2;
+
+  WORLD_WIDTH_PX = WORLD_WIDTH_TILES * GRID_CELL_WIDTH_PX;
+  WORLD_HEIGHT_PX = WORLD_HEIGHT_TILES * GRID_CELL_HEIGHT_PX;
+
+  auto &JsonObjects = mapData["layers"][1]["objects"];
+  bool spawnpoint_found = false;
+  bool goalzone_found = false;
+
+  // Temporary storage for spawn zones and points
+  std::unordered_map<std::string, std::vector<vec2>> spawnZones;
+  std::unordered_map<std::string, std::vector<vec2>> spawnPoints;
+  std::unordered_map<std::string, std::string> enemyType;
+  std::unordered_map<std::string, int> enemyQuantity;
+
+  for (const auto &jsonObj : JsonObjects)
+  {
+    // polyline case
+    if (jsonObj.find(JSON_POLYLINE_ATTR) != nullptr)
+    {
+      std::vector<vec2> chainPoints;
+      const float x_offset = jsonObj["x"].asFloat();
+      const float y_offset = jsonObj["y"].asFloat();
+      const float rotation = jsonObj["rotation"].asFloat() * (M_PI / 180.f);
+
+      for (auto &point : jsonObj[JSON_POLYLINE_ATTR])
+      {
+        float x = point["x"].asFloat();
+        float y = point["y"].asFloat();
+
+        // rotate points
+        if (rotation != 0.f)
+        {
+          vec2 origin = vec2(0.f, 0.f);
+          vec2 rotatedPoint = rotateAroundPoint(vec2(x, y), origin, rotation);
+          x = rotatedPoint.x;
+          y = rotatedPoint.y;
+        }
+
+        chainPoints.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
+      }
+
+      std::string name = jsonObj["name"].asString();
+      if (chainPoints.size() == 2 && name.find("SZ") == 0)
+      {
+        // Process enemy spawn zone
+        std::vector<std::string> parts = split(name, "_");
+        if (parts.size() == 2)
+        {
+          std::string id = parts[1];
+          spawnZones[id] = chainPoints;
+          std::cout << "Found enemy spawn ZONE with id: " << id << std::endl;
+        }
+      }
+      else if (chainPoints.size() == 2 && name.find("ENEMY") == 0)
+      {
+        std::cout << "found obstacle enemy spawnpath." << std::endl;
+        std::vector<std::string> parts = split(name, "_");
+        std::vector<vec2> points;
+        std::string id = parts[3];
+
+        const float x_offset = jsonObj["x"].asFloat();
+        const float y_offset = jsonObj["y"].asFloat();
+
+        for (auto &point : jsonObj[JSON_POLYLINE_ATTR])
+        {
+          float x = point["x"].asFloat();
+          float y = point["y"].asFloat();
+          points.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
+        }
+
+        spawnPoints[id] = points;
+        enemyType[id] = parts[1];
+        enemyQuantity[id] = std::stoi(parts[2]);
+      }
+      else if (chainPoints.size() == 2 && name == "goal")
+      {
+        std::cout << "found goalpost!" << std::endl;
+        goalzone_found = true;
+
+        bool first = true;
+        vec2 bl_corner;
+        vec2 tr_corner;
+        for (auto &point : jsonObj[JSON_POLYLINE_ATTR])
+        {
+          float x = point["x"].asFloat();
+          float y = point["y"].asFloat();
+
+          if (first)
+          {
+            bl_corner = vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset));
+            first = false;
+          }
+          else
+          {
+            tr_corner = vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset));
+          }
+        }
+
+        createGoalZone(bl_corner, tr_corner);
+      }
+      else if (chainPoints.size() >= 2)
+      {
+        std::cout << "Creating chainShape with " << chainPoints.size() << " segments." << std::endl;
+        if (name == "ledge")
+        {
+          create_chain(worldId, chainPoints, false, lines);
+        }
+        else
+        {
+          create_chain(worldId, chainPoints, true, lines);
+        }
+      }
+    }
+    // polygon case: polygon = closed-loop chain
+    else if (jsonObj.find(JSON_POLYGON_ATTR) != nullptr)
+    {
+      std::vector<vec2> chainPoints;
+      const float x_offset = jsonObj["x"].asFloat();
+      const float y_offset = jsonObj["y"].asFloat();
+      const float rotation = jsonObj["rotation"].asFloat() * (M_PI / 180.f);
+
+      for (auto &point : jsonObj[JSON_POLYGON_ATTR])
+      {
+        float x = point["x"].asFloat();
+        float y = point["y"].asFloat();
+
+        // rotate enemies_killed
+        if (rotation != 0.f)
+        {
+          vec2 origin = vec2(0.f, 0.f);
+          vec2 rotatedPoint = rotateAroundPoint(vec2(x, y), origin, rotation);
+          x = rotatedPoint.x;
+          y = rotatedPoint.y;
+        }
+
+        chainPoints.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
+      }
+
+      std::string name = jsonObj["name"].asString();
+      if (chainPoints.size() == 2 && name.find("SZ") == 0)
+      {
+        // Process enemy spawn zone
+        std::vector<std::string> parts = split(name, "_");
+        if (parts.size() == 2)
+        {
+          std::string id = parts[1];
+          spawnZones[id] = chainPoints;
+          std::cout << "Found enemy spawn ZONE with id: " << id << std::endl;
+        }
+      }
+      else if (chainPoints.size() == 2 && name.find("ENEMY") == 0)
+      {
+        std::cout << "found obstacle enemy spawnpath." << std::endl;
+        std::vector<std::string> parts = split(name, "_");
+        std::vector<vec2> points;
+        std::string id = parts[3];
+
+        const float x_offset = jsonObj["x"].asFloat();
+        const float y_offset = jsonObj["y"].asFloat();
+
+        for (auto &point : jsonObj[JSON_POLYLINE_ATTR])
+        {
+          float x = point["x"].asFloat();
+          float y = point["y"].asFloat();
+          points.push_back(vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset)));
+        }
+
+        spawnPoints[id] = points;
+        enemyType[id] = parts[1];
+        enemyQuantity[id] = std::stoi(parts[2]);
+      }
+      else if (chainPoints.size() == 2 && name == "goal")
+      {
+        std::cout << "found goalpost!" << std::endl;
+        goalzone_found = true;
+
+        bool first = true;
+        vec2 bl_corner;
+        vec2 tr_corner;
+        for (auto &point : jsonObj[JSON_POLYLINE_ATTR])
+        {
+          float x = point["x"].asFloat();
+          float y = point["y"].asFloat();
+
+          if (first)
+          {
+            bl_corner = vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset));
+            first = false;
+          }
+          else
+          {
+            tr_corner = vec2(x + x_offset, WORLD_HEIGHT_PX - (y + y_offset));
+          }
+        }
+
+        createGoalZone(bl_corner, tr_corner);
+      }
+      else if (chainPoints.size() >= 2)
+      {
+        std::cout << "Creating chainShape with " << chainPoints.size() << " segments." << std::endl;
+        if (name == "ledge")
+        {
+          create_chain(worldId, chainPoints, false, lines);
+        }
+        else
+        {
+          create_chain(worldId, chainPoints, true, lines);
+        }
+      }
+    }
+    // ball_spawnpoint case
+    else if (jsonObj.find("name") != nullptr && jsonObj["name"] == JSON_BALL_SPAWNPOINT)
+    {
+      const float x = jsonObj["x"].asFloat();
+      const float y = jsonObj["y"].asFloat();
+      createBall(worldId, vec2(x, WORLD_HEIGHT_PX - y));
+      spawnpoint_found = true;
+    }
+
+    // enemy spawnpoint case
+    else if (jsonObj.find("name") != nullptr && jsonObj["name"].asString().find("ENEMY") == 0)
+    {
+      std::string name = jsonObj["name"].asString();
+      std::vector<std::string> parts = split(name, "_");
+      if (parts.size() == 4)
+      {
+        std::string id = parts[3];
+        std::vector<vec2> points;
+
+        float x = jsonObj["x"].asFloat();
+        float y = jsonObj["y"].asFloat();
+        points.push_back(vec2(x, WORLD_HEIGHT_PX - y));
+
+        std::cout << "Found enemy spawn POINT with id: " << id << std::endl;
+        spawnPoints[id] = points;
+        enemyType[id] = parts[1];
+        enemyQuantity[id] = std::stoi(parts[2]);
+      }
+    }
+    // grapple point case
+    else if (jsonObj.find("name") != nullptr && jsonObj["name"] == "grapple_point")
+    {
+      const float x = jsonObj["x"].asFloat();
+      const float y = jsonObj["y"].asFloat();
+
+      std::cout << "Found grapple point at: " << x << ", " << y << std::endl;
+      createGrapplePoint(worldId, vec2(x, WORLD_HEIGHT_PX - y));
+    }
+  }
+
+  // Process enemy spawns
+  for (const auto &[id, zone] : spawnZones)
+  {
+    if (spawnPoints.find(id) != spawnPoints.end())
+    {
+      std::vector<vec2> points = spawnPoints[id];
+      ENEMY_TYPES currEnemyType;
+
+      switch (enemyType[id][0])
+      {
+      case 'S':
+        currEnemyType = SWARM;
+        break;
+      case 'C':
+        currEnemyType = COMMON;
+        break;
+      case 'O':
+        currEnemyType = OBSTACLE;
+        break;
+      }
+
+      int quantity = enemyQuantity[id];
+
+      ivec2 bottom_left = ivec2(zone[0].x / TILE_WIDTH, zone[0].y / TILE_HEIGHT);
+      ivec2 top_right = ivec2(zone[1].x / TILE_WIDTH, zone[1].y / TILE_HEIGHT);
+
+      if (currEnemyType == OBSTACLE && points.size() == 2)
+      {
+        vec2 start = points[0];
+        vec2 end = points[1];
+        ivec2 spawn_location = ivec2(start.x / TILE_WIDTH, start.y / TILE_HEIGHT);
+        ivec2 obstacle_patrol_bottom_left = ivec2(start.x / TILE_WIDTH, start.y / TILE_HEIGHT);
+        ivec2 obstacle_patrol_top_right = ivec2(end.x / TILE_WIDTH, end.y / TILE_HEIGHT);
+        insertToSpawnMap(bottom_left, top_right, currEnemyType, quantity, spawn_location, obstacle_patrol_bottom_left, obstacle_patrol_top_right);
+      }
+      else if (points.size() == 1)
+      {
+        vec2 point = points[0];
+        ivec2 spawn_location = ivec2(point.x / TILE_WIDTH, point.y / TILE_HEIGHT);
+        insertToSpawnMap(bottom_left, top_right, currEnemyType, quantity, spawn_location, ivec2(0, 0), ivec2(0, 0));
+      }
+    }
+  }
+
+  if (!spawnpoint_found)
+  {
+    std::cerr << "No spawnpoint found in map file." << std::endl;
+    return false;
+  }
+
+  if (!goalzone_found)
+  {
+    std::cerr << "No goalzone found in map file." << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
 void WorldSystem::generateTestTerrain()
 {
   if (lines.empty())
@@ -341,7 +887,7 @@ void WorldSystem::generateTestTerrain()
     // reverse vertices for counter-clockwise winding order
     std::reverse(testPoints.begin(), testPoints.end());
 
-    // render the line segments between points
+    // render the line segments between enemies_killed
     int count = testPoints.size();
     for (int i = 0; i < count - 1; ++i)
     {
@@ -366,7 +912,7 @@ void WorldSystem::generateTestTerrain()
 
 std::vector<b2Vec2> WorldSystem::generateTestPoints()
 {
-  // hardcoded points that make up a ramp
+  // hardcoded enemies_killed that make up a ramp
   return {
       {0.0f, 288.0f},
       {16.67f, 288.0f},
@@ -402,8 +948,13 @@ std::vector<b2Vec2> WorldSystem::generateTestPoints()
 }
 
 // Reset the world state to its initial state
-void WorldSystem::restart_game()
+void WorldSystem::restart_game(int level)
 {
+  // Figure out what we're using for each level
+  std::tuple<std::string, TEXTURE_ASSET_ID, MUSIC> level_specs = levelMap.find(level_selection)->second;
+  std::string level_path = std::get<0>(level_specs);
+  TEXTURE_ASSET_ID level_texture = std::get<1>(level_specs);
+  MUSIC level_music = std::get<2>(level_specs);
 
   std::cout << "Restarting..." << std::endl;
 
@@ -413,24 +964,72 @@ void WorldSystem::restart_game()
   // Reset the game speed
   current_speed = 1.f;
 
-  points = 0;
+  // LLTEST
+  // Clear spawn map
+  spawnMap.clear();
+  // Add some spawning to test
+  // insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 1, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
+  // insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
+  // insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
+
+  player_reached_finish_line = false;
+  timer_game_end_screen = TIMER_GAME_END;
+  num_enemies_to_kill = countEnemiesOnLevel();
+  hp = PLAYER_STARTING_HP;
+  enemies_killed = 0;
+  time_elapsed = 0;
+  time_granularity = TIME_GRANULARITY;
   max_towers = MAX_TOWERS_START;
   next_enemy_spawn = 0;
   enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
-  grappleActive = false;
+  if (grappleActive)
+  {
+    removeGrapple();
+    grappleActive = false;
+  }
 
-  // Remove all entities that we created
-  // All that have a motion, we could also iterate over all bug, eagles, ... but that would be more cumbersome
+  // remove all box2d bodies
+  while (registry.physicsBodies.entities.size() > 0)
+  {
+    PhysicsBody &physicsBody = registry.physicsBodies.get(registry.physicsBodies.entities.back());
+    b2DestroyBody(physicsBody.bodyId);
+    registry.physicsBodies.remove(registry.physicsBodies.entities.back());
+  }
+
   while (registry.motions.entities.size() > 0)
+  {
     registry.remove_all_components_of(registry.motions.entities.back());
+  }
 
-  // debugging for memory/component leaks
-  registry.list_all_components();
+  while (registry.lines.entities.size() > 0)
+  {
+    registry.remove_all_components_of(registry.lines.entities.back());
+  }
 
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // {{{ OK }}} TODO A1: create grid lines
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  if (registry.players.entities.size() > 0)
+  {
+    // clear player-related stuff.
+    Entity &playerEntity = registry.players.entities.back();
+    registry.remove_all_components_of(playerEntity);
+  }
+
+  if (registry.goalZones.entities.size() > 0)
+  {
+    // clear goalZone
+    Entity &goalEntity = registry.goalZones.entities.back();
+    registry.remove_all_components_of(goalEntity);
+  }
+
+  if (registry.backgroundLayers.size() > 0)
+  {
+    // clear player-related stuff.
+    Entity &backgroundEntity = registry.backgroundLayers.entities.back();
+    registry.remove_all_components_of(backgroundEntity);
+  }
+
   int grid_line_width = GRID_LINE_WIDTH_PX;
+
+  load_level(level_path);
 
   // create grid lines if they do not already exist
   if (grid_lines.size() == 0)
@@ -454,6 +1053,8 @@ void WorldSystem::restart_game()
     }
   }
 
+  createScreenElements();
+
   // Room dimensions
   const float roomWidth = WORLD_WIDTH_PX;
   const float roomHeight = WORLD_HEIGHT_PX;
@@ -465,88 +1066,8 @@ void WorldSystem::restart_game()
   b2BodyId leftWallId = create_vertical_wall(worldId, 0.0f, roomHeight / 2, roomHeight);       // Left Wall
   b2BodyId rightWallId = create_vertical_wall(worldId, roomWidth, roomHeight / 2, roomHeight); // Right Wall
 
-  // tiles
-  // create_single_tile(worldId, vec2(0, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(1, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(2, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(3, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(4, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-  // create_single_tile(worldId, vec2(5, 0), TEXTURE_ASSET_ID::SQUARE_TILE_1);
-
-  // tutorial: WASD movement
-  create_tutorial_tile(worldId, vec2(2, 5), TEXTURE_ASSET_ID::TUTORIAL_MOVE);
-  create_tutorial_tile(worldId, vec2(3, 5), TEXTURE_ASSET_ID::TUTORIAL_SPACEBAR);
-  create_block(worldId, vec2(0, 0), vec2(5, 3));
-  create_block(worldId, vec2(6, 0), vec2(6, 4));
-  create_curve(worldId, vec2(5, 4), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-  create_block(worldId, vec2(7, 0), vec2(9, 5));
-
-  // tutorial: grapple
-  create_tutorial_tile(worldId, vec2(9, 6), TEXTURE_ASSET_ID::TUTORIAL_GRAPPLE);
-  create_block(worldId, vec2(10, 0), vec2(14, 3));
-  create_grapple_tile(worldId, vec2(12, 6), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_block(worldId, vec2(15, 0), vec2(21, 5));
-  create_block(worldId, vec2(17, 8), vec2(21, 20));
-
-  // tutorial: obstacle enemies
-  create_block(worldId, vec2(22, 0), vec2(28, 4));
-  create_block(worldId, vec2(29, 0), vec2(29, 5));
-  create_curve(worldId, vec2(28, 5), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-  create_block(worldId, vec2(30, 0), vec2(34, 5));
-  create_block(worldId, vec2(30, 8), vec2(34, 12));
-
-  // tutorial: swarming enemy room
-  create_tutorial_tile(worldId, vec2(39, 7), TEXTURE_ASSET_ID::TUTORIAL_DESTROY);
-  create_curve(worldId, vec2(38, 6), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-  create_curve(worldId, vec2(46, 6), TEXTURE_ASSET_ID::SMOOTH_RAMP_BL);
-  create_block(worldId, vec2(35, 5), vec2(49, 5));
-  create_block(worldId, vec2(39, 0), vec2(39, 6));
-  create_block(worldId, vec2(45, 0), vec2(45, 6));
-  // Roof left
-  create_block(worldId, vec2(35, 8), vec2(36, 15));
-  create_block(worldId, vec2(37, 9), vec2(37, 15));
-  create_block(worldId, vec2(38, 10), vec2(39, 15));
-  // Roof Middle
-  create_block(worldId, vec2(40, 11), vec2(44, 15));
-  create_block(worldId, vec2(45, 10), vec2(46, 15));
-  // Roof Right
-  create_block(worldId, vec2(47, 9), vec2(47, 15));
-  create_block(worldId, vec2(48, 8), vec2(49, 15));
-  create_grapple_tile(worldId, vec2(42, 8), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  // Exit
-  create_block(worldId, vec2(50, 0), vec2(54, 5));
-  create_block(worldId, vec2(50, 8), vec2(54, 12));
-
-  // tutorial: walking enemy room
-  create_block(worldId, vec2(55, 0), vec2(69, 4));
-  create_curve(worldId, vec2(69, 5), TEXTURE_ASSET_ID::SMOOTH_RAMP_BR);
-
-  // tutorial: long vertical shaft with grapple points
-  create_block(worldId, vec2(70, 0), vec2(78, 0));
-  create_block(worldId, vec2(34 + 36, 8), vec2(37 + 36, 20));
-  create_block(worldId, vec2(37 + 36, 2), vec2(37 + 36, 20));
-  create_grapple_tile(worldId, vec2(40 + 36, 3), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_grapple_tile(worldId, vec2(40 + 36, 9), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_grapple_tile(worldId, vec2(40 + 36, 15), TEXTURE_ASSET_ID::TEXTURE_COUNT);
-  create_block(worldId, vec2(37 + 36, 18), vec2(50 + 36, 30));
-  create_block(worldId, vec2(43 + 36, 0), vec2(43 + 36, 15));
-  create_block(worldId, vec2(43 + 36, 18), vec2(43 + 36, 30));
-  create_block(worldId, vec2(43 + 36, 0), vec2(50 + 36, 5));
-  create_block(worldId, vec2(46 + 36, 8), vec2(50 + 36, 30));
-
-  // tutorial: ending straight to the finish line
-  create_block(worldId, vec2(87, 0), vec2(104, 4));
-
-  // generate the vertices for the terrain formed by the chain and render it
-  // generateTestTerrain();
-
-  // create grapple point
-  // createGrapplePoint(worldId, vec2(1200.0f, 300.0f));
-  // createGrapplePoint(worldId, vec2(900.0f, 300.0f));
-  // createGrapplePoint(worldId, vec2(300.0f, 300.0f));
-
-  // turn off trigger for fadeout shader
-  registry.screenStates.components[0].fadeout = 0.0f;
+  createBackgroundLayer(TEXTURE_ASSET_ID::BACKGROUND);
+  createLevelTextureLayer(level_texture);
 
   // turn the tunes back on
   if (Mix_PausedMusic())
@@ -555,7 +1076,8 @@ void WorldSystem::restart_game()
   }
   else
   {
-    Mix_PlayMusic(background_music, -1);
+    Mix_VolumeMusic(MIX_MAX_VOLUME / 4);
+    playMusic(level_music);
   }
 
   // reactivate the game
@@ -597,16 +1119,21 @@ void WorldSystem::handle_collisions()
         {
           b2DestroyBody(enemyBodyId);
           registry.remove_all_components_of(enemyEntity);
-          Mix_PlayChannel(-1, chicken_dead_sound, 0);
-          points++;
+          playSoundEffect(FX::FX_DESTROY_ENEMY);
+          enemies_killed++;
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.
         else if (enemyComponent.freeze_time <= 0)
         {
           enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
-          Mix_PlayChannel(-1, chicken_eat_sound, 0);
-          points -= 3; // small penalty for now
+          playSoundEffect(FX::FX_DESTROY_ENEMY_FAIL);
+
+          // Only lose HP if what we hit was NOT an obstacle
+          if (enemyComponent.destructable)
+          {
+            hp -= 1; // small penalty for now
+          }
         }
       }
       else
@@ -626,16 +1153,21 @@ void WorldSystem::handle_collisions()
         {
           b2DestroyBody(enemyBodyId);
           registry.remove_all_components_of(other);
-          Mix_PlayChannel(-1, chicken_dead_sound, 0);
-          points++;
+          playSoundEffect(FX::FX_DESTROY_ENEMY);
+          enemies_killed++;
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.
         else if (enemyComponent.freeze_time <= 0)
         {
           enemyComponent.freeze_time = ENEMY_FREEZE_TIME_MS;
-          Mix_PlayChannel(-1, chicken_eat_sound, 0);
-          points -= 3; // small penalty for now
+          playSoundEffect(FX::FX_DESTROY_ENEMY_FAIL);
+
+          // Only lose HP if what we hit was NOT an obstacle
+          if (enemyComponent.destructable)
+          {
+            hp -= 1; // small penalty for now
+          }
         }
       }
 
@@ -650,7 +1182,6 @@ void WorldSystem::handle_collisions()
       */
     }
   }
-
   // Remove all collisions from this simulation step
   registry.collisions.clear();
 }
@@ -857,12 +1388,15 @@ void WorldSystem::handle_movement(float elapsed_ms)
 // on key callback
 void WorldSystem::on_key(int key, int scancode, int action, int mod)
 {
+  // Current Screen
+  Entity currScreenEntity = registry.currentScreen.entities[0];
+  CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
 
   if (!game_active)
   {
     if (key == GLFW_KEY_R && action == GLFW_RELEASE)
     {
-      restart_game();
+      restart_game(level_selection);
     }
     return; // ignore all other inputs when game is inactive
   }
@@ -870,15 +1404,108 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
   // Exit game with ESC
   if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
   {
-    close_window();
+    // Playing screen - pauses game
+    if (currentScreen.current_screen == "PLAYING")
+    {
+      currentScreen.current_screen = "PAUSE";
+      // freezeMovements();
+      return;
+    }
+    // Pause screen - resume game
+    if (currentScreen.current_screen == "PAUSE")
+    {
+      currentScreen.current_screen = "PLAYING";
+      return;
+    }
+    // Menu and End of Game screen - exits game
+    if (currentScreen.current_screen == "MAIN MENU" || currentScreen.current_screen == "END OF GAME")
+    {
+      close_window();
+    }
   }
 
   // Reset game when R is released
   if (action == GLFW_RELEASE && key == GLFW_KEY_R)
   {
-    int w, h;
-    glfwGetWindowSize(window, &w, &h);
-    restart_game();
+    // Pause and End of Game screen - restarts game
+    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "END OF GAME")
+    {
+      currentScreen.current_screen = "PLAYING";
+      int w, h;
+      glfwGetWindowSize(window, &w, &h);
+      restart_game(level_selection);
+    }
+  }
+
+  // Select level - only active on MAIN MENU screen
+  if (currentScreen.current_screen == "MAIN MENU")
+  {
+    // Level keys 1-9
+    if (action == GLFW_RELEASE && key == GLFW_KEY_1)
+    {
+      levelHelper(1);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_2)
+    {
+      levelHelper(2);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_3)
+    {
+      levelHelper(3);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_4)
+    {
+      levelHelper(4);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_5)
+    {
+      levelHelper(5);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_6)
+    {
+      levelHelper(6);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_7)
+    {
+      levelHelper(7);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_8)
+    {
+      levelHelper(8);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_9)
+    {
+      levelHelper(9);
+    }
+    // Increment or decrement selected level by 1
+    if (action == GLFW_RELEASE && key == GLFW_KEY_UP)
+    {
+      levelHelper(level_selection + 1);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_DOWN)
+    {
+      levelHelper(level_selection - 1);
+    }
+  }
+
+  // ENTER key press handling
+  if (action == GLFW_RELEASE && key == GLFW_KEY_ENTER)
+  {
+
+    // Main menu screen - Loads the selected level and starts the game
+    if (currentScreen.current_screen == "MAIN MENU")
+    {
+      currentScreen.current_screen = "PLAYING";
+      restart_game(level_selection);
+      return;
+    }
+    // Pause and End of Game screen - back to main menu
+    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "END OF GAME")
+    {
+      currentScreen.current_screen = "MAIN MENU";
+      restart_game(level_selection);
+      return;
+    }
   }
 
   // Debug toggle with D
@@ -899,6 +1526,10 @@ void WorldSystem::on_mouse_move(vec2 mouse_position)
 
 void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 {
+  // Current Screen
+  Entity currScreenEntity = registry.currentScreen.entities[0];
+  CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
+
   if (!game_active)
   {
     return;
@@ -906,239 +1537,555 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
 
   if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
   {
+
     // Get mouse position and convert to world coordinates.
     vec2 mouseScreenPos = {mouse_pos_x, mouse_pos_y};
     vec2 worldMousePos = screenToWorld(mouseScreenPos);
+
+    /*
     std::cout << "Mouse clicked at world position: ("
-              << worldMousePos.x << ", " << worldMousePos.y << ")" << std::endl;
+                << worldMousePos.x << ", " << worldMousePos.y << ")" << std::endl;
     std::cout << "Corresponding tile: ("
-              << worldMousePos.x / GRID_CELL_WIDTH_PX << ", " << worldMousePos.y / GRID_CELL_HEIGHT_PX << ")" << std::endl;
+                << worldMousePos.x / GRID_CELL_WIDTH_PX << ", " << worldMousePos.y / GRID_CELL_HEIGHT_PX << ")" << std::endl;
+    */
 
-    // Find the grapple point closest to the click that is within the threshold.
-    GrapplePoint *selectedGp = nullptr;
-    float bestDist = GRAPPLE_ATTACH_ZONE_RADIUS; // distance threshold
-
-    for (Entity gpEntity : registry.grapplePoints.entities)
+    // For the playing screen specifically, mouse controls grapple
+    if (currentScreen.current_screen == "PLAYING")
     {
-      GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
-      float dist = length(gp.position - worldMousePos);
-      if (dist < bestDist)
+      // Find the grapple point closest to the click that is within the threshold.
+      GrapplePoint *selectedGp = nullptr;
+      float bestDist = GRAPPLE_ATTACH_ZONE_RADIUS; // distance threshold
+
+      for (Entity gpEntity : registry.grapplePoints.entities)
       {
-        bestDist = dist;
-        selectedGp = &gp;
+        GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
+        float dist = length(gp.position - worldMousePos);
+        if (dist < bestDist)
+        {
+          bestDist = dist;
+          selectedGp = &gp;
+        }
+      }
+
+      // Deactivate all grapple enemies_killed.
+      for (Entity gpEntity : registry.grapplePoints.entities)
+      {
+        GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
+        gp.active = false;
+      }
+
+      // If a valid grapple point is found, mark it as active.
+      if (selectedGp != nullptr)
+      {
+        selectedGp->active = true;
+        std::cout << "Selected grapple point at ("
+                  << selectedGp->position.x << ", " << selectedGp->position.y
+                  << ") with active = " << selectedGp->active << std::endl;
+      }
+
+      // Now, if no grapple is currently attached and we found an active point, attach the grapple.
+      if (!grappleActive && selectedGp != nullptr)
+      {
+        shootGrapplePoint();
+      }
+      else if (!grappleActive && selectedGp == nullptr)
+      {
+        shootGrapple(worldMousePos);
+      }
+      else if (grappleActive)
+      {
+        removeGrapple();
+        grappleActive = false;
+        grapplePointActive = false;
       }
     }
-
-    // Deactivate all grapple points.
-    for (Entity gpEntity : registry.grapplePoints.entities)
-    {
-      GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
-      gp.active = false;
-    }
-
-    // If a valid grapple point is found, mark it as active.
-    if (selectedGp != nullptr)
-    {
-      selectedGp->active = true;
-      std::cout << "Selected grapple point at ("
-                << selectedGp->position.x << ", " << selectedGp->position.y
-                << ") with active = " << selectedGp->active << std::endl;
-    }
-
-    // Now, if no grapple is currently attached and we found an active point, attach the grapple.
-    if (!grappleActive && selectedGp != nullptr)
-    {
-      shootGrapplePoint();
-    }
-    else if (!grappleActive && selectedGp == nullptr)
-    {
-      shootGrapple(worldMousePos);
-    }
-    else if (grappleActive)
-    {
-      removeGrapple();
-      grappleActive = false;
-      grapplePointActive = false;
-    }
-  }
-}
-
-vec2 WorldSystem::screenToWorld(vec2 mouse_position)
-{
-  for (Entity cameraEntity : registry.cameras.entities)
-  {
-    Camera &camera = registry.cameras.get(cameraEntity);
-    // Calculate the screen center.
-    float centerX = WINDOW_WIDTH_PX / 2.0f;
-    float centerY = WINDOW_HEIGHT_PX / 2.0f;
-
-    // Flip the Y coordinate: if the screen's Y=0 is at the top,
-    // convert it so Y increases upward. This example assumes that
-    // your world-space Y increases upward.
-    float flippedY = WINDOW_HEIGHT_PX - mouse_position.y;
-
-    // Offset the mouse position relative to the screen center.
-    float offsetX = mouse_position.x - centerX;
-    float offsetY = flippedY - centerY;
-
-    // Now add the camera's world position.
-    // camera.position is the world-space coordinate at the screen center.
-    vec2 worldPos;
-    worldPos.x = offsetX + camera.position.x;
-    worldPos.y = offsetY + camera.position.y;
-    std::cout << "mouse coordinate position: " << worldPos.x << ", " << worldPos.y << std::endl;
-    return worldPos;
-  }
-}
-
-void WorldSystem::shootGrapplePoint()
-{
-  Entity playerEntity = registry.players.entities[0];
-
-  // Retrieve the ball's physics body
-  PhysicsBody &ballBody = registry.physicsBodies.get(playerEntity);
-  b2BodyId ballBodyId = ballBody.bodyId;
-  b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
-
-  Entity activeGrapplePointEntity;
-  b2BodyId activeGrappleBodyId;
-  bool foundActive = false;
-
-  // Loop through all grapple points and find the active one
-  for (Entity gpEntity : registry.grapplePoints.entities)
-  {
-    GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
-    std::cout << gp.position.x << " " << gp.position.y << " " << gp.active << std::endl;
-    if (gp.active)
-    {
-      activeGrapplePointEntity = gpEntity;
-      activeGrappleBodyId = gp.bodyId;
-      foundActive = true;
-      break; // Stop once we find the first active grapple point
-    }
   }
 
-  // If no active grapple points were found, exit early
-  if (!foundActive)
+  vec2 WorldSystem::screenToWorld(vec2 mouse_position)
   {
-    return;
-  }
-
-  b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
-
-  // Compute the distance between the ball and the grapple point
-  float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
-                         (grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
-
-  // Attach the grapple if within range
-  if (distance <= GRAPPLE_MAX_LENGTH)
-  {
-    createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
-    grappleActive = true;
-    grapplePointActive = true;
-  }
-}
-
-void WorldSystem::shootGrapple(vec2 worldMousePos)
-{
-  Entity playerEntity = registry.players.entities[0];
-  PhysicsBody &ballBody = registry.physicsBodies.get(playerEntity);
-  b2BodyId ballBodyId = ballBody.bodyId;
-  b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
-
-  b2Vec2 mousePos{worldMousePos.x, worldMousePos.y};
-  b2Vec2 rayDir = mousePos - ballPos;
-
-  b2RayCastInput input;
-  input.origin = ballPos;
-  input.translation = rayDir;
-  input.maxFraction = 1.0f;
-
-  b2RayResult result = b2World_CastRayClosest(worldId, ballPos, rayDir, b2DefaultQueryFilter());
-
-  float distance = sqrtf((result.point.x - ballPos.x) * (result.point.x - ballPos.x) +
-                         (result.point.y - ballPos.y) * (result.point.y - ballPos.y));
-
-  if (result.hit && distance <= GRAPPLE_MAX_LENGTH)
-  {
-    b2BodyId bodyId = b2Shape_GetBody(result.shapeId);
-    b2BodyType bodyType = b2Body_GetType(bodyId);
-    if (bodyType == b2_staticBody)
+    for (Entity cameraEntity : registry.cameras.entities)
     {
-      b2BodyDef bodyDef = b2DefaultBodyDef();
-      bodyDef.type = b2_staticBody;
-      bodyDef.position = b2Vec2{result.point.x, result.point.y};
-      b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+      Camera &camera = registry.cameras.get(cameraEntity);
+      // Calculate the screen center.
+      float centerX = WINDOW_WIDTH_PX / 2.0f;
+      float centerY = WINDOW_HEIGHT_PX / 2.0f;
 
-      createGrapple(worldId, ballBodyId, bodyId, distance);
-      grappleActive = true;
+      // Flip the Y coordinate: if the screen's Y=0 is at the top,
+      // convert it so Y increases upward. This example assumes that
+      // your world-space Y increases upward.
+      float flippedY = WINDOW_HEIGHT_PX - mouse_position.y;
+
+      // Flip Y: mouse origin is top-left, OpenGL is bottom-left
+      mouse_screen.y = win_h - mouse_screen.y;
+
+      // Grab viewport from renderer (letterboxed area)
+      int vx = renderer->screen_viewport_x;
+      int vy = renderer->screen_viewport_y;
+      int vw = renderer->screen_viewport_w;
+      int vh = renderer->screen_viewport_h;
+
+      // Check if click is outside the visible game area
+      if (mouse_screen.x < vx || mouse_screen.x > vx + vw ||
+          mouse_screen.y < vy || mouse_screen.y > vy + vh)
+      {
+        return {-1, -1}; // outside the viewport
+      }
+
+      // Normalize to [0,1] within the viewport
+      float norm_x = (mouse_screen.x - vx) / vw;
+      float norm_y = (mouse_screen.y - vy) / vh;
+
+      // Map to virtual game coordinates
+      float virtual_x = norm_x * VIEWPORT_WIDTH_PX;  // 1200.f;
+      float virtual_y = norm_y * VIEWPORT_HEIGHT_PX; // 900.f;
+
+      // Offset from screen center (in virtual resolution)
+      float offset_x = virtual_x - VIEWPORT_WIDTH_PX / 2;  // 1200.f / 2.f;
+      float offset_y = virtual_y - VIEWPORT_HEIGHT_PX / 2; // 900.f / 2.f;
+
+      // Add camera position to get world-space coordinate
+      for (Entity cameraEntity : registry.cameras.entities)
+      {
+        Camera &camera = registry.cameras.get(cameraEntity);
+
+        vec2 worldPos;
+        worldPos.x = offset_x + camera.position.x;
+        worldPos.y = offset_y + camera.position.y;
+
+        std::cout << "mouse coordinate world pos: " << worldPos.x << ", " << worldPos.y << std::endl;
+        return worldPos;
+      }
+
+      return {0.f, 0.f}; // fallback if no camera
     }
-  }
-}
 
-void WorldSystem::checkGrappleGrounded()
-{
-  if (grappleActive)
-  {
-    if (!registry.players.entities.empty())
+    void WorldSystem::shootGrapplePoint()
     {
       Entity playerEntity = registry.players.entities[0];
 
-      if (registry.physicsBodies.has(playerEntity))
-      {
-        PhysicsBody &phys = registry.physicsBodies.get(playerEntity);
-        b2BodyId bodyId = phys.bodyId;
+      // Retrieve the ball's physics body
+      PhysicsBody &ballBody = registry.physicsBodies.get(playerEntity);
+      b2BodyId ballBodyId = ballBody.bodyId;
+      b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
 
-        // check if the player is grounded
-        bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
-        Grapple grapple;
-        for (Entity grappleEntity : registry.grapples.entities)
+      Entity activeGrapplePointEntity;
+      b2BodyId activeGrappleBodyId;
+      bool foundActive = false;
+
+      // Loop through all grapple enemies_killed and find the active one
+      for (Entity gpEntity : registry.grapplePoints.entities)
+      {
+        GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
+        std::cout << gp.position.x << " " << gp.position.y << " " << gp.active << std::endl;
+        if (gp.active)
         {
-          grapple = registry.grapples.get(grappleEntity);
+          activeGrapplePointEntity = gpEntity;
+          activeGrappleBodyId = gp.bodyId;
+          foundActive = true;
+          break; // Stop once we find the first active grapple point
         }
-        float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
-        if (isGrounded)
+      }
+
+      // If no active grapple enemies_killed were found, exit early
+      if (!foundActive)
+      {
+        return;
+      }
+
+      b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
+
+      // Compute the distance between the ball and the grapple point
+      float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
+                             (grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
+
+      // Attach the grapple if within range
+      if (distance <= GRAPPLE_MAX_LENGTH)
+      {
+        createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
+        grappleActive = true;
+        grapplePointActive = true;
+      }
+    }
+
+    void WorldSystem::shootGrapple(vec2 worldMousePos)
+    {
+      Entity playerEntity = registry.players.entities[0];
+      PhysicsBody &ballBody = registry.physicsBodies.get(playerEntity);
+      b2BodyId ballBodyId = ballBody.bodyId;
+      b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+
+      b2Vec2 mousePos{worldMousePos.x, worldMousePos.y};
+      b2Vec2 rayDir = mousePos - ballPos;
+
+      b2RayCastInput input;
+      input.origin = ballPos;
+      input.translation = rayDir;
+      input.maxFraction = 1.0f;
+
+      b2RayResult result = b2World_CastRayClosest(worldId, ballPos, rayDir, b2DefaultQueryFilter());
+
+      float distance = sqrtf((result.point.x - ballPos.x) * (result.point.x - ballPos.x) +
+                             (result.point.y - ballPos.y) * (result.point.y - ballPos.y));
+
+      if (result.hit && distance <= GRAPPLE_MAX_LENGTH)
+      {
+        b2BodyId bodyId = b2Shape_GetBody(result.shapeId);
+        b2BodyType bodyType = b2Body_GetType(bodyId);
+        if (bodyType == b2_staticBody)
         {
-          b2DistanceJoint_EnableSpring(grapple.jointId, true);
-          b2DistanceJoint_SetSpringHertz(grapple.jointId, GRAPPLE_HERTZ_GROUNDED);
-          b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, GRAPPLE_DAMPING_GROUNDED);
-          b2DistanceJoint_SetLength(grapple.jointId, curLen - GRAPPLE_DETRACT_GROUNDED);
-        }
-        else
-        {
-          b2DistanceJoint_EnableSpring(grapple.jointId, false);
+          b2BodyDef bodyDef = b2DefaultBodyDef();
+          bodyDef.type = b2_staticBody;
+          bodyDef.position = b2Vec2{result.point.x, result.point.y};
+          b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+
+          createGrapple(worldId, ballBodyId, bodyId, distance);
+          grappleActive = true;
         }
       }
     }
-  }
-}
 
-void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 gridPatrolXRange)
-{
-  // Create specified number of enemies by iterating
-  for (int i = 0; i < quantity; i++)
-  {
-    createEnemy(
-        worldId,
-        vec2((gridPosition.x + 0.5 + 0.1 * i) * GRID_CELL_WIDTH_PX,
-             (gridPosition.y + 0.5) * GRID_CELL_HEIGHT_PX),
-        enemy_type,
-        vec2((gridPatrolXRange.x + 0.5) * GRID_CELL_WIDTH_PX,
-             (gridPatrolXRange.y + 0.5) * GRID_CELL_HEIGHT_PX));
-  }
-}
+    void WorldSystem::checkGrappleGrounded()
+    {
+      if (grappleActive)
+      {
+        if (!registry.players.entities.empty())
+        {
+          Entity playerEntity = registry.players.entities[0];
 
-// LLNOTE
-bool WorldSystem::checkPlayerReachedTile(ivec2 gridCoordinate)
-{
+          if (registry.physicsBodies.has(playerEntity))
+          {
+            PhysicsBody &phys = registry.physicsBodies.get(playerEntity);
+            b2BodyId bodyId = phys.bodyId;
 
-  // Get player
-  Entity player = registry.players.entities[0];
-  Motion playerMotion = registry.motions.get(player);
+            // check if the player is grounded
+            bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
+            Grapple grapple;
+            for (Entity grappleEntity : registry.grapples.entities)
+            {
+              grapple = registry.grapples.get(grappleEntity);
+            }
+            float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
+            if (isGrounded)
+            {
+              b2DistanceJoint_EnableSpring(grapple.jointId, true);
+              b2DistanceJoint_SetSpringHertz(grapple.jointId, GRAPPLE_HERTZ_GROUNDED);
+              b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, GRAPPLE_DAMPING_GROUNDED);
+              b2DistanceJoint_SetLength(grapple.jointId, curLen - GRAPPLE_DETRACT_GROUNDED);
+            }
+            else
+            {
+              b2DistanceJoint_EnableSpring(grapple.jointId, false);
+            }
+          }
+        }
+      }
+    }
 
-  // Player location in terms of grid coordinates
-  ivec2 playerLocation = ivec2(playerMotion.position.x / GRID_CELL_WIDTH_PX, playerMotion.position.y / GRID_CELL_HEIGHT_PX);
+    void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 grid_patrol_point_a, ivec2 grid_patrol_point_b)
+    {
+      // Create specified number of enemies by iterating
+      for (int i = 0; i < quantity; i++)
+      {
+        createEnemy(
+            worldId,
+            vec2((gridPosition.x + 0.5 + 0.05 * i) * GRID_CELL_WIDTH_PX,
+                 (gridPosition.y + 0.5) * GRID_CELL_HEIGHT_PX),
+            enemy_type,
+            vec2((grid_patrol_point_a.x + 0.5) * GRID_CELL_WIDTH_PX, (grid_patrol_point_a.y + 0.5) * GRID_CELL_HEIGHT_PX),
+            vec2((grid_patrol_point_b.x + 0.5) * GRID_CELL_WIDTH_PX, (grid_patrol_point_b.y + 0.5) * GRID_CELL_HEIGHT_PX));
+      }
+    }
 
-  // If player is in the same grid as specified, then return true. else false.
-  return playerLocation == gridCoordinate;
-}
+    // NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!
+    // Takes:
+    // - Enemy Spawn Area
+    // - Enemy type/number to spawn
+    // - Location to spawn enemy
+    // - Patrol area if it's an obstacle
+    // Returns:
+    // - Handles enemy spawning according to specs.
+    void WorldSystem::insertToSpawnMap(ivec2 bottom_left, ivec2 top_right,
+                                       ENEMY_TYPES enemy_type, int num_enemies, ivec2 spawn_location,
+                                       ivec2 obstacle_patrol_point_a, ivec2 obstacle_patrol_point_b)
+    {
+
+      // Prep key from "spawn trigger area"
+      std::vector<int> mapKey = {bottom_left.x, bottom_left.y, top_right.x, top_right.y};
+
+      // Prep value from other inputs
+      std::tuple<ENEMY_TYPES,
+                 int,
+                 bool,
+                 bool,
+                 std::vector<int>,
+                 std::vector<int>>
+          mapValue = {enemy_type,
+                      num_enemies,
+                      false,
+                      false,
+                      {spawn_location.x, spawn_location.y},
+                      {obstacle_patrol_point_a.x, obstacle_patrol_point_a.y,
+                       obstacle_patrol_point_b.x, obstacle_patrol_point_b.y}};
+
+      // Insert to map
+      spawnMap.insert({mapKey, mapValue});
+    }
+
+    bool WorldSystem::checkPlayerReachedArea(ivec2 area_bottom_left, ivec2 area_top_right)
+    {
+      // Get player
+      Entity player = registry.players.entities[0];
+      Motion playerMotion = registry.motions.get(player);
+
+      // trigger area bounds
+      int min_x = area_bottom_left.x;
+      int min_y = area_bottom_left.y;
+      int max_x = area_top_right.x;
+      int max_y = area_top_right.y;
+
+      // Player location in terms of grid coordinates
+      ivec2 playerLocation = ivec2(playerMotion.position.x / GRID_CELL_WIDTH_PX, playerMotion.position.y / GRID_CELL_HEIGHT_PX);
+
+      // check that player location is inside the trigger area
+      bool player_inside_trigger_area = playerLocation.x >= min_x && playerLocation.y >= min_y && playerLocation.x <= max_x && playerLocation.y <= max_y;
+
+      return player_inside_trigger_area;
+    }
+
+    void WorldSystem::levelHelper(int level)
+    {
+      if (level <= levelMap.size() && level > 0)
+      {
+        level_selection = level;
+      }
+    }
+
+    int WorldSystem::countEnemiesOnLevel()
+    {
+
+      int num_enemies = 0;
+
+      for (auto &i : spawnMap)
+      {
+
+        std::vector<int> spawnTile = i.first;
+        std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>> &enemyDataTuple = i.second;
+        ENEMY_TYPES enemyType = std::get<0>(enemyDataTuple);
+        int quantity = std::get<1>(enemyDataTuple);
+        bool &hasPlayerReachedTile = std::get<2>(enemyDataTuple);
+        bool &hasEnemyAlreadySpawned = std::get<3>(enemyDataTuple);
+        std::vector<int> spawnPosition = std::get<4>(enemyDataTuple);
+        std::vector<int> patrolRange = std::get<5>(enemyDataTuple);
+
+        // This'll need to be changed if we add more indestructible enemies.
+        if (enemyType != OBSTACLE)
+        {
+          num_enemies += quantity;
+        }
+      }
+
+      return num_enemies;
+    }
+
+    void WorldSystem::handleGameover(CurrentScreen & currentScreen)
+    {
+
+      // If player HP reaches 0, game ends.
+      if (hp <= 0)
+      {
+        currentScreen.current_screen = "END OF GAME";
+
+        // Defeat title
+        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_DEFEAT, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+      }
+      // If player reached finish line AND killed all enemies, game ends.
+      else if (player_reached_finish_line)
+      {
+
+        if (timer_game_end_screen <= 0)
+        {
+          // Victory title
+          createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_VICTORY, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+
+          currentScreen.current_screen = "END OF GAME";
+        }
+        else
+        {
+          timer_game_end_screen -= time_elapsed;
+        }
+      }
+    }
+
+    // NOT NEEDED IF WE JUST FREEZE PHYSICS!!! (in fact it's better if we froze physics as original velocity preserved
+    void WorldSystem::freezeMovements()
+    {
+
+      // Get enemy entities
+      auto &enemy_registry = registry.enemies; // list of enemy entities stored in here
+
+      // Get player entity
+      Entity playerEntity = registry.players.entities[0];
+      Motion &playerMotion = registry.motions.get(playerEntity);
+      b2BodyId player_id = registry.physicsBodies.get(playerEntity).bodyId;
+
+      // freeze the player
+      b2Body_SetLinearVelocity(player_id, b2Vec2_zero);
+      playerMotion.velocity = vec2(0, 0);
+
+      // freeze the enemies
+      // Iterate over each enemy and implement basic logic as commented above.
+      for (int i = 0; i < enemy_registry.entities.size(); i++)
+      {
+
+        // Figure out enemy details
+        Entity enemyEntity = enemy_registry.entities[i];
+        Motion &enemyMotion = registry.motions.get(enemyEntity);
+        Enemy &enemyComponent = registry.enemies.get(enemyEntity);
+
+        // Get Box2D Speed
+        b2BodyId enemy_id = registry.physicsBodies.get(enemyEntity).bodyId;
+
+        // freeze the enemy
+        b2Body_SetLinearVelocity(enemy_id, b2Vec2_zero);
+        enemyMotion.velocity = vec2(0, 0);
+      }
+    }
+
+    // Handles button press based on function.
+    // LLNOTE: SHOULD HAVE A CASE FOR EACH BUTTON CREATED IN createScreenElements().
+    void WorldSystem::handleButtonPress(std::string function)
+    {
+
+      // Current Screen
+      Entity currScreenEntity = registry.currentScreen.entities[0];
+      CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
+
+      if (function == "INCREMENT LEVEL")
+      {
+
+        levelHelper(level_selection + 1);
+      }
+      else if (function == "DECREMENT LEVEL")
+      {
+
+        levelHelper(level_selection - 1);
+      }
+      else if (function == "EXIT GAME")
+      {
+
+        close_window();
+      }
+      else if (function == "START GAME")
+      {
+
+        currentScreen.current_screen = "PLAYING";
+        restart_game(level_selection);
+      }
+      else if (function == "RESUME")
+      {
+
+        currentScreen.current_screen = "PLAYING";
+      }
+      else if (function == "RESTART")
+      {
+
+        int w, h;
+        currentScreen.current_screen = "PLAYING";
+        glfwGetWindowSize(window, &w, &h);
+        restart_game(level_selection);
+      }
+      else if (function == "MAIN MENU")
+      {
+
+        currentScreen.current_screen = "MAIN MENU";
+        restart_game(level_selection);
+      }
+    }
+
+    // LLNOTE: FOR CODE READABILITY, ALL OF THE SCREEN ELEMENT AND BUTTON CREATIONS SHOULD BE IN HERE.
+    // create screens if they do not already exist
+    void WorldSystem::createScreenElements()
+    {
+
+      if (registry.screens.entities.size() == 0)
+      {
+
+        // MAIN MENU:
+
+        // Title
+        createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::TITLE_MENU, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+
+        // Text
+        createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::TEXT_MENU, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
+
+        // Buttons
+        //
+        // Increase level
+        createButton("INCREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLUP,
+                     VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
+
+        // Decrease Level
+        createButton("DECREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLDOWN,
+                     VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
+
+        // Start
+        createButton("START GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_START,
+                     VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
+
+        // Exit
+        createButton("EXIT GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_EXITGAME,
+                     VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
+
+        // PAUSE:
+
+        // Title
+        createScreenElement("PAUSE", TEXTURE_ASSET_ID::TITLE_PAUSE, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+
+        // Text
+        createScreenElement("PAUSE", TEXTURE_ASSET_ID::TEXT_PAUSE, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
+
+        // Buttons
+        //
+        // Resume
+        createButton("RESUME", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+        // Restart
+        createButton("RESTART", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
+
+        // Main Menu
+        createButton("MAIN MENU", "PAUSE", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+        // NOTE: Need to swap victory/defeat screen's title asset over to appropriate title when game ends.
+        // END OF GAME
+
+        // Title
+        // NOTE: THIS WILL BE SET IN THE END-OF-GAME CHECK handle_gameover() based on whether the player won or lost.
+
+        // Text
+        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TEXT_GAMEOVER, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
+
+        // Buttons
+        //
+        // Resume
+        createButton("RESUME", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+        // Restart
+        createButton("RESTART", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
+
+        // Main Menu
+        createButton("MAIN MENU", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+        // These are elements for the ENTIRE screen
+        // createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+        // createScreenElement("PLAYING", TEXTURE_ASSET_ID::PLAYING_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+        // createScreenElement("PAUSE", TEXTURE_ASSET_ID::PAUSE_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+        // createScreenElement("END OF GAME", TEXTURE_ASSET_ID::END_OF_GAME_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+
+        /* Legacy screen code using create screen
+        createScreen("MAIN MENU");
+        createScreen("PLAYING");
+        createScreen("PAUSE");
+        createScreen("END OF GAME");
+        */
+      }
+    }

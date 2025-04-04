@@ -16,6 +16,8 @@ public:
 	~PhysicsSystem();
 	void updateGrappleLines();
 
+	void update_fireball();
+
 private:
 	b2WorldId worldId;
 };

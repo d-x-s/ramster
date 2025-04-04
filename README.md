@@ -14,6 +14,32 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 | `Left Click` | Attach/detach to a grapple point |
 | `W` | Retract grapple |
 
+## M3 Requirements
+| Category | Task | Satisfying Feature(s) |
+|----------|----------|----------|
+| Playability | Sustain progressive, non-repetitive gameplay for at least 5 minutes | ✅ |
+| Playability | During the 5 minutes, the player should be able to interact with the game and see new content for most of the time | ✅ |
+| Robustness  | Memory management  | ✅  |
+| Robustness | User Input | ✅ |
+| Robustness | Realtime Performance | ✅ |
+| Stability | Include fully completed and playable prior-milestone implementations | ✅ |
+| Stability | Fix all bugs identified in prior marking sessions | ✅   |
+| Stability | The game resolution and aspect ratio are consistent across different machines/displays | ✅ |
+| Stability | The game code should support continuing execution and graceful termination, with no crashes, glitches, or other unpredictable behaviour | ✅ |
+| Software Engineering | Updated test Plan | See `docs` |
+| Reporting | Bug List | See `docs` |
+| Reporting | Demo Video | See Canvas |
+
+## M3 Creative Elements
+- (Basic) Dynamic window resizing
+- (Basic) Parallax
+- (Advanced) Chain shape parsing and level loader
+
+***
+
+<details>
+<summary>Expand for M2</summary>
+
 ## M2 Requirements
 | Category | Task | Satisfying Feature(s) |
 |----------|----------|----------|
@@ -35,6 +61,8 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 - (Basic) Accurate physical interactions with the world
 - (Advanced) Grapple improvements, including support for multiple grapples, and grapple retraction
 - (Advanced) Enemy swarm behavior
+
+</details>
 
 <details>
 <summary>Expand for M1</summary>

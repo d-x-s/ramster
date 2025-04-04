@@ -5,6 +5,7 @@
 
 // internal
 #include "render_system.hpp"
+#include "world_system.hpp"
 #include "tinyECS/registry.hpp"
 
 void RenderSystem::drawGridLine(Entity entity, const mat3& projection) {
@@ -123,7 +124,7 @@ void RenderSystem::drawLine(Entity entity, const mat3& projection) {
 	// Translate to midpoint
 	transform.translate((line.start_pos + line.end_pos) * 0.5f);
 
-	// Rotate the line to align with the start and end points
+	// Rotate the line to align with the start and end enemies_killed
 	transform.rotate(angle);
 
 	// Apply scaling: length in X, and line thickness in Y
@@ -234,11 +235,11 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	// TRANSLATE: Move to the correct position
 	transform.translate(motion.position);
 
-	// SCALE (TODO, remove the arbitrary scale up)
-	transform.scale(motion.scale);
-
 	// ROTATE: Apply Box2D rotation to sprite
 	transform.rotate(glm::radians(motion.angle));
+
+	// SCALE (TODO, remove the arbitrary scale up)
+	transform.scale(motion.scale);
 
 	// SCALE
 	// apply custom scale to each animation frame if scale data is embedded
@@ -258,7 +259,7 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	// handle animation if this render request has animation data embedded
 	assert(registry.renderRequests.has(entity));
 	RenderRequest& render_request = registry.renderRequests.get(entity);
-	if (!render_request.animation_frames.empty() && game_active) {
+	if (!render_request.animation_frames.empty() && game_active && render_request.is_visible) {
 		render_request.animation_elapsed_time += elapsed_ms;
 
 		// if this is not a looping animation and it is already complete, remove it
@@ -324,6 +325,48 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 		glBindTexture(GL_TEXTURE_2D, texture_id);
 		gl_has_errors();
 	}
+	else if (render_request.used_effect == EFFECT_ASSET_ID::PARALLAX)
+	{
+		GLint in_position_loc = glGetAttribLocation(program, "in_position");
+		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+		gl_has_errors();
+		assert(in_texcoord_loc >= 0);
+
+		glEnableVertexAttribArray(in_position_loc);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
+			sizeof(TexturedVertex), (void*)0);
+		gl_has_errors();
+
+		glEnableVertexAttribArray(in_texcoord_loc);
+		glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
+			sizeof(TexturedVertex), (void*)sizeof(vec3));
+		gl_has_errors();
+
+		// Enable and bind texture
+		glActiveTexture(GL_TEXTURE0);
+		gl_has_errors();
+
+		GLuint texture_id =
+			texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
+		glBindTexture(GL_TEXTURE_2D, texture_id);
+		gl_has_errors();
+
+		// Parallax-specific uniforms
+		Camera camera = registry.cameras.components[0];
+		GLint camera_pos_loc = glGetUniformLocation(program, "camera_pos");
+		glUniform2fv(camera_pos_loc, 1, (float*)&camera.position);
+		gl_has_errors();
+
+		float parallax_factor = 0.1f;
+		GLint parallax_factor_loc = glGetUniformLocation(program, "parallax_factor");
+		glUniform1f(parallax_factor_loc, parallax_factor);
+		gl_has_errors();
+
+		vec2 texture_size = vec2(640.0f, 564.0f);
+		GLint tex_size_loc = glGetUniformLocation(program, "texture_size");
+		glUniform2fv(tex_size_loc, 1, (float*)&texture_size);
+		gl_has_errors();
+	}
 	// .obj entities
 	else if (render_request.used_effect == EFFECT_ASSET_ID::CHICKEN || render_request.used_effect == EFFECT_ASSET_ID::EGG)
 	{
@@ -381,71 +424,78 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 // then draw the intermediate texture
 void RenderSystem::drawToScreen()
 {
-	// Setting shaders
-	// get the vignette texture, sprite mesh, and program
+	// --- SET SHADER ---
 	glUseProgram(effects[(GLuint)EFFECT_ASSET_ID::VIGNETTE]);
 	gl_has_errors();
 
-	// Clearing backbuffer
-	int w, h;
-	glfwGetFramebufferSize(window, &w, &h); // Note, this will be 2x the resolution given to glfwCreateWindow on retina displays
+	// --- GET ACTUAL WINDOW SIZE ---
+	int win_w, win_h;
+	glfwGetFramebufferSize(window, &win_w, &win_h);
+
+	// --- COMPUTE LETTERBOXED VIEWPORT ---
+	const float target_aspect = ASPECT_RATIO;
+	float window_aspect = (float)win_w / (float)win_h;
+
+	int viewport_x = 0, viewport_y = 0;
+	int viewport_w = win_w, viewport_h = win_h;
+
+	if (window_aspect > target_aspect) {
+		// Window is too wide --> pillarbox
+		viewport_w = int(win_h * target_aspect);
+		viewport_x = (win_w - viewport_w) / 2;
+	}
+	else {
+		// Window is too tall --> letterbox
+		viewport_h = int(win_w / target_aspect);
+		viewport_y = (win_h - viewport_h) / 2;
+	}
+
+	screen_viewport_x = viewport_x;
+	screen_viewport_y = viewport_y;
+	screen_viewport_w = viewport_w;
+	screen_viewport_h = viewport_h;
+
+	// --- CLEAR & SETUP SCREEN ---
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, w, h);
+	glViewport(viewport_x, viewport_y, viewport_w, viewport_h);
 	glDepthRange(0, 10);
-	glClearColor(1.f, 0, 0, 1.0);
+	glClearColor(0.f, 0.f, 0.f, 1.0f); // black bars
 	glClearDepth(1.f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	gl_has_errors();
-	// Enabling alpha channel for textures
 	glDisable(GL_BLEND);
-	// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_DEPTH_TEST);
-
-	// Draw the screen texture on the quad geometry
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]);
-	glBindBuffer(
-		GL_ELEMENT_ARRAY_BUFFER,
-		index_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]); // Note, GL_ELEMENT_ARRAY_BUFFER associates
-	// indices to the bound GL_ARRAY_BUFFER
 	gl_has_errors();
 
-	// add the "vignette" effect
+	// --- SET GEOMETRY ---
+	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffers[(GLuint)GEOMETRY_BUFFER_ID::SCREEN_TRIANGLE]);
+	gl_has_errors();
+
+	// --- UNIFORMS ---
 	const GLuint vignette_program = effects[(GLuint)EFFECT_ASSET_ID::VIGNETTE];
 
-	// set clock
 	GLuint time_uloc = glGetUniformLocation(vignette_program, "time");
 	glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
 
-	// screen effects
-	GLuint dead_timer_uloc = glGetUniformLocation(vignette_program, "darken_screen_factor");
-	GLuint apply_vignette_uloc = glGetUniformLocation(vignette_program, "apply_vignette");
-	GLuint apply_fadeout_uloc = glGetUniformLocation(vignette_program, "apply_fadeout");
-
 	ScreenState& screen = registry.screenStates.get(screen_state_entity);
-	// std::cout << "screen.darken_screen_factor: " << screen.darken_screen_factor << " entity id: " << screen_state_entity << std::endl;
-	glUniform1f(dead_timer_uloc, screen.darken_screen_factor);
-	glUniform1f(apply_vignette_uloc, screen.vignette);
-	glUniform1f(apply_fadeout_uloc, screen.fadeout);
+	glUniform1f(glGetUniformLocation(vignette_program, "darken_screen_factor"), screen.darken_screen_factor);
+	glUniform1f(glGetUniformLocation(vignette_program, "apply_vignette"), screen.vignette);
+	glUniform1f(glGetUniformLocation(vignette_program, "apply_fadeout"), screen.fadeout);
 	gl_has_errors();
 
-	// Set the vertex position and vertex texture coordinates (both stored in the
-	// same VBO)
+	// --- VERTEX ATTRIB ---
 	GLint in_position_loc = glGetAttribLocation(vignette_program, "in_position");
 	glEnableVertexAttribArray(in_position_loc);
 	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
 	gl_has_errors();
 
-	// Bind our texture in Texture Unit 0
+	// --- TEXTURE ---
 	glActiveTexture(GL_TEXTURE0);
-
 	glBindTexture(GL_TEXTURE_2D, off_screen_render_buffer_color);
 	gl_has_errors();
 
-	// Draw
-	glDrawElements(
-		GL_TRIANGLES, 3, GL_UNSIGNED_SHORT,
-		nullptr); // one triangle = 3 vertices; nullptr indicates that there is
-	// no offset from the bound index buffer
+	// --- DRAW ---
+	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_SHORT, nullptr);
 	gl_has_errors();
 }
 
@@ -479,26 +529,89 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 
 	mat3 projection_2D = createProjectionMatrix();
 
-	// draw grid lines first
-	for (Entity entity : registry.renderRequests.entities)
-	{
-		if (registry.gridLines.has(entity)) {
-			drawGridLine(entity, projection_2D);
+
+	// Current Screen
+	Entity currScreenEntity = registry.currentScreen.entities[0];
+	CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
+	// RENDER WHEN PLAYING
+	if (currentScreen.current_screen == "PLAYING") {
+		// draw grid lines first
+		for (Entity entity : registry.renderRequests.entities)
+		{
+			if (registry.gridLines.has(entity)) {
+				drawGridLine(entity, projection_2D);
+			}
+		}
+
+		// draw the background layer
+		for (Entity entity : registry.renderRequests.entities)
+		{
+			if (registry.motions.has(entity) && registry.backgroundLayers.has(entity)) {
+				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+			}
+		}
+
+		// draw all entities with a render request to the frame buffer
+		for (Entity entity : registry.renderRequests.entities)
+		{			 
+			RenderRequest& rr = registry.renderRequests.get(entity);
+			// filter to entities that have a motion component (but not a screen)
+			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity) && !registry.screenElements.has(entity) && rr.is_visible) {
+				// Note, its not very efficient to access elements indirectly via the entity
+				// albeit iterating through all Sprites in sequence. A good point to optimize
+				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+			}
+			// draw terrain lines separately
+			else if (registry.lines.has(entity)) {
+				drawLine(entity, projection_2D);
+			}
 		}
 	}
+	// SCREENS TO RENDER WHEN NOT PLAYING
+	else {
 
-	// draw all entities with a render request to the frame buffer
-	for (Entity entity : registry.renderRequests.entities)
-	{
-		// filter to entities that have a motion component
-		if (registry.motions.has(entity)) {
-			// Note, its not very efficient to access elements indirectly via the entity
-			// albeit iterating through all Sprites in sequence. A good point to optimize
-			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
-		}
-		// draw terrain lines separately
-		else if (registry.lines.has(entity)) {
-			drawLine(entity, projection_2D);
+		Entity cameraEntity = registry.players.entities[0];
+		vec2 cameraPosition = registry.cameras.get(cameraEntity).position;
+
+		for (Entity entity : registry.renderRequests.entities) {
+
+			// We're only interested in screen elements
+			if (registry.screenElements.has(entity)) {
+
+				ScreenElement screenElement = registry.screenElements.get(entity);
+				Motion& screenMotion = registry.motions.get(entity);
+
+				// Ensure that we're only rendering elements belonging to the screen we're currently on
+				if (currentScreen.current_screen == screenElement.screen) {
+
+					// Re-center screen onto camera
+					screenMotion.position = vec2(cameraPosition.x + screenElement.position.x, cameraPosition.y + screenElement.position.y);
+
+					// Then render
+					drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+				}
+
+			}
+
+			/* LEGACY CODE FOR SCREEN RENDERING 
+			// filter to screen entities
+			if (registry.screens.has(entity)) {
+
+				Screen screen = registry.screens.get(entity);
+				Motion& screenMotion = registry.motions.get(entity);
+
+				// Ensure that we're only rendering the screen that we're on right now
+				if (currentScreen.current_screen == screen.screen) {
+
+					// Re-center screen onto camera
+					screenMotion.position = vec2(cameraPosition.x, cameraPosition.y);
+
+					// Then render
+					drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+				}
+
+			}
+			*/
 		}
 	}
 
@@ -519,13 +632,14 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 mat3 RenderSystem::createProjectionMatrix() {
 	Camera camera = registry.cameras.components[0];
 
-	// Compute relative viewport bounds
-	float left = camera.position.x - WINDOW_WIDTH_PX / 2.0f;
-	float bottom = camera.position.y - WINDOW_HEIGHT_PX / 2.0f;
-	float right = left + WINDOW_WIDTH_PX;
-	float top = bottom + WINDOW_HEIGHT_PX;
+	
+  // Fixed camera view centered around player
+	float left = camera.position.x - VIEWPORT_WIDTH_PX / 2.f;
+	float right = camera.position.x + VIEWPORT_WIDTH_PX / 2.f;
+	float bottom = camera.position.y - VIEWPORT_HEIGHT_PX / 2.f;
+	float top = camera.position.y + VIEWPORT_HEIGHT_PX / 2.f;
 
-	// Scale factors, to scale to [-1, 1] OpenGl coordinate space
+  // Scale factors, to scale to [-1, 1] OpenGl coordinate space
 	float sx = 2.f / (right - left);
 	float sy = 2.f / (top - bottom);
 
@@ -538,4 +652,33 @@ mat3 RenderSystem::createProjectionMatrix() {
 		{ 0.f, sy, 0.f },
 		{ tx, ty, 1.f }
 	};
+}
+
+void RenderSystem::resizeScreenTexture(int width, int height)
+{
+	// Delete the previous color texture and depth buffer
+	glDeleteTextures(1, &off_screen_render_buffer_color);
+	glDeleteRenderbuffers(1, &off_screen_render_buffer_depth);
+
+	// Recreate the color texture with the new size
+	glGenTextures(1, &off_screen_render_buffer_color);
+	glBindTexture(GL_TEXTURE_2D, off_screen_render_buffer_color);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	gl_has_errors();
+
+	// Recreate the depth renderbuffer with the new size
+	glGenRenderbuffers(1, &off_screen_render_buffer_depth);
+	glBindRenderbuffer(GL_RENDERBUFFER, off_screen_render_buffer_depth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+	gl_has_errors();
+
+	// Reattach textures to the framebuffer
+	glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, off_screen_render_buffer_color, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, off_screen_render_buffer_depth);
+	gl_has_errors();
+
+	assert(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
 }

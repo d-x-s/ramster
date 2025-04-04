@@ -7,6 +7,7 @@
 #include <vector>
 #include <random>
 #include <map>
+#include <string>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -36,6 +37,8 @@ public:
 	// call to close the window
 	void close_window();
 
+	bool is_in_goal();
+
 	// starts the game
 	void init(RenderSystem *renderer);
 
@@ -54,12 +57,23 @@ public:
 	// vignete fade out control
 	float vignette_timer_ms = 0.0f;
 
+	// level loading
+	bool load_level(const std::string &filename);
+
 	GLFWwindow *getWindow()
 	{
 		return window;
 	}
 
+	RenderSystem *renderer;
+
 private:
+	// Selected level
+	int level_selection = 1;
+
+	// Number of (destructible) enemies to kill
+	int num_enemies_to_kill = -1;
+
 	// box2d world instance (shared between systems)
 	b2WorldId worldId;
 
@@ -68,9 +82,7 @@ private:
 
 	float mouse_pos_x = 0.0f;
 	float mouse_pos_y = 0.0f;
-
 	// Game state
-	RenderSystem *renderer;
 	float current_speed;
 
 	// grid
@@ -79,8 +91,28 @@ private:
 
 	// music references
 	Mix_Music *background_music;
+	Mix_Music *background_music_memorybranch;
+	Mix_Music *background_music_oblanka;
+	Mix_Music *background_music_paradrizzle;
+	Mix_Music *background_music_windcatcher;
+	Mix_Music *background_music_promenade;
+	Mix_Music *background_music_spaba;
+	Mix_Music *background_music_cottonplanes;
+	Mix_Music *background_music_pencilcrayons;
+	Mix_Music *background_music_moontownshores;
+
+	// fx references
+	Mix_Chunk *fx_destroy_enemy;
+	Mix_Chunk *fx_destroy_enemy_fail;
+	Mix_Chunk *fx_jump;
+	Mix_Chunk *fx_grapple;
+	Mix_Chunk *fx_victory;
 	Mix_Chunk *chicken_dead_sound;
 	Mix_Chunk *chicken_eat_sound;
+
+	// audio control
+	void playMusic(MUSIC music);
+	void playSoundEffect(FX effect);
 
 	// player movement
 	void handle_movement(float elapsed_ms);
@@ -102,7 +134,7 @@ private:
 	bool game_active = true;
 
 	// restart level
-	void restart_game();
+	void restart_game(int level);
 
 	// prototype for generating chain terrain
 	void generateTestTerrain();
@@ -111,13 +143,62 @@ private:
 	// OpenGL window handle
 	GLFWwindow *window;
 
-	// LLNOTE
-	// Updated map:
+	// LEVEL MAP
+	// KEY: (int) Level
+	// VALUE: Tuple < (string) levelMapFilePath, (enum) Level_Texture, (enum) Level_Music >
+	// Inside tuple we put:
+	// - File path for the level map
+	// - Texture asset for the level
+	// - Music for the level
+
+	const std::map<int,
+				   std::tuple<
+					   std::string,
+					   TEXTURE_ASSET_ID,
+					   MUSIC>>
+		levelMap =
+			{
+				// ADD LEVELS HERE
+				// tmj files
+				{1, {"level1.tmj", TEXTURE_ASSET_ID::LEVEL_1, MUSIC::PROMENADE}},
+				{2, {"level2.tmj", TEXTURE_ASSET_ID::LEVEL_2, MUSIC::PROMENADE}},
+				{3, {"level3.tmj", TEXTURE_ASSET_ID::LEVEL_3, MUSIC::PROMENADE}},
+				{4, {"level4.tmj", TEXTURE_ASSET_ID::LEVEL_4, MUSIC::PROMENADE}},
+				{5, {"level5.tmj", TEXTURE_ASSET_ID::LEVEL_5, MUSIC::PROMENADE}},
+				{6, {"level6.tmj", TEXTURE_ASSET_ID::LEVEL_6, MUSIC::PROMENADE}},
+				{7, {"tutorial.tmj", TEXTURE_ASSET_ID::LEVEL_TUTORIAL, MUSIC::PARADRIZZLE}},
+				{8, {"tower.tmj", TEXTURE_ASSET_ID::LEVEL_TOWER, MUSIC::WINDCATCHER}},
+				{9, {"lab.tmj", TEXTURE_ASSET_ID::LEVEL_LAB, MUSIC::COTTONPLANES}},
+				{10, {"under.tmj", TEXTURE_ASSET_ID::LEVEL_UNDER, MUSIC::SPABA}},
+				{11, {"snake.tmj", TEXTURE_ASSET_ID::LEVEL_SNAKE, MUSIC::PENCILCRAYONS}},
+				{12, {"tunnelsmall.tmj", TEXTURE_ASSET_ID::LEVEL_TUNNELSMALL, MUSIC::MOONTOWNSHORES}}
+
+				// How to Add Levels:
+				// 1. Add both TMJ (/levels) and PNG (/data/textures/levels) to the project
+				// 2. Add TMJ file, asset, and music here
+				// 3. Add ASSET_ID in components.hpp
+				// 4. Load map texture in render_system.hpp
+	};
+
+	// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!
+	// Takes:
+	// - Enemy Spawn Area
+	// - Enemy type/number to spawn
+	// - Location to spawn enemy
+	// - Patrol area if it's an obstacle
+	// Returns:
+	// - Handles enemy spawning according to specs.
+	void insertToSpawnMap(ivec2 bottom_left, ivec2 top_right,
+						  ENEMY_TYPES enemy_type, int num_enemies,
+						  ivec2 spawn_location,
+						  ivec2 obstacle_patrol_bottom_left, ivec2 obstacle_patrol_top_right);
+
+	// Spawn map:
 	//	key is a vector<int> (tile that triggers spawn),
 	//	value is a tuple with:
 	// 1. ENEMY_TYPE denoting type of enemy to spawn
 	// 2. Int denoting quantity of enemies to spawn
-	// 3. Boolean denoting hasPlayerReachedTile
+	// 3. Boolean denoting spawnMap
 	// 4. Boolean denoting hasEnemyAlreadySpawned (at this tile)
 	// 5. vector<int> denoting spawn position
 	// 6. vector<int> denoting patrol range on the X-axis
@@ -131,41 +212,32 @@ private:
 			std::vector<int>, // 5
 			std::vector<int>  // 6
 			>>
-		hasPlayerReachedTile = {
-			{{17, 6},
-			 {ENEMY_TYPES::OBSTACLE,
-			  1,
-			  false,
-			  false,
-			  {26, 5},
-			  {23, 28}}},
-			{{33, 6},
-			 {ENEMY_TYPES::SWARM,
-			  20,
-			  false,
-			  false,
-			  {42, 8},
-			  {0, 0}}},
-			{{50, 6},
-			 {ENEMY_TYPES::COMMON,
-			  3,
-			  false,
-			  false,
-			  {68, 5},
-			  {0, 0}}}};
+		spawnMap;
+	// call map helper to insert into this map.
 
 	int next_enemy_spawn;
 	int enemy_spawn_rate_ms; // see default value in common.hpp
 
 	int max_towers; // see default value in common.hpp
 
-	// Number of invaders stopped by the towers, displayed in the window title
-	int points;
+	// Player reached finish line (DEFAULT TO FALSE AND SET TO TRUE IF THEY GOT THERE!!!)
+	bool player_reached_finish_line = false; // LLNOTE: make sure to set this to true once player reaches finish line.
+	// Timer before end of game screen is displayed
+	int timer_game_end_screen = TIMER_GAME_END;
+	// Enemies killed.
+	int enemies_killed = 0;
+	// Player hp.
+	int hp = PLAYER_STARTING_HP;
 
 	// Frames per second
 	int fps = 0; // 0 is default val
 	// Do an FPS cooldown to prevent flickering
 	float fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
+
+	// Time elapsed
+	int time_elapsed = 0;
+	// Time cooldown to prevent flickering (also determines granularity of time)
+	int time_granularity = TIME_GRANULARITY;
 
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
@@ -179,13 +251,34 @@ private:
 	- position: where to spawn the enemy.
 	- movement_area: this applies to OBSTACLE enemies only. Dictates the upper and lower bounds for x-coordinates on which it can move.
 	*/
-	void handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 gridPatrolXRange);
+	void handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 grid_patrol_point_a, ivec2 grid_patrol_point_b);
 
 	// use this to check if the player has reached a specified grid coordinate. (recall GRID_CELL_WIDTH, GRID_CELL_HEIGHT)
-	bool checkPlayerReachedTile(ivec2 grid_coordinate);
+	// Note that the ivec4
+	bool checkPlayerReachedArea(ivec2 area_bottom_left, ivec2 area_top_right);
 
 	vec2 screenToWorld(vec2 mouse_position);
 	void checkGrappleGrounded();
+
+	// Handles logic for level.
+	void levelHelper(int level);
+
+	// Returns total number of (destructible) enemies per level.
+	int countEnemiesOnLevel();
+
+	// NOT NEEDED IF WE JUST FREEZE PHYSICS!!! (in fact it's better if we froze physics as original velocity preserved
+	// Freezes everything when game is paused.
+	void freezeMovements();
+
+	// Checks if the game is over and sets the screen as needed based on whether the player won or lost.
+	void handleGameover(CurrentScreen &currentScreen);
+
+	// LLNOTE: FOR CODE READABILITY, ALL OF THE SCREEN ELEMENT AND BUTTON CREATIONS SHOULD BE IN HERE.
+	// Handles the creation of screen elements.
+	void createScreenElements();
+
+	// Handles button presses based on the function of said button.
+	void handleButtonPress(std::string function);
 	void shootGrapplePoint();
 	void shootGrapple(vec2 worldMousePos);
 };

@@ -6,8 +6,35 @@
 
 #include <box2d/box2d.h>
 
+
+// current screen
+Entity createCurrentScreen(); // DEFAULT TO MAIN MENU
+
+/* Creates an element to dispay on-screen.
+	Takes:
+	- screen: screen that this element is for
+	- texture: texture of this element
+	- width_px: width of this element
+	- height_px: height of this element
+	- pos_relative_center: position of element relative to CENTER of screen.
+	
+	NOTE: for width, height, and pos, make sure to enter values relative to viewport so scaling works!!!
+	TIP: to get viewport-relative values, do this: (Viewport Pixels / Actual Pixels) Amount to Divide
+*/
+Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center);
+
+/* Creates a button to display on-screen.
+	Function is an identifier for the button so it can be recognized. Make sure to use one button per function.
+	For remaining params, same logic/inputs as createScreenElement, except this makes a button.
+*/
+Entity createButton(std::string function, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center);
+
+// screen
+// NOTE: LEGACY CODE PORTED OVER TO createScreenElement
+Entity createScreen(std::string screen_type);
+
 // enemy
-Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_area);
+Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_range_point_a, vec2 movement_range_point_b);
 
 // invaders
 Entity createInvader(RenderSystem* renderer, vec2 position);
@@ -35,7 +62,14 @@ Entity createGrapplePoint(b2WorldId worldId, vec2 position);
 Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBodyId, float distance);
 void removeGrapple();
 
+Entity createGoalZone(vec2 bottom_left_pos, vec2 bottom_right_pos);
+
+// level layers
+Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId);
+Entity createBackgroundLayer(TEXTURE_ASSET_ID textureId);
+
 // legacy
 // the player
 Entity createChicken(RenderSystem* renderer, vec2 position);
-Entity createBall(b2WorldId worldId);
+Entity createBall(b2WorldId worldId, vec2 startPos);
+Entity createFireball(vec2 startPos);

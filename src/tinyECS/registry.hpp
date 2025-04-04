@@ -12,6 +12,10 @@ class ECSRegistry
 public:
 	// Manually created list of all components this game has
 	// TODO: A1 add a LightUp component
+	ComponentContainer<CurrentScreen> currentScreen;
+	ComponentContainer<ScreenElement> screenElements;
+	ComponentContainer<Button> buttons;
+	ComponentContainer<Screen> screens; // legacy code. remove support after finishing screen element
 	ComponentContainer<DeathTimer> deathTimers;
 	ComponentContainer<Motion> motions;
 	ComponentContainer<Collision> collisions;
@@ -38,11 +42,19 @@ public:
 	ComponentContainer<Grapple> grapples;
 	ComponentContainer<GrapplePoint> grapplePoints;
 	ComponentContainer<TutorialTile> tutorialTiles;
+	ComponentContainer<LevelLayer> levelLayers;
+	ComponentContainer<BackgroundLayer> backgroundLayers;
+	ComponentContainer<GoalZone> goalZones;
+	ComponentContainer<FireBall> fireballs;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
 	{
 		// TODO: A1 add a LightUp component
+		registry_list.push_back(&currentScreen);
+		registry_list.push_back(&screenElements);
+		registry_list.push_back(&buttons);
+		registry_list.push_back(&screens); // remove after implementation of screenElement/Button
 		registry_list.push_back(&deathTimers);
 		registry_list.push_back(&motions);
 		registry_list.push_back(&collisions);
@@ -66,6 +78,13 @@ public:
 		registry_list.push_back(&enemyPhysics);
 		registry_list.push_back(&grapples);
 		registry_list.push_back(&grapplePoints);
+
+		registry_list.push_back(&levelLayers);
+		registry_list.push_back(&cameras);
+
+		registry_list.push_back(&goalZones);
+		registry_list.push_back(&backgroundLayers);
+		registry_list.push_back(&fireballs);
 	}
 
 	void clear_all_components() {

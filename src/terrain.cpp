@@ -38,6 +38,11 @@ b2BodyId create_vertical_wall(b2WorldId worldId, float x, float y, float height)
     vec2 bottom = {x, y - halfHeight};
     createLine(bottom, top);
 
+    // create PhysicsBody component
+    Entity entity = Entity();
+    PhysicsBody &physicsBody = registry.physicsBodies.emplace(entity);
+    physicsBody.bodyId = bodyId;
+
     return bodyId;
 };
 
@@ -72,6 +77,11 @@ b2BodyId create_horizontal_wall(b2WorldId worldId, float x, float y, float width
     vec2 left = {x - halfWidth, y};
     vec2 right = {x + halfWidth, y};
     createLine(left, right);
+
+    // create PhysicsBody component
+    Entity entity = Entity();
+    PhysicsBody &physicsBody = registry.physicsBodies.emplace(entity);
+    physicsBody.bodyId = bodyId;
 
     return bodyId;
 };
@@ -195,6 +205,51 @@ void create_grapple_tile(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID
         {TEXTURE_ASSET_ID::GRAPPLE_OUTLINE,
          EFFECT_ASSET_ID::TEXTURED,
          GEOMETRY_BUFFER_ID::SPRITE});
+}
+
+b2BodyId create_chain(b2WorldId worldId, std::vector<vec2> points, bool isLoop, std::vector<Entity> &linesArrayRef)
+{
+    // convert the coords to world space.
+    std::vector<b2Vec2> translatedVertices;
+    translatedVertices.reserve(points.size());
+    for (const auto &vertex : points)
+    {
+        translatedVertices.push_back(b2Vec2{
+            vertex.x * TILED_TO_GRID_PIXEL_SCALE,
+            vertex.y * TILED_TO_GRID_PIXEL_SCALE,
+        });
+    }
+
+    //// render the line segments between enemies_killed
+    // auto& lines = linesArrayRef;
+    // int count = translatedVertices.size();
+    // for (int i = 0; i < count - 1; ++i)
+    //{
+    //     lines.push_back(
+    //         createLine(
+    //             glm::vec2(translatedVertices[i].x, translatedVertices[i].y),
+    //             glm::vec2(translatedVertices[i + 1].x, translatedVertices[i + 1].y)));
+    // }
+
+    // Create a Box2D chain shape based on the translated vertices
+    b2ChainDef chainDef = b2DefaultChainDef();
+    chainDef.count = translatedVertices.size();
+    chainDef.points = translatedVertices.data();
+
+    chainDef.isLoop = isLoop;
+    chainDef.friction = TERRAIN_DEFAULT_FRICTION;
+    chainDef.restitution = TERRAIN_DEFAULT_RESTITUTION;
+
+    b2BodyDef bodyDef = b2DefaultBodyDef();
+    b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+    b2CreateChain(bodyId, &chainDef);
+
+    // create physicsBody component to track the terrain shapes.
+    Entity entity = Entity();
+    PhysicsBody &pb = registry.physicsBodies.emplace(entity);
+    pb.bodyId = bodyId;
+
+    return bodyId;
 }
 
 b2BodyId create_curve(b2WorldId worldId, vec2 grid_position, TEXTURE_ASSET_ID textureId)
@@ -333,16 +388,20 @@ b2BodyId create_block(b2WorldId worldId, vec2 start_tile, vec2 end_tile)
     return bodyId;
 }
 
-void spawnEnemyAtTile(b2WorldId worldId, bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 tile_position, vec2 tile_movement_area)
+void spawnEnemyAtTile(b2WorldId worldId, bool predicate, ENEMY_TYPES enemy_type, int quantity, vec2 tile_position, ivec2 tile_movement_point_a, ivec2 tile_movement_point_b)
 {
     // Convert tile coordinates to pixel coordinates
     vec2 pixel_position = {
         tile_position.x * GRID_CELL_WIDTH_PX + (GRID_CELL_WIDTH_PX / 2.0f),
         tile_position.y * GRID_CELL_HEIGHT_PX + (GRID_CELL_HEIGHT_PX / 2.0f)};
 
-    vec2 pixel_movement_area = {
-        tile_movement_area.x * GRID_CELL_WIDTH_PX,
-        tile_movement_area.y * GRID_CELL_HEIGHT_PX};
+    vec2 pixel_movement_area_bottom_left = {
+        tile_movement_point_a.x * GRID_CELL_WIDTH_PX,
+        tile_movement_point_a.y * GRID_CELL_HEIGHT_PX};
+
+    vec2 pixel_movement_area_top_right = {
+        tile_movement_point_b.x * GRID_CELL_WIDTH_PX,
+        tile_movement_point_b.y * GRID_CELL_HEIGHT_PX};
 
     // only create if predicate is true
     if (predicate)
@@ -351,7 +410,7 @@ void spawnEnemyAtTile(b2WorldId worldId, bool predicate, ENEMY_TYPES enemy_type,
         for (int i = 0; i < quantity; i++)
         {
             // enemy created here
-            createEnemy(worldId, pixel_position, enemy_type, pixel_movement_area);
+            createEnemy(worldId, pixel_position, enemy_type, pixel_movement_area_bottom_left, pixel_movement_area_top_right);
         }
     }
 }

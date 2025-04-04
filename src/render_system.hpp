@@ -30,6 +30,30 @@ class RenderSystem
 
   // Make sure these paths remain in sync with the associated enumerators (see TEXTURE_ASSET_ID).
   const std::array<std::string, texture_count> texture_paths = {
+
+      // Screen Elements
+      textures_path("screenElements/menu_title.png"),
+      textures_path("screenElements/pause_title.png"),
+      textures_path("screenElements/victory_title.png"),
+      textures_path("screenElements/defeat_title.png"),
+      textures_path("screenElements/menu_text.png"),
+      textures_path("screenElements/pause_text.png"),
+      textures_path("screenElements/gameover_text.png"),
+      textures_path("screenElements/button_lvlUp.png"),
+      textures_path("screenElements/button_lvlDown.png"),
+      textures_path("screenElements/button_start.png"),
+      textures_path("screenElements/button_resume.png"),
+      textures_path("screenElements/button_restart.png"),
+      textures_path("screenElements/button_mainMenu.png"),
+      textures_path("screenElements/button_exit.png"),
+
+      // Screens
+      textures_path("screens/main_menu.png"),
+      textures_path("screens/test_screen.png"), // This one's the playing screen that we will never use.
+      textures_path("screens/pause.png"),
+      textures_path("screens/game_ended_screen.png"),
+
+      // Legacy invaders code
       textures_path("invaders/blue_1.png"),
       textures_path("invaders/blue_2.png"),
       textures_path("invaders/blue_3.png"),
@@ -102,6 +126,36 @@ class RenderSystem
     textures_path("tutorial/move.png"),
     textures_path("tutorial/grapple.png"),
     textures_path("tutorial/destroy.png"),
+
+    // levels
+	textures_path("levels/level1.png"),
+    textures_path("levels/level2.png"),
+	textures_path("levels/level3.png"),
+	textures_path("levels/level4.png"),
+	textures_path("levels/level5.png"),
+    textures_path("levels/level6.png"),
+    textures_path("levels/tutorial.png"),
+	textures_path("levels/tower.png"),
+	textures_path("levels/lab.png"),
+	textures_path("levels/under.png"),
+	textures_path("levels/snake.png"),
+    textures_path("levels/tunnelsmall.png"),
+    // <--- Add Next level here !
+    textures_path("levels/background.png"),
+
+    // fireball effect frames
+    textures_path("fireball_effect/frame_00_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_01_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_02_delay-0.06s.png"),
+    textures_path("fireball_effect/frame_03_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_04_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_05_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_06_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_07_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_08_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_09_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_10_delay-0.06s.png"),
+	textures_path("fireball_effect/frame_11_delay-0.06s.png"),
   };
 
   std::array<GLuint, effect_count> effects;
@@ -112,6 +166,7 @@ class RenderSystem
       shader_path("chicken"),
       shader_path("textured"),
       shader_path("vignette"),
+      shader_path("parallax"),
   };
 
   std::array<GLuint, geometry_count> vertex_buffers;
@@ -119,6 +174,7 @@ class RenderSystem
   std::array<Mesh, geometry_count> meshes;
 
 public:
+
   // Initialize the window
   bool init(GLFWwindow *window);
 
@@ -149,6 +205,12 @@ public:
 
   Entity get_screen_state_entity() { return screen_state_entity; }
 
+  // Window resizing
+  void resizeScreenTexture(int width, int height);
+
+  int screen_viewport_x = 0, screen_viewport_y = 0;
+  int screen_viewport_w = 1200, screen_viewport_h = 900;
+
 private:
   // Internal drawing functions for each entity type
   void drawGridLine(Entity entity, const mat3 &projection);
@@ -165,6 +227,7 @@ private:
   GLuint off_screen_render_buffer_depth;
 
   Entity screen_state_entity;
+
 };
 
 bool loadEffectFromFile(

@@ -375,7 +375,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
       handleGameover(currentScreen);
       update_isGrounded();
-      handle_movement();
+      handle_movement(elapsed_ms_since_last_update);
       checkGrappleGrounded();
 
       //        // LLNOTE
@@ -1600,492 +1600,483 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
       }
     }
   }
+}
+vec2 WorldSystem::screenToWorld(vec2 mouse_screen)
+{
+  int win_w, win_h;
+  glfwGetWindowSize(window, &win_w, &win_h);
 
-  vec2 WorldSystem::screenToWorld(vec2 mouse_position)
+  // Flip Y: mouse origin is top-left, OpenGL is bottom-left
+  mouse_screen.y = win_h - mouse_screen.y;
+
+  // Grab viewport from renderer (letterboxed area)
+  int vx = renderer->screen_viewport_x;
+  int vy = renderer->screen_viewport_y;
+  int vw = renderer->screen_viewport_w;
+  int vh = renderer->screen_viewport_h;
+
+  // Check if click is outside the visible game area
+  if (mouse_screen.x < vx || mouse_screen.x > vx + vw ||
+      mouse_screen.y < vy || mouse_screen.y > vy + vh)
   {
-    for (Entity cameraEntity : registry.cameras.entities)
+    return {-1, -1}; // outside the viewport
+  }
+
+  // Normalize to [0,1] within the viewport
+  float norm_x = (mouse_screen.x - vx) / vw;
+  float norm_y = (mouse_screen.y - vy) / vh;
+
+  // Map to virtual game coordinates
+  float virtual_x = norm_x * VIEWPORT_WIDTH_PX;  // 1200.f;
+  float virtual_y = norm_y * VIEWPORT_HEIGHT_PX; // 900.f;
+
+  // Offset from screen center (in virtual resolution)
+  float offset_x = virtual_x - VIEWPORT_WIDTH_PX / 2;  // 1200.f / 2.f;
+  float offset_y = virtual_y - VIEWPORT_HEIGHT_PX / 2; // 900.f / 2.f;
+
+  // Add camera position to get world-space coordinate
+  for (Entity cameraEntity : registry.cameras.entities)
+  {
+    Camera &camera = registry.cameras.get(cameraEntity);
+
+    vec2 worldPos;
+    worldPos.x = offset_x + camera.position.x;
+    worldPos.y = offset_y + camera.position.y;
+
+    std::cout << "mouse coordinate world pos: " << worldPos.x << ", " << worldPos.y << std::endl;
+    return worldPos;
+  }
+
+  return {0.f, 0.f}; // fallback if no camera
+}
+
+void WorldSystem::shootGrapplePoint()
+{
+  Entity playerEntity = registry.players.entities[0];
+
+  // Retrieve the ball's physics body
+  PhysicsBody &ballBody = registry.physicsBodies.get(playerEntity);
+  b2BodyId ballBodyId = ballBody.bodyId;
+  b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+
+  Entity activeGrapplePointEntity;
+  b2BodyId activeGrappleBodyId;
+  bool foundActive = false;
+
+  // Loop through all grapple enemies_killed and find the active one
+  for (Entity gpEntity : registry.grapplePoints.entities)
+  {
+    GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
+    std::cout << gp.position.x << " " << gp.position.y << " " << gp.active << std::endl;
+    if (gp.active)
     {
-      Camera &camera = registry.cameras.get(cameraEntity);
-      // Calculate the screen center.
-      float centerX = WINDOW_WIDTH_PX / 2.0f;
-      float centerY = WINDOW_HEIGHT_PX / 2.0f;
-
-      // Flip the Y coordinate: if the screen's Y=0 is at the top,
-      // convert it so Y increases upward. This example assumes that
-      // your world-space Y increases upward.
-      float flippedY = WINDOW_HEIGHT_PX - mouse_position.y;
-
-      // Flip Y: mouse origin is top-left, OpenGL is bottom-left
-      mouse_screen.y = win_h - mouse_screen.y;
-
-      // Grab viewport from renderer (letterboxed area)
-      int vx = renderer->screen_viewport_x;
-      int vy = renderer->screen_viewport_y;
-      int vw = renderer->screen_viewport_w;
-      int vh = renderer->screen_viewport_h;
-
-      // Check if click is outside the visible game area
-      if (mouse_screen.x < vx || mouse_screen.x > vx + vw ||
-          mouse_screen.y < vy || mouse_screen.y > vy + vh)
-      {
-        return {-1, -1}; // outside the viewport
-      }
-
-      // Normalize to [0,1] within the viewport
-      float norm_x = (mouse_screen.x - vx) / vw;
-      float norm_y = (mouse_screen.y - vy) / vh;
-
-      // Map to virtual game coordinates
-      float virtual_x = norm_x * VIEWPORT_WIDTH_PX;  // 1200.f;
-      float virtual_y = norm_y * VIEWPORT_HEIGHT_PX; // 900.f;
-
-      // Offset from screen center (in virtual resolution)
-      float offset_x = virtual_x - VIEWPORT_WIDTH_PX / 2;  // 1200.f / 2.f;
-      float offset_y = virtual_y - VIEWPORT_HEIGHT_PX / 2; // 900.f / 2.f;
-
-      // Add camera position to get world-space coordinate
-      for (Entity cameraEntity : registry.cameras.entities)
-      {
-        Camera &camera = registry.cameras.get(cameraEntity);
-
-        vec2 worldPos;
-        worldPos.x = offset_x + camera.position.x;
-        worldPos.y = offset_y + camera.position.y;
-
-        std::cout << "mouse coordinate world pos: " << worldPos.x << ", " << worldPos.y << std::endl;
-        return worldPos;
-      }
-
-      return {0.f, 0.f}; // fallback if no camera
+      activeGrapplePointEntity = gpEntity;
+      activeGrappleBodyId = gp.bodyId;
+      foundActive = true;
+      break; // Stop once we find the first active grapple point
     }
+  }
 
-    void WorldSystem::shootGrapplePoint()
+  // If no active grapple enemies_killed were found, exit early
+  if (!foundActive)
+  {
+    return;
+  }
+
+  b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
+
+  // Compute the distance between the ball and the grapple point
+  float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
+                         (grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
+
+  // Attach the grapple if within range
+  if (distance <= GRAPPLE_MAX_LENGTH)
+  {
+    createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
+    grappleActive = true;
+    grapplePointActive = true;
+  }
+}
+
+void WorldSystem::shootGrapple(vec2 worldMousePos)
+{
+  Entity playerEntity = registry.players.entities[0];
+  PhysicsBody &ballBody = registry.physicsBodies.get(playerEntity);
+  b2BodyId ballBodyId = ballBody.bodyId;
+  b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+
+  b2Vec2 mousePos{worldMousePos.x, worldMousePos.y};
+  b2Vec2 rayDir = mousePos - ballPos;
+
+  b2RayCastInput input;
+  input.origin = ballPos;
+  input.translation = rayDir;
+  input.maxFraction = 1.0f;
+
+  b2RayResult result = b2World_CastRayClosest(worldId, ballPos, rayDir, b2DefaultQueryFilter());
+
+  float distance = sqrtf((result.point.x - ballPos.x) * (result.point.x - ballPos.x) +
+                         (result.point.y - ballPos.y) * (result.point.y - ballPos.y));
+
+  if (result.hit && distance <= GRAPPLE_MAX_LENGTH)
+  {
+    b2BodyId bodyId = b2Shape_GetBody(result.shapeId);
+    b2BodyType bodyType = b2Body_GetType(bodyId);
+    if (bodyType == b2_staticBody)
+    {
+      b2BodyDef bodyDef = b2DefaultBodyDef();
+      bodyDef.type = b2_staticBody;
+      bodyDef.position = b2Vec2{result.point.x, result.point.y};
+      b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+
+      createGrapple(worldId, ballBodyId, bodyId, distance);
+      grappleActive = true;
+    }
+  }
+}
+
+void WorldSystem::checkGrappleGrounded()
+{
+  if (grappleActive)
+  {
+    if (!registry.players.entities.empty())
     {
       Entity playerEntity = registry.players.entities[0];
 
-      // Retrieve the ball's physics body
-      PhysicsBody &ballBody = registry.physicsBodies.get(playerEntity);
-      b2BodyId ballBodyId = ballBody.bodyId;
-      b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
-
-      Entity activeGrapplePointEntity;
-      b2BodyId activeGrappleBodyId;
-      bool foundActive = false;
-
-      // Loop through all grapple enemies_killed and find the active one
-      for (Entity gpEntity : registry.grapplePoints.entities)
+      if (registry.physicsBodies.has(playerEntity))
       {
-        GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
-        std::cout << gp.position.x << " " << gp.position.y << " " << gp.active << std::endl;
-        if (gp.active)
+        PhysicsBody &phys = registry.physicsBodies.get(playerEntity);
+        b2BodyId bodyId = phys.bodyId;
+
+        // check if the player is grounded
+        bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
+        Grapple grapple;
+        for (Entity grappleEntity : registry.grapples.entities)
         {
-          activeGrapplePointEntity = gpEntity;
-          activeGrappleBodyId = gp.bodyId;
-          foundActive = true;
-          break; // Stop once we find the first active grapple point
+          grapple = registry.grapples.get(grappleEntity);
         }
-      }
-
-      // If no active grapple enemies_killed were found, exit early
-      if (!foundActive)
-      {
-        return;
-      }
-
-      b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
-
-      // Compute the distance between the ball and the grapple point
-      float distance = sqrtf((grapplePos.x - ballPos.x) * (grapplePos.x - ballPos.x) +
-                             (grapplePos.y - ballPos.y) * (grapplePos.y - ballPos.y));
-
-      // Attach the grapple if within range
-      if (distance <= GRAPPLE_MAX_LENGTH)
-      {
-        createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
-        grappleActive = true;
-        grapplePointActive = true;
-      }
-    }
-
-    void WorldSystem::shootGrapple(vec2 worldMousePos)
-    {
-      Entity playerEntity = registry.players.entities[0];
-      PhysicsBody &ballBody = registry.physicsBodies.get(playerEntity);
-      b2BodyId ballBodyId = ballBody.bodyId;
-      b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
-
-      b2Vec2 mousePos{worldMousePos.x, worldMousePos.y};
-      b2Vec2 rayDir = mousePos - ballPos;
-
-      b2RayCastInput input;
-      input.origin = ballPos;
-      input.translation = rayDir;
-      input.maxFraction = 1.0f;
-
-      b2RayResult result = b2World_CastRayClosest(worldId, ballPos, rayDir, b2DefaultQueryFilter());
-
-      float distance = sqrtf((result.point.x - ballPos.x) * (result.point.x - ballPos.x) +
-                             (result.point.y - ballPos.y) * (result.point.y - ballPos.y));
-
-      if (result.hit && distance <= GRAPPLE_MAX_LENGTH)
-      {
-        b2BodyId bodyId = b2Shape_GetBody(result.shapeId);
-        b2BodyType bodyType = b2Body_GetType(bodyId);
-        if (bodyType == b2_staticBody)
+        float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
+        if (isGrounded)
         {
-          b2BodyDef bodyDef = b2DefaultBodyDef();
-          bodyDef.type = b2_staticBody;
-          bodyDef.position = b2Vec2{result.point.x, result.point.y};
-          b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
-
-          createGrapple(worldId, ballBodyId, bodyId, distance);
-          grappleActive = true;
-        }
-      }
-    }
-
-    void WorldSystem::checkGrappleGrounded()
-    {
-      if (grappleActive)
-      {
-        if (!registry.players.entities.empty())
-        {
-          Entity playerEntity = registry.players.entities[0];
-
-          if (registry.physicsBodies.has(playerEntity))
-          {
-            PhysicsBody &phys = registry.physicsBodies.get(playerEntity);
-            b2BodyId bodyId = phys.bodyId;
-
-            // check if the player is grounded
-            bool isGrounded = registry.playerPhysics.get(playerEntity).isGrounded;
-            Grapple grapple;
-            for (Entity grappleEntity : registry.grapples.entities)
-            {
-              grapple = registry.grapples.get(grappleEntity);
-            }
-            float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
-            if (isGrounded)
-            {
-              b2DistanceJoint_EnableSpring(grapple.jointId, true);
-              b2DistanceJoint_SetSpringHertz(grapple.jointId, GRAPPLE_HERTZ_GROUNDED);
-              b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, GRAPPLE_DAMPING_GROUNDED);
-              b2DistanceJoint_SetLength(grapple.jointId, curLen - GRAPPLE_DETRACT_GROUNDED);
-            }
-            else
-            {
-              b2DistanceJoint_EnableSpring(grapple.jointId, false);
-            }
-          }
-        }
-      }
-    }
-
-    void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 grid_patrol_point_a, ivec2 grid_patrol_point_b)
-    {
-      // Create specified number of enemies by iterating
-      for (int i = 0; i < quantity; i++)
-      {
-        createEnemy(
-            worldId,
-            vec2((gridPosition.x + 0.5 + 0.05 * i) * GRID_CELL_WIDTH_PX,
-                 (gridPosition.y + 0.5) * GRID_CELL_HEIGHT_PX),
-            enemy_type,
-            vec2((grid_patrol_point_a.x + 0.5) * GRID_CELL_WIDTH_PX, (grid_patrol_point_a.y + 0.5) * GRID_CELL_HEIGHT_PX),
-            vec2((grid_patrol_point_b.x + 0.5) * GRID_CELL_WIDTH_PX, (grid_patrol_point_b.y + 0.5) * GRID_CELL_HEIGHT_PX));
-      }
-    }
-
-    // NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!
-    // Takes:
-    // - Enemy Spawn Area
-    // - Enemy type/number to spawn
-    // - Location to spawn enemy
-    // - Patrol area if it's an obstacle
-    // Returns:
-    // - Handles enemy spawning according to specs.
-    void WorldSystem::insertToSpawnMap(ivec2 bottom_left, ivec2 top_right,
-                                       ENEMY_TYPES enemy_type, int num_enemies, ivec2 spawn_location,
-                                       ivec2 obstacle_patrol_point_a, ivec2 obstacle_patrol_point_b)
-    {
-
-      // Prep key from "spawn trigger area"
-      std::vector<int> mapKey = {bottom_left.x, bottom_left.y, top_right.x, top_right.y};
-
-      // Prep value from other inputs
-      std::tuple<ENEMY_TYPES,
-                 int,
-                 bool,
-                 bool,
-                 std::vector<int>,
-                 std::vector<int>>
-          mapValue = {enemy_type,
-                      num_enemies,
-                      false,
-                      false,
-                      {spawn_location.x, spawn_location.y},
-                      {obstacle_patrol_point_a.x, obstacle_patrol_point_a.y,
-                       obstacle_patrol_point_b.x, obstacle_patrol_point_b.y}};
-
-      // Insert to map
-      spawnMap.insert({mapKey, mapValue});
-    }
-
-    bool WorldSystem::checkPlayerReachedArea(ivec2 area_bottom_left, ivec2 area_top_right)
-    {
-      // Get player
-      Entity player = registry.players.entities[0];
-      Motion playerMotion = registry.motions.get(player);
-
-      // trigger area bounds
-      int min_x = area_bottom_left.x;
-      int min_y = area_bottom_left.y;
-      int max_x = area_top_right.x;
-      int max_y = area_top_right.y;
-
-      // Player location in terms of grid coordinates
-      ivec2 playerLocation = ivec2(playerMotion.position.x / GRID_CELL_WIDTH_PX, playerMotion.position.y / GRID_CELL_HEIGHT_PX);
-
-      // check that player location is inside the trigger area
-      bool player_inside_trigger_area = playerLocation.x >= min_x && playerLocation.y >= min_y && playerLocation.x <= max_x && playerLocation.y <= max_y;
-
-      return player_inside_trigger_area;
-    }
-
-    void WorldSystem::levelHelper(int level)
-    {
-      if (level <= levelMap.size() && level > 0)
-      {
-        level_selection = level;
-      }
-    }
-
-    int WorldSystem::countEnemiesOnLevel()
-    {
-
-      int num_enemies = 0;
-
-      for (auto &i : spawnMap)
-      {
-
-        std::vector<int> spawnTile = i.first;
-        std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>> &enemyDataTuple = i.second;
-        ENEMY_TYPES enemyType = std::get<0>(enemyDataTuple);
-        int quantity = std::get<1>(enemyDataTuple);
-        bool &hasPlayerReachedTile = std::get<2>(enemyDataTuple);
-        bool &hasEnemyAlreadySpawned = std::get<3>(enemyDataTuple);
-        std::vector<int> spawnPosition = std::get<4>(enemyDataTuple);
-        std::vector<int> patrolRange = std::get<5>(enemyDataTuple);
-
-        // This'll need to be changed if we add more indestructible enemies.
-        if (enemyType != OBSTACLE)
-        {
-          num_enemies += quantity;
-        }
-      }
-
-      return num_enemies;
-    }
-
-    void WorldSystem::handleGameover(CurrentScreen & currentScreen)
-    {
-
-      // If player HP reaches 0, game ends.
-      if (hp <= 0)
-      {
-        currentScreen.current_screen = "END OF GAME";
-
-        // Defeat title
-        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_DEFEAT, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
-      }
-      // If player reached finish line AND killed all enemies, game ends.
-      else if (player_reached_finish_line)
-      {
-
-        if (timer_game_end_screen <= 0)
-        {
-          // Victory title
-          createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_VICTORY, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
-
-          currentScreen.current_screen = "END OF GAME";
+          b2DistanceJoint_EnableSpring(grapple.jointId, true);
+          b2DistanceJoint_SetSpringHertz(grapple.jointId, GRAPPLE_HERTZ_GROUNDED);
+          b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, GRAPPLE_DAMPING_GROUNDED);
+          b2DistanceJoint_SetLength(grapple.jointId, curLen - GRAPPLE_DETRACT_GROUNDED);
         }
         else
         {
-          timer_game_end_screen -= time_elapsed;
+          b2DistanceJoint_EnableSpring(grapple.jointId, false);
         }
       }
     }
+  }
+}
 
-    // NOT NEEDED IF WE JUST FREEZE PHYSICS!!! (in fact it's better if we froze physics as original velocity preserved
-    void WorldSystem::freezeMovements()
+void WorldSystem::handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 grid_patrol_point_a, ivec2 grid_patrol_point_b)
+{
+  // Create specified number of enemies by iterating
+  for (int i = 0; i < quantity; i++)
+  {
+    createEnemy(
+        worldId,
+        vec2((gridPosition.x + 0.5 + 0.05 * i) * GRID_CELL_WIDTH_PX,
+             (gridPosition.y + 0.5) * GRID_CELL_HEIGHT_PX),
+        enemy_type,
+        vec2((grid_patrol_point_a.x + 0.5) * GRID_CELL_WIDTH_PX, (grid_patrol_point_a.y + 0.5) * GRID_CELL_HEIGHT_PX),
+        vec2((grid_patrol_point_b.x + 0.5) * GRID_CELL_WIDTH_PX, (grid_patrol_point_b.y + 0.5) * GRID_CELL_HEIGHT_PX));
+  }
+}
+
+// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!
+// Takes:
+// - Enemy Spawn Area
+// - Enemy type/number to spawn
+// - Location to spawn enemy
+// - Patrol area if it's an obstacle
+// Returns:
+// - Handles enemy spawning according to specs.
+void WorldSystem::insertToSpawnMap(ivec2 bottom_left, ivec2 top_right,
+                                   ENEMY_TYPES enemy_type, int num_enemies, ivec2 spawn_location,
+                                   ivec2 obstacle_patrol_point_a, ivec2 obstacle_patrol_point_b)
+{
+
+  // Prep key from "spawn trigger area"
+  std::vector<int> mapKey = {bottom_left.x, bottom_left.y, top_right.x, top_right.y};
+
+  // Prep value from other inputs
+  std::tuple<ENEMY_TYPES,
+             int,
+             bool,
+             bool,
+             std::vector<int>,
+             std::vector<int>>
+      mapValue = {enemy_type,
+                  num_enemies,
+                  false,
+                  false,
+                  {spawn_location.x, spawn_location.y},
+                  {obstacle_patrol_point_a.x, obstacle_patrol_point_a.y,
+                   obstacle_patrol_point_b.x, obstacle_patrol_point_b.y}};
+
+  // Insert to map
+  spawnMap.insert({mapKey, mapValue});
+}
+
+bool WorldSystem::checkPlayerReachedArea(ivec2 area_bottom_left, ivec2 area_top_right)
+{
+  // Get player
+  Entity player = registry.players.entities[0];
+  Motion playerMotion = registry.motions.get(player);
+
+  // trigger area bounds
+  int min_x = area_bottom_left.x;
+  int min_y = area_bottom_left.y;
+  int max_x = area_top_right.x;
+  int max_y = area_top_right.y;
+
+  // Player location in terms of grid coordinates
+  ivec2 playerLocation = ivec2(playerMotion.position.x / GRID_CELL_WIDTH_PX, playerMotion.position.y / GRID_CELL_HEIGHT_PX);
+
+  // check that player location is inside the trigger area
+  bool player_inside_trigger_area = playerLocation.x >= min_x && playerLocation.y >= min_y && playerLocation.x <= max_x && playerLocation.y <= max_y;
+
+  return player_inside_trigger_area;
+}
+
+void WorldSystem::levelHelper(int level)
+{
+  if (level <= levelMap.size() && level > 0)
+  {
+    level_selection = level;
+  }
+}
+
+int WorldSystem::countEnemiesOnLevel()
+{
+
+  int num_enemies = 0;
+
+  for (auto &i : spawnMap)
+  {
+
+    std::vector<int> spawnTile = i.first;
+    std::tuple<ENEMY_TYPES, int, bool, bool, std::vector<int>, std::vector<int>> &enemyDataTuple = i.second;
+    ENEMY_TYPES enemyType = std::get<0>(enemyDataTuple);
+    int quantity = std::get<1>(enemyDataTuple);
+    bool &hasPlayerReachedTile = std::get<2>(enemyDataTuple);
+    bool &hasEnemyAlreadySpawned = std::get<3>(enemyDataTuple);
+    std::vector<int> spawnPosition = std::get<4>(enemyDataTuple);
+    std::vector<int> patrolRange = std::get<5>(enemyDataTuple);
+
+    // This'll need to be changed if we add more indestructible enemies.
+    if (enemyType != OBSTACLE)
     {
-
-      // Get enemy entities
-      auto &enemy_registry = registry.enemies; // list of enemy entities stored in here
-
-      // Get player entity
-      Entity playerEntity = registry.players.entities[0];
-      Motion &playerMotion = registry.motions.get(playerEntity);
-      b2BodyId player_id = registry.physicsBodies.get(playerEntity).bodyId;
-
-      // freeze the player
-      b2Body_SetLinearVelocity(player_id, b2Vec2_zero);
-      playerMotion.velocity = vec2(0, 0);
-
-      // freeze the enemies
-      // Iterate over each enemy and implement basic logic as commented above.
-      for (int i = 0; i < enemy_registry.entities.size(); i++)
-      {
-
-        // Figure out enemy details
-        Entity enemyEntity = enemy_registry.entities[i];
-        Motion &enemyMotion = registry.motions.get(enemyEntity);
-        Enemy &enemyComponent = registry.enemies.get(enemyEntity);
-
-        // Get Box2D Speed
-        b2BodyId enemy_id = registry.physicsBodies.get(enemyEntity).bodyId;
-
-        // freeze the enemy
-        b2Body_SetLinearVelocity(enemy_id, b2Vec2_zero);
-        enemyMotion.velocity = vec2(0, 0);
-      }
+      num_enemies += quantity;
     }
+  }
 
-    // Handles button press based on function.
-    // LLNOTE: SHOULD HAVE A CASE FOR EACH BUTTON CREATED IN createScreenElements().
-    void WorldSystem::handleButtonPress(std::string function)
+  return num_enemies;
+}
+
+void WorldSystem::handleGameover(CurrentScreen &currentScreen)
+{
+
+  // If player HP reaches 0, game ends.
+  if (hp <= 0)
+  {
+    currentScreen.current_screen = "END OF GAME";
+
+    // Defeat title
+    createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_DEFEAT, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+  }
+  // If player reached finish line AND killed all enemies, game ends.
+  else if (player_reached_finish_line)
+  {
+
+    if (timer_game_end_screen <= 0)
     {
+      // Victory title
+      createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_VICTORY, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
 
-      // Current Screen
-      Entity currScreenEntity = registry.currentScreen.entities[0];
-      CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
-
-      if (function == "INCREMENT LEVEL")
-      {
-
-        levelHelper(level_selection + 1);
-      }
-      else if (function == "DECREMENT LEVEL")
-      {
-
-        levelHelper(level_selection - 1);
-      }
-      else if (function == "EXIT GAME")
-      {
-
-        close_window();
-      }
-      else if (function == "START GAME")
-      {
-
-        currentScreen.current_screen = "PLAYING";
-        restart_game(level_selection);
-      }
-      else if (function == "RESUME")
-      {
-
-        currentScreen.current_screen = "PLAYING";
-      }
-      else if (function == "RESTART")
-      {
-
-        int w, h;
-        currentScreen.current_screen = "PLAYING";
-        glfwGetWindowSize(window, &w, &h);
-        restart_game(level_selection);
-      }
-      else if (function == "MAIN MENU")
-      {
-
-        currentScreen.current_screen = "MAIN MENU";
-        restart_game(level_selection);
-      }
+      currentScreen.current_screen = "END OF GAME";
     }
-
-    // LLNOTE: FOR CODE READABILITY, ALL OF THE SCREEN ELEMENT AND BUTTON CREATIONS SHOULD BE IN HERE.
-    // create screens if they do not already exist
-    void WorldSystem::createScreenElements()
+    else
     {
-
-      if (registry.screens.entities.size() == 0)
-      {
-
-        // MAIN MENU:
-
-        // Title
-        createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::TITLE_MENU, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
-
-        // Text
-        createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::TEXT_MENU, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
-
-        // Buttons
-        //
-        // Increase level
-        createButton("INCREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLUP,
-                     VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
-
-        // Decrease Level
-        createButton("DECREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLDOWN,
-                     VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
-
-        // Start
-        createButton("START GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_START,
-                     VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
-
-        // Exit
-        createButton("EXIT GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_EXITGAME,
-                     VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
-
-        // PAUSE:
-
-        // Title
-        createScreenElement("PAUSE", TEXTURE_ASSET_ID::TITLE_PAUSE, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
-
-        // Text
-        createScreenElement("PAUSE", TEXTURE_ASSET_ID::TEXT_PAUSE, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
-
-        // Buttons
-        //
-        // Resume
-        createButton("RESUME", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
-
-        // Restart
-        createButton("RESTART", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
-
-        // Main Menu
-        createButton("MAIN MENU", "PAUSE", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
-
-        // NOTE: Need to swap victory/defeat screen's title asset over to appropriate title when game ends.
-        // END OF GAME
-
-        // Title
-        // NOTE: THIS WILL BE SET IN THE END-OF-GAME CHECK handle_gameover() based on whether the player won or lost.
-
-        // Text
-        createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TEXT_GAMEOVER, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
-
-        // Buttons
-        //
-        // Resume
-        createButton("RESUME", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
-
-        // Restart
-        createButton("RESTART", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
-
-        // Main Menu
-        createButton("MAIN MENU", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
-
-        // These are elements for the ENTIRE screen
-        // createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
-        // createScreenElement("PLAYING", TEXTURE_ASSET_ID::PLAYING_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
-        // createScreenElement("PAUSE", TEXTURE_ASSET_ID::PAUSE_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
-        // createScreenElement("END OF GAME", TEXTURE_ASSET_ID::END_OF_GAME_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
-
-        /* Legacy screen code using create screen
-        createScreen("MAIN MENU");
-        createScreen("PLAYING");
-        createScreen("PAUSE");
-        createScreen("END OF GAME");
-        */
-      }
+      timer_game_end_screen -= time_elapsed;
     }
+  }
+}
+
+// NOT NEEDED IF WE JUST FREEZE PHYSICS!!! (in fact it's better if we froze physics as original velocity preserved
+void WorldSystem::freezeMovements()
+{
+
+  // Get enemy entities
+  auto &enemy_registry = registry.enemies; // list of enemy entities stored in here
+
+  // Get player entity
+  Entity playerEntity = registry.players.entities[0];
+  Motion &playerMotion = registry.motions.get(playerEntity);
+  b2BodyId player_id = registry.physicsBodies.get(playerEntity).bodyId;
+
+  // freeze the player
+  b2Body_SetLinearVelocity(player_id, b2Vec2_zero);
+  playerMotion.velocity = vec2(0, 0);
+
+  // freeze the enemies
+  // Iterate over each enemy and implement basic logic as commented above.
+  for (int i = 0; i < enemy_registry.entities.size(); i++)
+  {
+
+    // Figure out enemy details
+    Entity enemyEntity = enemy_registry.entities[i];
+    Motion &enemyMotion = registry.motions.get(enemyEntity);
+    Enemy &enemyComponent = registry.enemies.get(enemyEntity);
+
+    // Get Box2D Speed
+    b2BodyId enemy_id = registry.physicsBodies.get(enemyEntity).bodyId;
+
+    // freeze the enemy
+    b2Body_SetLinearVelocity(enemy_id, b2Vec2_zero);
+    enemyMotion.velocity = vec2(0, 0);
+  }
+}
+
+// Handles button press based on function.
+// LLNOTE: SHOULD HAVE A CASE FOR EACH BUTTON CREATED IN createScreenElements().
+void WorldSystem::handleButtonPress(std::string function)
+{
+
+  // Current Screen
+  Entity currScreenEntity = registry.currentScreen.entities[0];
+  CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
+
+  if (function == "INCREMENT LEVEL")
+  {
+
+    levelHelper(level_selection + 1);
+  }
+  else if (function == "DECREMENT LEVEL")
+  {
+
+    levelHelper(level_selection - 1);
+  }
+  else if (function == "EXIT GAME")
+  {
+
+    close_window();
+  }
+  else if (function == "START GAME")
+  {
+
+    currentScreen.current_screen = "PLAYING";
+    restart_game(level_selection);
+  }
+  else if (function == "RESUME")
+  {
+
+    currentScreen.current_screen = "PLAYING";
+  }
+  else if (function == "RESTART")
+  {
+
+    int w, h;
+    currentScreen.current_screen = "PLAYING";
+    glfwGetWindowSize(window, &w, &h);
+    restart_game(level_selection);
+  }
+  else if (function == "MAIN MENU")
+  {
+
+    currentScreen.current_screen = "MAIN MENU";
+    restart_game(level_selection);
+  }
+}
+
+// LLNOTE: FOR CODE READABILITY, ALL OF THE SCREEN ELEMENT AND BUTTON CREATIONS SHOULD BE IN HERE.
+// create screens if they do not already exist
+void WorldSystem::createScreenElements()
+{
+
+  if (registry.screens.entities.size() == 0)
+  {
+
+    // MAIN MENU:
+
+    // Title
+    createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::TITLE_MENU, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+
+    // Text
+    createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::TEXT_MENU, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
+
+    // Buttons
+    //
+    // Increase level
+    createButton("INCREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLUP,
+                 VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
+
+    // Decrease Level
+    createButton("DECREMENT LEVEL", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_LVLDOWN,
+                 VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
+
+    // Start
+    createButton("START GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_START,
+                 VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 7, -VIEWPORT_HEIGHT_PX / 3.5));
+
+    // Exit
+    createButton("EXIT GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_EXITGAME,
+                 VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 2.5, -VIEWPORT_HEIGHT_PX / 3.5));
+
+    // PAUSE:
+
+    // Title
+    createScreenElement("PAUSE", TEXTURE_ASSET_ID::TITLE_PAUSE, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
+
+    // Text
+    createScreenElement("PAUSE", TEXTURE_ASSET_ID::TEXT_PAUSE, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
+
+    // Buttons
+    //
+    // Resume
+    createButton("RESUME", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+    // Restart
+    createButton("RESTART", "PAUSE", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
+
+    // Main Menu
+    createButton("MAIN MENU", "PAUSE", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+    // NOTE: Need to swap victory/defeat screen's title asset over to appropriate title when game ends.
+    // END OF GAME
+
+    // Title
+    // NOTE: THIS WILL BE SET IN THE END-OF-GAME CHECK handle_gameover() based on whether the player won or lost.
+
+    // Text
+    createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TEXT_GAMEOVER, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 3, vec2(0, 0));
+
+    // Buttons
+    //
+    // Resume
+    createButton("RESUME", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESUME, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(-VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+    // Restart
+    createButton("RESTART", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_RESTART, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(0, -VIEWPORT_HEIGHT_PX / 3.5));
+
+    // Main Menu
+    createButton("MAIN MENU", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_MAINMENU, VIEWPORT_WIDTH_PX / 6.4, VIEWPORT_HEIGHT_PX / 5.4, vec2(VIEWPORT_WIDTH_PX / 3, -VIEWPORT_HEIGHT_PX / 3.5));
+
+    // These are elements for the ENTIRE screen
+    // createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+    // createScreenElement("PLAYING", TEXTURE_ASSET_ID::PLAYING_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+    // createScreenElement("PAUSE", TEXTURE_ASSET_ID::PAUSE_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+    // createScreenElement("END OF GAME", TEXTURE_ASSET_ID::END_OF_GAME_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+
+    /* Legacy screen code using create screen
+    createScreen("MAIN MENU");
+    createScreen("PLAYING");
+    createScreen("PAUSE");
+    createScreen("END OF GAME");
+    */
+  }
+}

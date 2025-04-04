@@ -7,21 +7,21 @@
 class ECSRegistry
 {
 	// callbacks to remove a particular or all entities in the system
-	std::vector<ContainerInterface*> registry_list;
+	std::vector<ContainerInterface *> registry_list;
 
 public:
 	// Manually created list of all components this game has
 	// TODO: A1 add a LightUp component
 	ComponentContainer<CurrentScreen> currentScreen;
 	ComponentContainer<ScreenElement> screenElements;
-	ComponentContainer<Button> buttons;
+	ComponentContainer<UIButton> buttons;
 	ComponentContainer<Screen> screens; // legacy code. remove support after finishing screen element
 	ComponentContainer<DeathTimer> deathTimers;
 	ComponentContainer<Motion> motions;
 	ComponentContainer<Collision> collisions;
 	ComponentContainer<Player> players;
 	ComponentContainer<Enemy> enemies;
-	ComponentContainer<Mesh*> meshPtrs;
+	ComponentContainer<Mesh *> meshPtrs;
 	ComponentContainer<RenderRequest> renderRequests;
 	ComponentContainer<ScreenState> screenStates;
 	ComponentContainer<Eatable> eatables;
@@ -87,27 +87,31 @@ public:
 		registry_list.push_back(&fireballs);
 	}
 
-	void clear_all_components() {
-		for (ContainerInterface* reg : registry_list)
+	void clear_all_components()
+	{
+		for (ContainerInterface *reg : registry_list)
 			reg->clear();
 	}
 
-	void list_all_components() {
+	void list_all_components()
+	{
 		printf("Debug info on all registry entries:\n");
-		for (ContainerInterface* reg : registry_list)
+		for (ContainerInterface *reg : registry_list)
 			if (reg->size() > 0)
 				printf("%4d components of type %s\n", (int)reg->size(), typeid(*reg).name());
 	}
 
-	void list_all_components_of(Entity e) {
+	void list_all_components_of(Entity e)
+	{
 		printf("Debug info on components of entity %u:\n", (unsigned int)e);
-		for (ContainerInterface* reg : registry_list)
+		for (ContainerInterface *reg : registry_list)
 			if (reg->has(e))
 				printf("type %s\n", typeid(*reg).name());
 	}
 
-	void remove_all_components_of(Entity e) {
-		for (ContainerInterface* reg : registry_list)
+	void remove_all_components_of(Entity e)
+	{
+		for (ContainerInterface *reg : registry_list)
 			reg->remove(e);
 	}
 };

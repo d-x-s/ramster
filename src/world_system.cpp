@@ -2000,7 +2000,7 @@ void WorldSystem::handleButtonPress(Entity buttonEntity)
           }
 
           else if (currentScreen.current_screen == "STORY CONCLUSION") {
-              currentScreen.current_screen = "VICTORY";
+              currentScreen.current_screen = "GAME COMPLETE";
               playMusic(MUSIC::MENU);
           }
       }
@@ -2231,6 +2231,23 @@ void WorldSystem::createScreenElements()
     createStoryFrame(2, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_2);
     createStoryFrame(3, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_3);
     createStoryFrame(4, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_4);
+
+
+    // GAME COMPLETE ///////////////////////////////////////////////////////
+
+    // Title
+    createScreenElement(
+        "GAME COMPLETE", TEXTURE_ASSET_ID::TITLE_VICTORY,
+        900, 400,
+        vec2(0, 100));
+
+    // Buttons
+    //
+    // Main Menu
+    createButton(
+        "MAIN MENU", "GAME COMPLETE", TEXTURE_ASSET_ID::BUTTON_MAINMENU,
+        256, 128,
+        vec2(0, -200));
 
     }
 }

@@ -355,6 +355,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     {
       time_elapsed += 1; // note: this only works if granularity is 1000 ms and time is in seconds
       time_granularity = TIME_GRANULARITY;
+      updateTimer(time_elapsed);
     }
     else
     {
@@ -1028,6 +1029,16 @@ void WorldSystem::restart_game(int level)
     Entity &backgroundEntity = registry.backgroundLayers.entities.back();
     registry.remove_all_components_of(backgroundEntity);
   }
+  // clear score ui
+  if (registry.scores.entities.size() > 0)
+  {
+    registry.remove_all_components_of(registry.scores.entities.back());
+  }
+  // clear timer ui
+  if (registry.timers.entities.size() > 0)
+  {
+    registry.remove_all_components_of(registry.timers.entities.back());
+  }
 
   int grid_line_width = GRID_LINE_WIDTH_PX;
 
@@ -1057,6 +1068,8 @@ void WorldSystem::restart_game(int level)
 
   createScreenElements();
   createHealthBar(hp);
+  createScore();
+  createTimer();
 
   // Room dimensions
   const float roomWidth = WORLD_WIDTH_PX;
@@ -1124,6 +1137,12 @@ void WorldSystem::handle_collisions()
           registry.remove_all_components_of(enemyEntity);
           playSoundEffect(FX::FX_DESTROY_ENEMY);
           enemies_killed++;
+          for (Entity &scoreEntity : registry.scores.entities)
+          {
+            Score &score = registry.scores.get(scoreEntity);
+            score.score = score.score + 5;
+            updateScore(scoreEntity);
+          }
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.
@@ -1164,6 +1183,12 @@ void WorldSystem::handle_collisions()
           registry.remove_all_components_of(other);
           playSoundEffect(FX::FX_DESTROY_ENEMY);
           enemies_killed++;
+          for (Entity &scoreEntity : registry.scores.entities)
+          {
+            Score &score = registry.scores.get(scoreEntity);
+            score.score = score.score + 5;
+            updateScore(scoreEntity);
+          }
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.
@@ -1348,6 +1373,7 @@ void WorldSystem::handle_movement(float elapsed_ms)
 
   // jump is set seperately, since it can be used in conjunction with the movement keys.
   if (keyStates[GLFW_KEY_SPACE] && jumpCooldownTimer <= 0.0f)
+
   {
     // Jump: apply a strong upward impulse
     jump_impulse = {0, jumpImpulseMagnitude};
@@ -2095,5 +2121,54 @@ void WorldSystem::createScreenElements()
     createScreen("PAUSE");
     createScreen("END OF GAME");
     */
+  }
+}
+
+void WorldSystem::updateScore(Entity scoreEntity)
+{
+  Score &score = registry.scores.get(scoreEntity);
+  int value = score.score;
+
+  Entity *digits = score.digits;
+
+  for (int i = 0; i < 4; i++)
+  {
+    Entity digitEntity = digits[i];
+
+    // Get digit value from right to left
+    int digit = (value / (int)pow(10, 4 - 1 - i)) % 10;
+
+    // Get render request and update texture
+    if (registry.renderRequests.has(digitEntity))
+    {
+      RenderRequest &rr = registry.renderRequests.get(digitEntity);
+      rr.used_texture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + digit);
+    }
+  }
+}
+
+void WorldSystem::updateTimer(int time_elapsed)
+{
+  for (Entity &timerEntity : registry.timers.entities)
+  {
+    Timer &timer = registry.timers.get(timerEntity);
+
+    int minutes = time_elapsed / 60;
+    int seconds = time_elapsed % 60;
+
+    int digits[4] = {
+        minutes / 10,
+        minutes % 10,
+        seconds / 10,
+        seconds % 10};
+
+    for (int i = 0; i < 4; ++i)
+    {
+      Entity digitEntity = timer.digits[i];
+      if (!registry.renderRequests.has(digitEntity))
+        continue;
+      RenderRequest &rr = registry.renderRequests.get(digitEntity);
+      rr.used_texture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + digits[i]);
+    }
   }
 }

@@ -463,6 +463,8 @@ void PhysicsSystem::step(float elapsed_ms)
 
   update_fireball();
   updateHealthBar(camera.position);
+  updateTimer(camera.position);
+  updateScore(camera.position);
 }
 
 void PhysicsSystem::updateGrappleLines()
@@ -557,5 +559,51 @@ void PhysicsSystem::updateHealthBar(vec2 camPos)
     motion.scale.x = bar_width;
     motion.position = vec2(camPos.x - WINDOW_WIDTH_PX / 2 + 150.0f - offset,
                            camPos.y + WINDOW_HEIGHT_PX / 2 - 40.0f);
+  }
+}
+
+void PhysicsSystem::updateScore(vec2 camPos)
+{
+  const float fullScoreWidth = 4 * 40.f + 3 * 4.f;                              // 4 digits * width + 3 gaps
+  const float baseX = camPos.x + WINDOW_WIDTH_PX / 2.f - fullScoreWidth - 40.f; // 40 px margin from right edge
+  const float baseY = camPos.y + WINDOW_HEIGHT_PX / 2.f - 40.f - 60.0f;
+
+  for (Entity scoreEntity : registry.scores.entities)
+  {
+    Score &score = registry.scores.get(scoreEntity);
+    vec2 digitSize = vec2(40.f, 50.f);
+
+    for (int i = 0; i < 4; ++i)
+    {
+      Entity digitEntity = score.digits[i];
+      Motion &motion = registry.motions.get(digitEntity);
+
+      vec2 offset = vec2(i * (digitSize.x + 4.f), 0); // 4 px spacing between digits
+      motion.position = vec2(baseX + offset.x, baseY);
+      motion.scale = digitSize;
+    }
+  }
+}
+
+void PhysicsSystem::updateTimer(vec2 camPos)
+{
+  const float fullScoreWidth = 4 * 40.f + 3 * 4.f;                              // 4 digits * width + 3 gaps
+  const float baseX = camPos.x + WINDOW_WIDTH_PX / 2.f - fullScoreWidth - 40.f; // 40 px margin from right edge
+  const float baseY = camPos.y + WINDOW_HEIGHT_PX / 2.f - 40.f;                 // 40 px from top
+
+  for (Entity timerEntity : registry.timers.entities)
+  {
+    Timer &timer = registry.timers.get(timerEntity);
+    vec2 digitSize = vec2(40.f, 50.f);
+
+    for (int i = 0; i < 4; ++i)
+    {
+      Entity digitEntity = timer.digits[i];
+      Motion &motion = registry.motions.get(digitEntity);
+
+      vec2 offset = vec2(i * (digitSize.x + 4.f), 0); // 4 px spacing between digits
+      motion.position = vec2(baseX + offset.x, baseY);
+      motion.scale = digitSize;
+    }
   }
 }

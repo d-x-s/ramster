@@ -18,6 +18,8 @@ public:
 
 	void update_fireball();
 	void updateHealthBar(vec2 camPos);
+	void updateScore(vec2 camPos);
+	void updateTimer(vec2 camPos);
 
 private:
 	b2WorldId worldId;

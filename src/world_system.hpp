@@ -281,4 +281,6 @@ private:
 	void handleButtonPress(std::string function);
 	void shootGrapplePoint();
 	void shootGrapple(vec2 worldMousePos);
+	void updateScore(Entity scoreEntity);
+	void updateTimer(int time_elapsed);
 };

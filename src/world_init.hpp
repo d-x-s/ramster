@@ -73,3 +73,5 @@ Entity createChicken(RenderSystem *renderer, vec2 position);
 Entity createBall(b2WorldId worldId, vec2 startPos);
 Entity createFireball(vec2 startPos);
 Entity createHealthBar(float health);
+Entity createScore();
+Entity createTimer();

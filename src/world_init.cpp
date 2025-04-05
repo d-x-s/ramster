@@ -514,6 +514,8 @@ Entity createHealthBar(float health)
 	HealthBar &hp = registry.healthbars.emplace(entity);
 	hp.health = health;
 
+	registry.uis.emplace(entity);
+
 	auto &motion = registry.motions.emplace(entity);
 	motion.position = vec2(150, WINDOW_HEIGHT_PX - 50);
 	motion.scale = vec2(200, 20);
@@ -812,4 +814,76 @@ Entity createChicken(RenderSystem *renderer, vec2 pos)
 		 GEOMETRY_BUFFER_ID::CHICKEN});
 
 	return entity;
+}
+
+Entity createScore()
+{
+	Entity scoreEntity = Entity();
+
+	Score &score = registry.scores.emplace(scoreEntity);
+	score.score = 0;
+
+	registry.uis.emplace(scoreEntity);
+
+	vec2 basePosition = vec2(150, WINDOW_HEIGHT_PX - 50);
+	vec2 digitSize = vec2(40, 50);
+
+	for (int i = 0; i < 4; ++i)
+	{
+		Entity digitEntity = Entity();
+
+		vec2 offset = vec2(i * (digitSize.x + 4), 0); // 4px padding between digits
+		auto &motion = registry.motions.emplace(digitEntity);
+		motion.position = basePosition + offset;
+		motion.scale = digitSize;
+
+		registry.uis.emplace(digitEntity);
+
+		// Start all digits at 0
+		registry.renderRequests.insert(
+			digitEntity,
+			{TEXTURE_ASSET_ID::NUMBER_0,
+			 EFFECT_ASSET_ID::TEXTURED,
+			 GEOMETRY_BUFFER_ID::SPRITE});
+
+		// Track this digit in the Score component
+		score.digits[i] = digitEntity;
+	}
+
+	return scoreEntity;
+}
+
+Entity createTimer()
+{
+	Entity timerEntity = Entity();
+	Timer &timer = registry.timers.emplace(timerEntity);
+
+	registry.uis.emplace(timerEntity);
+
+	vec2 basePosition = vec2(150, WINDOW_HEIGHT_PX - 50);
+	vec2 digitSize = vec2(40, 50);
+
+	for (int i = 0; i < 4; ++i)
+	{
+		Entity digitEntity = Entity();
+
+		// Motion
+		vec2 offset = vec2(i * (digitSize.x + 4), 0); // 4px padding between digits
+		auto &motion = registry.motions.emplace(digitEntity);
+		motion.position = basePosition + offset;
+		motion.scale = digitSize;
+
+		registry.uis.emplace(digitEntity);
+
+		// Render
+		registry.renderRequests.insert(
+			digitEntity,
+			{TEXTURE_ASSET_ID::NUMBER_0,
+			 EFFECT_ASSET_ID::TEXTURED,
+			 GEOMETRY_BUFFER_ID::SPRITE});
+
+		timer.digits[i] = digitEntity;
+	}
+
+	return timerEntity;
 }

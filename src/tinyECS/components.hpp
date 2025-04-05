@@ -197,8 +197,20 @@ struct Mesh
  */
 enum class TEXTURE_ASSET_ID
 {
+  // Numbers
+  NUMBER_0 = 0,
+  NUMBER_1 = NUMBER_0 + 1,
+  NUMBER_2 = NUMBER_1 + 1,
+  NUMBER_3 = NUMBER_2 + 1,
+  NUMBER_4 = NUMBER_3 + 1,
+  NUMBER_5 = NUMBER_4 + 1,
+  NUMBER_6 = NUMBER_5 + 1,
+  NUMBER_7 = NUMBER_6 + 1,
+  NUMBER_8 = NUMBER_7 + 1,
+  NUMBER_9 = NUMBER_8 + 1,
+
   // Screen Elements
-  TITLE_MENU = 0,
+  TITLE_MENU = NUMBER_9 + 1,
   TITLE_PAUSE = TITLE_MENU + 1,
   TITLE_VICTORY = TITLE_PAUSE + 1,
   TITLE_DEFEAT = TITLE_VICTORY + 1,
@@ -480,4 +492,19 @@ struct BackgroundLayer
 struct HealthBar
 {
   float health;
+};
+
+struct Score
+{
+  int score;
+  Entity digits[4];
+};
+
+struct Timer
+{
+  Entity digits[4];
+};
+
+struct UI
+{
 };

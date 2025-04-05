@@ -519,6 +519,12 @@ bool WorldSystem::is_in_goal() {
 		// check if player is within goal zone
         if (player_position.x >= bl.x && player_position.x <= tr.x && player_position.y >= bl.y && player_position.y <= tr.y) {
 			if (!goalZone.hasTriggered) {
+                std::cout << "=====================================================<VICTORY!>=====================================================" << std::endl;
+				std::cout << "player location: " << player_position.x << ", " << player_position.y << std::endl;
+				std::cout << "goal zone location (bl): " << bl.x << ", " << bl.y << std::endl;
+				std::cout << "goal zone location (tr): " << tr.x << ", " << tr.y << std::endl;
+				std::cout << "number of goal posts: " << registry.goalZones.entities.size() << std::endl;
+
                 Mix_PlayChannel(-1, fx_victory, 0);
                 createConfetti(vec2((bl.x + tr.x) / 2, bl.y + 60.f));
 			}

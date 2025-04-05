@@ -109,9 +109,14 @@ private:
 	Mix_Chunk* chicken_dead_sound;
 	Mix_Chunk* chicken_eat_sound;
 
+	Mix_Chunk* ball_rolling;
+	Mix_Chunk* ball_flamming;
+
   // audio control
   void playMusic(MUSIC music);
   void playSoundEffect(FX effect);
+  void handleRollingSfx();
+  void handleFlammingSfx();
 
 	// player movement
 	void handle_movement();

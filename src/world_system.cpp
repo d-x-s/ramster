@@ -69,6 +69,7 @@ WorldSystem::~WorldSystem()
 	  Mix_FreeMusic(background_music_pencilcrayons);
   if (background_music_moontownshores != nullptr)
 	  Mix_FreeMusic(background_music_moontownshores);
+
   if (fx_destroy_enemy != nullptr)
     Mix_FreeChunk(fx_destroy_enemy);
   if (fx_destroy_enemy_fail != nullptr)
@@ -83,6 +84,10 @@ WorldSystem::~WorldSystem()
     Mix_FreeChunk(chicken_dead_sound);
   if (chicken_eat_sound != nullptr)
     Mix_FreeChunk(chicken_eat_sound);
+  if (ball_rolling != nullptr)
+      Mix_FreeChunk(ball_rolling);
+  if (ball_flamming != nullptr)
+      Mix_FreeChunk(ball_flamming);
   Mix_CloseAudio();
 
   // Destroy all created components
@@ -205,6 +210,8 @@ bool WorldSystem::start_and_load_sounds()
   fx_victory = Mix_LoadWAV(audio_path("fx_victory.wav").c_str());
   chicken_dead_sound = Mix_LoadWAV(audio_path("chicken_dead.wav").c_str());
   chicken_eat_sound = Mix_LoadWAV(audio_path("chicken_eat.wav").c_str());
+  ball_rolling = Mix_LoadWAV(audio_path("ball_rolling_sfx.wav").c_str());
+  ball_flamming = Mix_LoadWAV(audio_path("fire_woosh_sfx.wav").c_str());
   
   if (
       background_music == nullptr || 
@@ -217,6 +224,10 @@ bool WorldSystem::start_and_load_sounds()
 	  background_music_cottonplanes == nullptr ||
 	  background_music_pencilcrayons == nullptr ||
 	  background_music_moontownshores == nullptr ||
+
+	  ball_rolling == nullptr ||
+	  ball_flamming == nullptr ||
+
       fx_destroy_enemy == nullptr ||
       fx_destroy_enemy_fail == nullptr ||
       fx_jump == nullptr ||
@@ -285,29 +296,86 @@ void WorldSystem::playMusic(MUSIC music)
       Mix_PlayMusic(background_music_memorybranch, -1);
       break;
   }
+
+  Mix_VolumeMusic(4);
 }
 
 void WorldSystem::playSoundEffect(FX effect)
 {
+  int channel;
   switch (effect)
   {
     case FX::FX_DESTROY_ENEMY:
-      Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+      channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
       break;
     case FX::FX_DESTROY_ENEMY_FAIL:
-      Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
+        channel = Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
       break;
     case FX::FX_JUMP:
-      Mix_PlayChannel(-1, fx_jump, 0);
+        channel = Mix_PlayChannel(-1, fx_jump, 0);
       break;
     case FX::FX_GRAPPLE:
-      Mix_PlayChannel(-1, fx_grapple, 0);
+        channel = Mix_PlayChannel(-1, fx_grapple, 0);
       break;
     default:
-      Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+        channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
       break;
   } 
+
+  Mix_Volume(channel, 8);
 }
+
+// NOTE: function should be called after update_isGrounded() call for accuracy.
+void WorldSystem::handleRollingSfx() {
+    Entity playerEntity = registry.players.entities[0];
+	Player& player = registry.players.get(playerEntity);
+    PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
+    b2BodyId bodyId = phys.bodyId;
+
+    bool& isGroundedRef = registry.playerPhysics.get(playerEntity).isGrounded;
+    b2Vec2 playerVelocity = b2Body_GetLinearVelocity(bodyId);
+
+    if (isGroundedRef && b2Length(playerVelocity) >=70) {
+        // start audio on loop.
+        if (!player.isCurrentlyRolling) {
+			player.isCurrentlyRolling = true;
+            Mix_PlayChannel(4, ball_rolling, -1);
+			Mix_Volume(4, 95);
+        }
+
+    }
+    else {
+		// stop audio and update isCurrentlyRolling
+        player.isCurrentlyRolling = false;
+		Mix_Pause(4);
+    }
+}
+
+//// NOTE: function should be called after update_isGrounded() call for accuracy.
+//void WorldSystem::handleFlammingSfx() {
+//    Entity playerEntity = registry.players.entities[0];
+//    Player& player = registry.players.get(playerEntity);
+//    PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
+//    b2BodyId bodyId = phys.bodyId;
+//
+//    b2Vec2 playerVelocity = b2Body_GetLinearVelocity(bodyId);
+//
+//    if (isGroundedRef && b2Length(playerVelocity) >= 0) {
+//        // start audio on loop.
+//        if (!player.isCurrentlyRolling) {
+//            player.isCurrentlyRolling = true;
+//            Mix_PlayChannel(5, ball_flamming, -1);
+//        }
+//
+//    }
+//    else {
+//        // stop audio and update isCurrentlyRolling
+//        player.isCurrentlyRolling = false;
+//        Mix_Pause(5);
+//    }
+//}
+
+
 
 void WorldSystem::init(RenderSystem *renderer_arg)
 {
@@ -372,6 +440,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             update_isGrounded();
             handle_movement();
             checkGrappleGrounded();
+            handleRollingSfx();
 
             //        // LLNOTE
             //        // Check if player reached spawn enemies_killed of enemies.
@@ -525,7 +594,7 @@ bool WorldSystem::is_in_goal() {
 				std::cout << "goal zone location (tr): " << tr.x << ", " << tr.y << std::endl;
 				std::cout << "number of goal posts: " << registry.goalZones.entities.size() << std::endl;
 
-                Mix_PlayChannel(-1, fx_victory, 0);
+                 Mix_PlayChannel(-1, fx_victory, 0);
                 createConfetti(vec2((bl.x + tr.x) / 2, bl.y + 60.f));
 			}
 

@@ -49,6 +49,8 @@ struct CurrentScreen {
 // Player component
 struct Player
 {
+	bool isCurrentlyRolling;
+	bool isCurrentlyFlamming;
 };
 
 // Enemy component
@@ -401,7 +403,6 @@ enum class MUSIC
   COTTONPLANES = SPABA + 1,
   PENCILCRAYONS = COTTONPLANES + 1,
   MOONTOWNSHORES = PENCILCRAYONS + 1,
-
   MUSIC_COUNT = MOONTOWNSHORES + 1,
 };
 const int music_count = (int)MUSIC::MUSIC_COUNT;
@@ -412,8 +413,11 @@ enum class FX
   FX_DESTROY_ENEMY_FAIL = FX_DESTROY_ENEMY + 1,
   FX_JUMP = FX_DESTROY_ENEMY_FAIL + 1,
   FX_GRAPPLE = FX_JUMP + 1,
+
+  FX_BALL_ROLLING = FX_GRAPPLE + 1,
+  FX_BALL_FLAMMING = FX_BALL_ROLLING + 1,
   
-  FX_COUNT = FX_GRAPPLE + 1,
+  FX_COUNT = FX_BALL_FLAMMING + 1,
 };
 const int fx_count = (int)FX::FX_COUNT;
 

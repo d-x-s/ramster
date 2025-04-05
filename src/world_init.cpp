@@ -126,6 +126,8 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 
 	auto& player_registry = registry.players;
 	Player& player = registry.players.emplace(entity);
+	player.isCurrentlyFlamming = false;
+	player.isCurrentlyRolling = false;
 
 	// Define a dynamic body
 	b2BodyDef bodyDef = b2DefaultBodyDef();

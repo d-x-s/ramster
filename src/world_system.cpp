@@ -322,7 +322,7 @@ void WorldSystem::playSoundEffect(FX effect)
       break;
   } 
 
-  Mix_Volume(channel, 8);
+  Mix_Volume(channel, 5);
 }
 
 // NOTE: function should be called after update_isGrounded() call for accuracy.
@@ -339,41 +339,44 @@ void WorldSystem::handleRollingSfx() {
         // start audio on loop.
         if (!player.isCurrentlyRolling) {
 			player.isCurrentlyRolling = true;
-            Mix_PlayChannel(4, ball_rolling, -1);
-			Mix_Volume(4, 95);
+            Mix_HaltChannel(7);
+            Mix_FadeInChannelTimed(7, ball_rolling, -1, 320, -1);
+			Mix_Volume(7, 75);
         }
 
     }
     else {
 		// stop audio and update isCurrentlyRolling
         player.isCurrentlyRolling = false;
-		Mix_Pause(4);
+        Mix_FadeOutChannel(7, 300);
     }
 }
 
-//// NOTE: function should be called after update_isGrounded() call for accuracy.
-//void WorldSystem::handleFlammingSfx() {
-//    Entity playerEntity = registry.players.entities[0];
-//    Player& player = registry.players.get(playerEntity);
-//    PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
-//    b2BodyId bodyId = phys.bodyId;
-//
-//    b2Vec2 playerVelocity = b2Body_GetLinearVelocity(bodyId);
-//
-//    if (isGroundedRef && b2Length(playerVelocity) >= 0) {
-//        // start audio on loop.
-//        if (!player.isCurrentlyRolling) {
-//            player.isCurrentlyRolling = true;
-//            Mix_PlayChannel(5, ball_flamming, -1);
-//        }
-//
-//    }
-//    else {
-//        // stop audio and update isCurrentlyRolling
-//        player.isCurrentlyRolling = false;
-//        Mix_Pause(5);
-//    }
-//}
+// NOTE: function should be called after update_isGrounded() call for accuracy.
+void WorldSystem::handleFlammingSfx() {
+    Entity playerEntity = registry.players.entities[0];
+    Player& player = registry.players.get(playerEntity);
+    PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
+    b2BodyId bodyId = phys.bodyId;
+
+    b2Vec2 playerVelocity = b2Body_GetLinearVelocity(bodyId);
+
+    if (b2Length(playerVelocity) >= MIN_COLLISION_SPEED) {
+        // start audio on loop.
+        if (!player.isCurrentlyFlamming) {
+            player.isCurrentlyFlamming = true;
+            Mix_HaltChannel(6);
+            Mix_FadeInChannelTimed(6, ball_flamming, -1, 100, -1);
+            Mix_Volume(6, 75);
+        }
+
+    }
+    else {
+        // stop audio and update isCurrentlyRolling
+        player.isCurrentlyFlamming = false;
+        Mix_FadeOutChannel(6, 200);
+    }
+}
 
 
 
@@ -441,6 +444,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
             handle_movement();
             checkGrappleGrounded();
             handleRollingSfx();
+            handleFlammingSfx();
 
             //        // LLNOTE
             //        // Check if player reached spawn enemies_killed of enemies.
@@ -594,7 +598,8 @@ bool WorldSystem::is_in_goal() {
 				std::cout << "goal zone location (tr): " << tr.x << ", " << tr.y << std::endl;
 				std::cout << "number of goal posts: " << registry.goalZones.entities.size() << std::endl;
 
-                 Mix_PlayChannel(-1, fx_victory, 0);
+                 int channel = Mix_PlayChannel(-1, fx_victory, 0);
+                 Mix_Volume(channel, 4);
                 createConfetti(vec2((bl.x + tr.x) / 2, bl.y + 60.f));
 			}
 

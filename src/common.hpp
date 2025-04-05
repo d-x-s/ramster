@@ -111,7 +111,7 @@ const float ENEMY_FREEZE_TIME_MS = 1500;
 // Delay before showing end of game screen after game is over
 const int TIMER_GAME_END = 1500;
 // Minimum amount of speed the player needs after a collision to "win". Tune down for easier gameplay and vice versa.
-const float MIN_COLLISION_SPEED = 500;
+const float MIN_COLLISION_SPEED = 800;
 
 // Amount of time before refreshing FPS counter. This will eliminate window flickering from too many updates per second.
 const int FPS_UPDATE_COOLDOWN_MS = 250;

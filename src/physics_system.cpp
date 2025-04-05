@@ -462,6 +462,7 @@ void PhysicsSystem::step(float elapsed_ms)
   }
 
   update_fireball();
+  updateHealthBar(camera.position);
 }
 
 void PhysicsSystem::updateGrappleLines()
@@ -536,5 +537,25 @@ void PhysicsSystem::update_fireball()
       RenderRequest &fireballRenderRequest = registry.renderRequests.get(fireballEntity);
       fireballRenderRequest.is_visible = false;
     }
+  }
+}
+
+void PhysicsSystem::updateHealthBar(vec2 camPos)
+{
+  for (Entity hpEntity : registry.healthbars.entities)
+  {
+    HealthBar &hp = registry.healthbars.get(hpEntity);
+
+    Motion &motion = registry.motions.get(hpEntity);
+    float hp_ratio = std::max(0.f, hp.health / 5.f);
+    float full_width = 200.f;
+    float bar_width = full_width * hp_ratio;
+
+    // shrink leftward: adjust position to keep left side fixed
+    float offset = (full_width - bar_width) / 2.f;
+
+    motion.scale.x = bar_width;
+    motion.position = vec2(camPos.x - WINDOW_WIDTH_PX / 2 + 150.0f - offset,
+                           camPos.y + WINDOW_HEIGHT_PX / 2 - 40.0f);
   }
 }

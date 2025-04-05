@@ -17,6 +17,7 @@ public:
 	void updateGrappleLines();
 
 	void update_fireball();
+	void updateHealthBar(vec2 camPos);
 
 private:
 	b2WorldId worldId;

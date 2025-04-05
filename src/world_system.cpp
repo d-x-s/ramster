@@ -363,7 +363,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
     if (is_in_goal())
     {
-      player_reached_finish_line = true;
+      // Commented out for debuggings
+      // player_reached_finish_line = true;
     }
 
     // Remove debug info from the last step
@@ -950,6 +951,7 @@ std::vector<b2Vec2> WorldSystem::generateTestPoints()
 // Reset the world state to its initial state
 void WorldSystem::restart_game(int level)
 {
+
   // Figure out what we're using for each level
   std::tuple<std::string, TEXTURE_ASSET_ID, MUSIC> level_specs = levelMap.find(level_selection)->second;
   std::string level_path = std::get<0>(level_specs);
@@ -1054,6 +1056,7 @@ void WorldSystem::restart_game(int level)
   }
 
   createScreenElements();
+  createHealthBar(hp);
 
   // Room dimensions
   const float roomWidth = WORLD_WIDTH_PX;
@@ -1133,6 +1136,12 @@ void WorldSystem::handle_collisions()
           if (enemyComponent.destructable)
           {
             hp -= 1; // small penalty for now
+            for (Entity &hpEntity : registry.healthbars.entities)
+            {
+              HealthBar &hp = registry.healthbars.get(hpEntity);
+              hp.health -= 1;
+              std::cout << "decrease health: " << hp.health << std::endl;
+            }
           }
         }
       }
@@ -1167,6 +1176,12 @@ void WorldSystem::handle_collisions()
           if (enemyComponent.destructable)
           {
             hp -= 1; // small penalty for now
+            for (Entity &hpEntity : registry.healthbars.entities)
+            {
+              HealthBar &hp = registry.healthbars.get(hpEntity);
+              hp.health -= 1;
+              std::cout << "decrease health: " << hp.health << std::endl;
+            }
           }
         }
       }

@@ -476,3 +476,8 @@ struct LevelLayer
 struct BackgroundLayer
 {
 };
+
+struct HealthBar
+{
+  float health;
+};

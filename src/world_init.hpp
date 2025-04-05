@@ -6,7 +6,6 @@
 
 #include <box2d/box2d.h>
 
-
 // current screen
 Entity createCurrentScreen(); // DEFAULT TO MAIN MENU
 
@@ -17,7 +16,7 @@ Entity createCurrentScreen(); // DEFAULT TO MAIN MENU
 	- width_px: width of this element
 	- height_px: height of this element
 	- pos_relative_center: position of element relative to CENTER of screen.
-	
+
 	NOTE: for width, height, and pos, make sure to enter values relative to viewport so scaling works!!!
 	TIP: to get viewport-relative values, do this: (Viewport Pixels / Actual Pixels) Amount to Divide
 */
@@ -37,17 +36,17 @@ Entity createScreen(std::string screen_type);
 Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_range_point_a, vec2 movement_range_point_b);
 
 // invaders
-Entity createInvader(RenderSystem* renderer, vec2 position);
+Entity createInvader(RenderSystem *renderer, vec2 position);
 
 // towers
-Entity createTower(RenderSystem* renderer, vec2 position);
+Entity createTower(RenderSystem *renderer, vec2 position);
 void removeTower(vec2 position);
 
 // projectile
 Entity createProjectile(vec2 pos, vec2 size, vec2 velocity);
 
 // explosion
-Entity createExplosion(RenderSystem* renderer, vec2 position);
+Entity createExplosion(RenderSystem *renderer, vec2 position);
 
 // grid lines to show tile positions
 Entity createGridLine(vec2 start_pos, vec2 end_pos);
@@ -70,6 +69,7 @@ Entity createBackgroundLayer(TEXTURE_ASSET_ID textureId);
 
 // legacy
 // the player
-Entity createChicken(RenderSystem* renderer, vec2 position);
+Entity createChicken(RenderSystem *renderer, vec2 position);
 Entity createBall(b2WorldId worldId, vec2 startPos);
 Entity createFireball(vec2 startPos);
+Entity createHealthBar(float health);

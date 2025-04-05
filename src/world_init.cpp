@@ -507,6 +507,28 @@ Entity createLine(vec2 start_pos, vec2 end_pos)
 	return entity;
 }
 
+Entity createHealthBar(float health)
+{
+	Entity entity = Entity();
+
+	HealthBar &hp = registry.healthbars.emplace(entity);
+	hp.health = health;
+
+	auto &motion = registry.motions.emplace(entity);
+	motion.position = vec2(150, WINDOW_HEIGHT_PX - 50);
+	motion.scale = vec2(200, 20);
+
+	registry.colors.emplace(entity) = vec3(0.2f, 0.9f, 0.2f);
+
+	registry.renderRequests.insert(
+		entity,
+		{TEXTURE_ASSET_ID::TEXTURE_COUNT,  // No texture
+		 EFFECT_ASSET_ID::EGG,			   // Uses colored shader
+		 GEOMETRY_BUFFER_ID::DEBUG_LINE}); // Use existing filled shape geometry
+
+	return entity;
+}
+
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! render the entire level png at once
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

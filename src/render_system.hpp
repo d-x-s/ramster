@@ -94,68 +94,68 @@ class RenderSystem
       textures_path("invaders/obstacle_4.png"),
 
       // tiles
-    textures_path("tiles/half-ramp-bl.png"),
-    textures_path("tiles/half-ramp-br.png"),
-    textures_path("tiles/half-ramp-tl.png"),
-    textures_path("tiles/half-ramp-tr.png"),
-    textures_path("tiles/half-square-2-bottom.png"),
-    textures_path("tiles/half-square-2-left.png"),
-    textures_path("tiles/half-square-2-right.png"),
-    textures_path("tiles/half-square-2-top.png"),
-    textures_path("tiles/half-square-bottom.png"),
-    textures_path("tiles/half-square-left.png"),
-    textures_path("tiles/half-square-right.png"),
-    textures_path("tiles/half-square-top.png"),
-    textures_path("tiles/smooth-ramp-bl.png"),
-    textures_path("tiles/smooth-ramp-br.png"),
-    textures_path("tiles/smooth-ramp-tl.png"),
-    textures_path("tiles/smooth-ramp-tr.png"),
-    textures_path("tiles/square-tile-1.png"),
-    textures_path("tiles/square-tile-2.png"),
-    textures_path("tiles/tall-ramp-bl.png"),
-    textures_path("tiles/tall-ramp-br.png"),
-    textures_path("tiles/tall-ramp-tl.png"),
-    textures_path("tiles/tall-ramp-tr.png"),
-    textures_path("tiles/tesla-trap-1-bottom.png"),
-    textures_path("tiles/tesla-trap-1-left.png"),
-    textures_path("tiles/tesla-trap-1-right.png"),
-    textures_path("tiles/tesla-trap-1-top.png"),
+      textures_path("tiles/half-ramp-bl.png"),
+      textures_path("tiles/half-ramp-br.png"),
+      textures_path("tiles/half-ramp-tl.png"),
+      textures_path("tiles/half-ramp-tr.png"),
+      textures_path("tiles/half-square-2-bottom.png"),
+      textures_path("tiles/half-square-2-left.png"),
+      textures_path("tiles/half-square-2-right.png"),
+      textures_path("tiles/half-square-2-top.png"),
+      textures_path("tiles/half-square-bottom.png"),
+      textures_path("tiles/half-square-left.png"),
+      textures_path("tiles/half-square-right.png"),
+      textures_path("tiles/half-square-top.png"),
+      textures_path("tiles/smooth-ramp-bl.png"),
+      textures_path("tiles/smooth-ramp-br.png"),
+      textures_path("tiles/smooth-ramp-tl.png"),
+      textures_path("tiles/smooth-ramp-tr.png"),
+      textures_path("tiles/square-tile-1.png"),
+      textures_path("tiles/square-tile-2.png"),
+      textures_path("tiles/tall-ramp-bl.png"),
+      textures_path("tiles/tall-ramp-br.png"),
+      textures_path("tiles/tall-ramp-tl.png"),
+      textures_path("tiles/tall-ramp-tr.png"),
+      textures_path("tiles/tesla-trap-1-bottom.png"),
+      textures_path("tiles/tesla-trap-1-left.png"),
+      textures_path("tiles/tesla-trap-1-right.png"),
+      textures_path("tiles/tesla-trap-1-top.png"),
 
-    // tutorial
-    textures_path("tutorial/space.png"),
-    textures_path("tutorial/move.png"),
-    textures_path("tutorial/grapple.png"),
-    textures_path("tutorial/destroy.png"),
+      // tutorial
+      textures_path("tutorial/space.png"),
+      textures_path("tutorial/move.png"),
+      textures_path("tutorial/grapple.png"),
+      textures_path("tutorial/destroy.png"),
 
-    // levels
-	textures_path("levels/level1.png"),
-    textures_path("levels/level2.png"),
-	textures_path("levels/level3.png"),
-	textures_path("levels/level4.png"),
-	textures_path("levels/level5.png"),
-    textures_path("levels/level6.png"),
-    textures_path("levels/tutorial.png"),
-	textures_path("levels/tower.png"),
-	textures_path("levels/lab.png"),
-	textures_path("levels/under.png"),
-	textures_path("levels/snake.png"),
-    textures_path("levels/tunnelsmall.png"),
-    // <--- Add Next level here !
-    textures_path("levels/background.png"),
+      // levels
+      textures_path("levels/level1.png"),
+      textures_path("levels/level2.png"),
+      textures_path("levels/level3.png"),
+      textures_path("levels/level4.png"),
+      textures_path("levels/level5.png"),
+      textures_path("levels/level6.png"),
+      textures_path("levels/tutorial.png"),
+      textures_path("levels/tower.png"),
+      textures_path("levels/lab.png"),
+      textures_path("levels/under.png"),
+      textures_path("levels/snake.png"),
+      textures_path("levels/tunnelsmall.png"),
+      // <--- Add Next level here !
+      textures_path("levels/background.png"),
 
-    // fireball effect frames
-    textures_path("fireball_effect/frame_00_delay-0.06s.png"),
-    textures_path("fireball_effect/frame_01_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_02_delay-0.06s.png"),
-    textures_path("fireball_effect/frame_03_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_04_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_05_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_06_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_07_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_08_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_09_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_10_delay-0.06s.png"),
-	textures_path("fireball_effect/frame_11_delay-0.06s.png"),
+      // fireball effect frames
+      textures_path("fireball_effect/frame_00_delay-0.06s.png"),
+      textures_path("fireball_effect/frame_01_delay-0.06s.png"),
+      textures_path("fireball_effect/frame_02_delay-0.06s.png"),
+      textures_path("fireball_effect/frame_03_delay-0.06s.png"),
+      textures_path("fireball_effect/frame_04_delay-0.06s.png"),
+      textures_path("fireball_effect/frame_05_delay-0.06s.png"),
+      textures_path("fireball_effect/frame_06_delay-0.06s.png"),
+      textures_path("fireball_effect/frame_07_delay-0.06s.png"),
+      textures_path("fireball_effect/frame_08_delay-0.06s.png"),
+      textures_path("fireball_effect/frame_09_delay-0.06s.png"),
+      textures_path("fireball_effect/frame_10_delay-0.06s.png"),
+      textures_path("fireball_effect/frame_11_delay-0.06s.png"),
   };
 
   std::array<GLuint, effect_count> effects;
@@ -174,7 +174,6 @@ class RenderSystem
   std::array<Mesh, geometry_count> meshes;
 
 public:
-
   // Initialize the window
   bool init(GLFWwindow *window);
 
@@ -227,7 +226,6 @@ private:
   GLuint off_screen_render_buffer_depth;
 
   Entity screen_state_entity;
-
 };
 
 bool loadEffectFromFile(

@@ -73,3 +73,4 @@ Entity createBackgroundLayer(TEXTURE_ASSET_ID textureId);
 Entity createChicken(RenderSystem* renderer, vec2 position);
 Entity createBall(b2WorldId worldId, vec2 startPos);
 Entity createFireball(vec2 startPos);
+Entity createConfetti(vec2 position);

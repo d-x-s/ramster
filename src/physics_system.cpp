@@ -487,8 +487,6 @@ void PhysicsSystem::update_fireball() {
 
     b2Vec2 playerDirection = b2Normalize(playerVelocity);
 
-    const float fireballAspectRatio = 774.f / 260.f;
-
     // Check if the player is moving at or above the minimum collision speed
     if (playerSpeed >= MIN_COLLISION_SPEED) {
         // Set the fireball render request to visible

@@ -520,6 +520,7 @@ bool WorldSystem::is_in_goal() {
         if (player_position.x >= bl.x && player_position.x <= tr.x && player_position.y >= bl.y && player_position.y <= tr.y) {
 			if (!goalZone.hasTriggered) {
                 Mix_PlayChannel(-1, fx_victory, 0);
+                createConfetti(vec2((bl.x + tr.x) / 2, bl.y + 60.f));
 			}
 
 			goalZone.hasTriggered = true;

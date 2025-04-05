@@ -68,7 +68,7 @@ public:
 private:
 
 	// Selected level
-	int level_selection = 1;
+	int current_level = 1;
 
 	// Number of (destructible) enemies to kill
 	int num_enemies_to_kill = -1;
@@ -90,6 +90,8 @@ private:
 
 	// music references
 	Mix_Music* background_music;
+	Mix_Music* background_music_story_intro;
+	Mix_Music* background_music_story_conclusion;
   Mix_Music* background_music_memorybranch;
   Mix_Music* background_music_oblanka;
   Mix_Music* background_music_paradrizzle;
@@ -257,8 +259,8 @@ private:
 	void attachGrapple();
 	void checkGrappleGrounded();
 
-	// Handles logic for level.
-	void levelHelper(int level);
+	// Starts the game at specified level
+	void levelHelper(int level, CurrentScreen& currentScreen);
 
 	// Returns total number of (destructible) enemies per level.
 	int countEnemiesOnLevel();
@@ -275,5 +277,5 @@ private:
 	void createScreenElements();
 
 	// Handles button presses based on the function of said button.
-	void handleButtonPress(std::string function);
+	void handleButtonPress(Entity buttonEntity);
 };

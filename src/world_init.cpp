@@ -68,6 +68,26 @@ Entity createButton(std::string function, std::string screen, TEXTURE_ASSET_ID t
 }
 
 
+// Same as create button, but ties a level component onto it.
+Entity createLevelButton(int level, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
+
+	Entity buttonElement = createButton("LEVEL BUTTON", screen, texture, width_px, height_px, pos_relative_center);
+	Level& levelComponent = registry.levels.emplace(buttonElement);
+	levelComponent.level = level;
+
+	return buttonElement;
+}
+
+
+Entity createStoryFrame(int frameNumber, int maxFrame, std::string screen, TEXTURE_ASSET_ID texture) {
+
+	Entity buttonElement = createButton("STORY FRAME BUTTON", screen, texture, 1366, 768, vec2(0, 0));
+	StoryFrame& storyFrame = registry.storyFrames.emplace(buttonElement);
+	storyFrame.frame = frameNumber;
+	storyFrame.max_frame = maxFrame;
+
+	return buttonElement;
+}
 
 // This will create the screens that we are going to be using.
 // NOTE: THIS IS LEGACY CODE. PORTED OVER TO createScreenElement

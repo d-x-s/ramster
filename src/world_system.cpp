@@ -180,6 +180,8 @@ bool WorldSystem::start_and_load_sounds()
 
   // music
   background_music = Mix_LoadMUS(audio_path("music.wav").c_str());
+  background_music_story_intro = background_music;
+  background_music_story_conclusion = background_music;
   background_music_memorybranch = Mix_LoadMUS(audio_path("music_memorybranch.wav").c_str());
   background_music_oblanka = Mix_LoadMUS(audio_path("music_oblanka.wav").c_str());
   background_music_paradrizzle = Mix_LoadMUS(audio_path("music_paradrizzle.wav").c_str());
@@ -255,6 +257,12 @@ void WorldSystem::playMusic(MUSIC music)
     Mix_PlayMusic(background_music_promenade, -1);
     // current_music = MUSIC::LEVEL_4;
     break;
+  case MUSIC::STORY_INTRO:
+    Mix_PlayMusic(background_music_story_intro, -1);
+    break;
+  case MUSIC::STORY_CONCLUSION:
+    Mix_PlayMusic(background_music_story_conclusion, -1);
+    break;
   default:
     Mix_PlayMusic(background_music_memorybranch, -1);
     // current_music = MUSIC::MENU;
@@ -294,7 +302,7 @@ void WorldSystem::init(RenderSystem *renderer_arg)
   // Mix_PlayMusic(background_music, -1);
 
   // Set all states to default
-  restart_game(level_selection);
+  restart_game(current_level);
 }
 
 // Update our game world
@@ -307,7 +315,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
   // Updating window title with enemies_killed (and remaining towers)
   std::stringstream title_ss;
-  title_ss << "Ramster | Level : " << level_selection << " | Time : " << time_elapsed << "s | Kills : " << enemies_killed << " | HP : " << hp << " | FPS : " << fps;
+  title_ss << "Ramster | Level : " << current_level << " | Time : " << time_elapsed << "s | Kills : " << enemies_killed << " | HP : " << hp << " | FPS : " << fps;
   glfwSetWindowTitle(window, title_ss.str().c_str());
 
   // Game logic only runs when playing
@@ -924,7 +932,7 @@ std::vector<b2Vec2> WorldSystem::generateTestPoints()
 void WorldSystem::restart_game(int level)
 {
   // Figure out what we're using for each level
-  std::tuple<std::string, TEXTURE_ASSET_ID, MUSIC> level_specs = levelMap.find(level_selection)->second;
+  std::tuple<std::string, TEXTURE_ASSET_ID, MUSIC> level_specs = levelMap.find(current_level)->second;
   std::string level_path = std::get<0>(level_specs);
   TEXTURE_ASSET_ID level_texture = std::get<1>(level_specs);
   MUSIC level_music = std::get<2>(level_specs);
@@ -1356,10 +1364,12 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
 
   if (!game_active)
   {
+    /* DISABLED - REPLACED WITH MOUSE INPUT HANDLING.
     if (key == GLFW_KEY_R && action == GLFW_RELEASE)
     {
-      restart_game(level_selection);
+      restart_game(current_level);
     }
+    */
     return; // ignore all other inputs when game is inactive
   }
 
@@ -1373,6 +1383,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
       // freezeMovements();
       return;
     }
+    /* DISABLED - REPLACED WITH MOUSE INPUT HANDLING.
     // Pause screen - resume game
     if (currentScreen.current_screen == "PAUSE")
     {
@@ -1380,77 +1391,82 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
       return;
     }
     // Menu and End of Game screen - exits game
-    if (currentScreen.current_screen == "MAIN MENU" || currentScreen.current_screen == "END OF GAME")
+    if (currentScreen.current_screen == "MAIN MENU" || currentScreen.current_screen == "VICTORY" || currentScreen.current_screen == "DEFEAT")
     {
       close_window();
     }
+    */
   }
 
   // Reset game when R is released
+  /* DISABLED. REPLACED WITH MOUSE INPUT HANDLING.
   if (action == GLFW_RELEASE && key == GLFW_KEY_R)
   {
     // Pause and End of Game screen - restarts game
-    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "END OF GAME")
+    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "VICTORY" || currentScreen.current_screen == "DEFEAT")
     {
       currentScreen.current_screen = "PLAYING";
       int w, h;
       glfwGetWindowSize(window, &w, &h);
-      restart_game(level_selection);
+      restart_game(current_level);
     }
   }
-
+  */
   // Select level - only active on MAIN MENU screen
+  /* DISABLED. REPLACED WITH MOUSE INPUT HANDLING.
   if (currentScreen.current_screen == "MAIN MENU")
   {
     // Level keys 1-9
     if (action == GLFW_RELEASE && key == GLFW_KEY_1)
     {
-      levelHelper(1);
+      levelHelper(1, currentScreen);
     }
     if (action == GLFW_RELEASE && key == GLFW_KEY_2)
     {
-      levelHelper(2);
+      levelHelper(2, currentScreen);
     }
     if (action == GLFW_RELEASE && key == GLFW_KEY_3)
     {
-      levelHelper(3);
+      levelHelper(3, currentScreen);
     }
     if (action == GLFW_RELEASE && key == GLFW_KEY_4)
     {
-      levelHelper(4);
+      levelHelper(4, currentScreen);
     }
     if (action == GLFW_RELEASE && key == GLFW_KEY_5)
     {
-      levelHelper(5);
+      levelHelper(5, currentScreen);
     }
     if (action == GLFW_RELEASE && key == GLFW_KEY_6)
     {
-      levelHelper(6);
+      levelHelper(6, currentScreen);
     }
     if (action == GLFW_RELEASE && key == GLFW_KEY_7)
     {
-      levelHelper(7);
+      levelHelper(7, currentScreen);
     }
     if (action == GLFW_RELEASE && key == GLFW_KEY_8)
     {
-      levelHelper(8);
+      levelHelper(8, currentScreen);
     }
     if (action == GLFW_RELEASE && key == GLFW_KEY_9)
     {
-      levelHelper(9);
+      levelHelper(9, currentScreen);
     }
     // Increment or decrement selected level by 1
     if (action == GLFW_RELEASE && key == GLFW_KEY_UP)
     {
-      levelHelper(level_selection + 1);
+      levelHelper(current_level + 1, currentScreen);
     }
     if (action == GLFW_RELEASE && key == GLFW_KEY_DOWN)
     {
-      levelHelper(level_selection - 1);
+      levelHelper(current_level - 1, currentScreen);
     }
   }
+  */
 
   // ENTER key press handling
+  /* DISABLED. REPLACED WITH MOUSE INPUT HANDLING.
   if (action == GLFW_RELEASE && key == GLFW_KEY_ENTER)
   {
 
@@ -1458,17 +1474,18 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
     if (currentScreen.current_screen == "MAIN MENU")
     {
       currentScreen.current_screen = "PLAYING";
-      restart_game(level_selection);
+      restart_game(current_level);
       return;
     }
     // Pause and End of Game screen - back to main menu
-    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "END OF GAME")
+    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "VICTORY" || currentScreen.current_screen == "DEFEAT")
     {
       currentScreen.current_screen = "MAIN MENU";
-      restart_game(level_selection);
+      restart_game(current_level);
       return;
     }
   }
+  */
 
   // Debug toggle with D
   if (key == GLFW_KEY_P && action == GLFW_RELEASE)
@@ -1600,7 +1617,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
             // std::cout << "!!!!!! BUTTON PRESSED !!!!!!" << button.function << std::endl;
 
             // Handle the button press
-            handleButtonPress(button.function);
+            handleButtonPress(buttonEntity);
             break;
           }
         }
@@ -1813,11 +1830,22 @@ bool WorldSystem::checkPlayerReachedArea(ivec2 area_bottom_left, ivec2 area_top_
   return player_inside_trigger_area;
 }
 
-void WorldSystem::levelHelper(int level)
+void WorldSystem::levelHelper(int level, CurrentScreen& currentScreen)
 {
-  if (level <= levelMap.size() && level > 0)
+  // Player sent to intro if they select level 1
+  if (level == 1) 
   {
-    level_selection = level;
+      currentScreen.current_screen = "STORY INTRO";
+      playMusic(MUSIC::STORY_INTRO);
+  }
+  else if (level <= levelMap.size() && level > 0)
+  {
+
+    current_level = level;
+
+    currentScreen.current_screen = "PLAYING";
+    restart_game(level);
+
   }
 }
 
@@ -1854,15 +1882,21 @@ void WorldSystem::handleGameover(CurrentScreen &currentScreen)
   // If player HP reaches 0, game ends.
   if (hp <= 0)
   {
-    currentScreen.current_screen = "END OF GAME";
+    currentScreen.current_screen = "DEFEAT";
   }
   // If player reached finish line AND killed all enemies, game ends.
   else if (player_reached_finish_line)
   {
-
     if (timer_game_end_screen <= 0)
     {
-      currentScreen.current_screen = "END OF GAME";
+        // Make sure to show conclusion sequence if finished level 12
+        if (current_level == 12) {
+            currentScreen.current_screen = "STORY CONCLUSION";
+            playMusic(MUSIC::STORY_CONCLUSION);
+        }
+        else {
+            currentScreen.current_screen = "VICTORY";
+        }
     }
     else
     {
@@ -1908,33 +1942,85 @@ void WorldSystem::freezeMovements()
 
 // Handles button press based on function.
 // LLNOTE: SHOULD HAVE A CASE FOR EACH BUTTON CREATED IN createScreenElements().
-void WorldSystem::handleButtonPress(std::string function)
+void WorldSystem::handleButtonPress(Entity buttonEntity)
 {
 
   // Current Screen
   Entity currScreenEntity = registry.currentScreen.entities[0];
   CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
 
-  if (function == "INCREMENT LEVEL")
-  {
+  // Get function of button
+  Button buttonComponent = registry.buttons.get(buttonEntity);
+  std::string function = buttonComponent.function;
 
-    levelHelper(level_selection + 1);
+  if (function == "LEVEL BUTTON")
+  {
+      // Level buttons have an extra level component that we can use to select the level with
+      Level level = registry.levels.get(buttonEntity);
+
+      levelHelper(level.level, currentScreen);
   }
-  else if (function == "DECREMENT LEVEL")
-  {
+  else if (function == "STORY FRAME BUTTON") {
 
-    levelHelper(level_selection - 1);
+      // This button is a bit of a special case, as it could be any of the frames, but we only want to deal with the smallest one in the sequence. So we'll be looking
+      // for the entity representing the EARLIEST frame as opposed to the button entity itself.
+
+      // Get the smallest story frame on current screen
+      Entity storyFrameToHandle;
+      int lowest_frame = 9999;
+
+      for (Entity entity : registry.storyFrames.entities) {
+
+          // We only want story frames for the current screen
+          ScreenElement screenElement = registry.screenElements.get(entity);
+          if (screenElement.screen == currentScreen.current_screen) {
+
+              // If this story frame's the lowest in the sequence then we want to render it.
+              StoryFrame storyFrame = registry.storyFrames.get(entity);
+              if (storyFrame.frame < lowest_frame) {
+                  storyFrameToHandle = entity;
+                  lowest_frame = storyFrame.frame;
+              }
+          }
+      }
+
+      // Get the storyframe for this entity
+      StoryFrame storyFrame = registry.storyFrames.get(storyFrameToHandle);
+      std::cout << "STORY FRAME: " << storyFrame.frame << "MAX FRAME: " << storyFrame.max_frame << std::endl;
+
+      // If it's the last frame in the sequence we go to the next screen
+      if (storyFrame.frame == storyFrame.max_frame) {
+
+          if (currentScreen.current_screen == "STORY INTRO") {
+
+              current_level = 1;
+              currentScreen.current_screen = "PLAYING";
+              restart_game(1);
+
+          }
+
+          else if (currentScreen.current_screen == "STORY CONCLUSION") {
+              currentScreen.current_screen = "VICTORY";
+              playMusic(MUSIC::MENU);
+          }
+      }
+      // Otherwise we delete the EARLIEST story frame so the remaining frames get rendered
+      else {
+          registry.remove_all_components_of(storyFrameToHandle);
+      }
+
+  }
+  else if (function == "NEXT LEVEL") {
+      levelHelper(current_level + 1, currentScreen);
   }
   else if (function == "EXIT GAME")
   {
-
     close_window();
   }
   else if (function == "START GAME")
   {
 
-    currentScreen.current_screen = "PLAYING";
-    restart_game(level_selection);
+      currentScreen.current_screen = "LEVEL SELECT";
   }
   else if (function == "RESUME")
   {
@@ -1947,13 +2033,13 @@ void WorldSystem::handleButtonPress(std::string function)
     int w, h;
     currentScreen.current_screen = "PLAYING";
     glfwGetWindowSize(window, &w, &h);
-    restart_game(level_selection);
+    restart_game(current_level);
   }
   else if (function == "MAIN MENU")
   {
 
     currentScreen.current_screen = "MAIN MENU";
-    restart_game(level_selection);
+    restart_game(current_level);
   }
 }
 
@@ -1985,68 +2071,68 @@ void WorldSystem::createScreenElements()
         256, 128,
         vec2(200, -200));
 
-    // LEVEL SELECT ////////////////////////////////////////////////////////
 
+    // LEVEL SELECT ////////////////////////////////////////////////////////
     // Row 1
-    createButton(
-        "LEVEL 1", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL1,
+    createLevelButton(
+        1, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL1,
         128, 128,
         vec2(-375, 250));
 
-    createButton(
-        "LEVEL 2", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL2,
+    createLevelButton(
+        2, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL2,
         128, 128,
         vec2(-125, 250));
 
-    createButton(
-        "LEVEL 3", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL3,
+    createLevelButton(
+        3, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL3,
         128, 128,
         vec2(125, 250));
 
-    createButton(
-        "LEVEL 4", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL4,
+    createLevelButton(
+        4, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL4,
         128, 128,
         vec2(375, 250));
 
     // Row 2
-    createButton(
-        "LEVEL 5", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL5,
+    createLevelButton(
+        5, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL5,
         128, 128,
         vec2(-375, 0));
 
-    createButton(
-        "LEVEL 6", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL6,
+    createLevelButton(
+        6, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL6,
         128, 128,
         vec2(-125, 0));
 
-    createButton(
-        "LEVEL 7", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL7,
+    createLevelButton(
+        7, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL7,
         128, 128,
         vec2(125, 0));
 
-    createButton(
-        "LEVEL 8", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL8,
+    createLevelButton(
+        8, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL8,
         128, 128,
         vec2(375, 0));
 
     // Row 3
-    createButton(
-        "LEVEL 9", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL9,
+    createLevelButton(
+        9, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL9,
         128, 128,
         vec2(-375, -250));
 
-    createButton(
-        "LEVEL 10", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL10,
+    createLevelButton(
+        10, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL10,
         128, 128,
         vec2(-125, -250));
 
-    createButton(
-        "LEVEL 11", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL11,
+    createLevelButton(
+        11, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL11,
         128, 128,
         vec2(125, -250));
 
-    createButton(
-        "LEVEL 12", "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL12,
+    createLevelButton(
+        12, "LEVEL SELECT", TEXTURE_ASSET_ID::BUTTON_LVL12,
         128, 128,
         vec2(375, -250));
 
@@ -2078,12 +2164,12 @@ void WorldSystem::createScreenElements()
         256, 128,
         vec2(400, -200));
 
-    // END OF GAME (VICTORY) ////////////////////////////////////////////////////////
-    // NOTE: Need to swap victory/defeat screen's title asset over to appropriate title when game ends.
+
+    // VICTORY ////////////////////////////////////////////////////////
 
     // Title
     createScreenElement(
-        "END OF GAME", TEXTURE_ASSET_ID::TITLE_VICTORY,
+        "VICTORY", TEXTURE_ASSET_ID::TITLE_VICTORY,
         900, 400,
         vec2(0, 100));
 
@@ -2091,18 +2177,18 @@ void WorldSystem::createScreenElements()
     //
     // Main Menu
     createButton(
-        "MAIN MENU", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_MAINMENU,
+        "MAIN MENU", "VICTORY", TEXTURE_ASSET_ID::BUTTON_MAINMENU,
         256, 128,
         vec2(-200, -200));
 
     // Restart
     createButton(
-        "NEXT LEVEL", "END OF GAME", TEXTURE_ASSET_ID::BUTTON_LVLUP,
+        "NEXT LEVEL", "VICTORY", TEXTURE_ASSET_ID::BUTTON_LVLUP,
         256, 128,
         vec2(200, -200));
 
+
     // DEFEAT ////////////////////////////////////////////////////////
-    // NOTE: Need to swap victory/defeat screen's title asset over to appropriate title when game ends.
 
     // Title
     createScreenElement(
@@ -2129,18 +2215,22 @@ void WorldSystem::createScreenElements()
         "MAIN MENU", "DEFEAT", TEXTURE_ASSET_ID::BUTTON_MAINMENU,
         256, 128,
         vec2(400, -200));
+  
+    
+    // STORY INTRO /////////////////////////////////////////////////////////
 
-    // These are elements for the ENTIRE screen
-    // createScreenElement("MAIN MENU", TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
-    // createScreenElement("PLAYING", TEXTURE_ASSET_ID::PLAYING_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
-    // createScreenElement("PAUSE", TEXTURE_ASSET_ID::PAUSE_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
-    // createScreenElement("END OF GAME", TEXTURE_ASSET_ID::END_OF_GAME_TEXTURE, VIEWPORT_WIDTH_PX, VIEWPORT_HEIGHT_PX, vec2(0, 0));
+    createStoryFrame(1, 4, "STORY INTRO", TEXTURE_ASSET_ID::STORYFRAME_INTRO_1);
+    createStoryFrame(2, 4, "STORY INTRO", TEXTURE_ASSET_ID::STORYFRAME_INTRO_2);
+    createStoryFrame(3, 4, "STORY INTRO", TEXTURE_ASSET_ID::STORYFRAME_INTRO_3);
+    createStoryFrame(4, 4, "STORY INTRO", TEXTURE_ASSET_ID::STORYFRAME_INTRO_4);
 
-    /* Legacy screen code using create screen
-    createScreen("MAIN MENU");
-    createScreen("PLAYING");
-    createScreen("PAUSE");
-    createScreen("END OF GAME");
-    */
-  }
+
+    // STORY CONCLUSION ///////////////////////////////////////////////////
+
+    createStoryFrame(1, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_1);
+    createStoryFrame(2, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_2);
+    createStoryFrame(3, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_3);
+    createStoryFrame(4, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_4);
+
+    }
 }

@@ -432,7 +432,7 @@ void PhysicsSystem::step(float elapsed_ms)
               // NOTE: this depends on MIN_COLLISION_SPEED, which will need some fine-tuning to find a good speed at which we can hit the enemy.
               bool player_wins_collision = false;
 
-              if (playerSpeed > MIN_COLLISION_SPEED) {
+              if (playerSpeed > MIN_COLLISION_SPEED/1000) {
                   player_wins_collision = true;
               }
 
@@ -499,7 +499,7 @@ void PhysicsSystem::update_fireball() {
     const float fireballAspectRatio = 774.f / 260.f;
 
     // Check if the player is moving at or above the minimum collision speed
-    if (playerSpeed >= MIN_COLLISION_SPEED) {
+    if (playerSpeed >= MIN_COLLISION_SPEED/1000) {
         // Set the fireball render request to visible
         for (Entity fireballEntity : registry.fireballs.entities) {
             RenderRequest& fireballRenderRequest = registry.renderRequests.get(fireballEntity);

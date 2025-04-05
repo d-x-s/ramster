@@ -31,6 +31,18 @@ struct Button {
 
 };
 
+// Indicates that a button has a level
+struct Level {
+	int level;
+};
+
+// Indicates that this screen element is part of a story frame
+struct StoryFrame {
+	int frame;
+	// Total number of frames for this story sequence
+	int max_frame;
+};
+
 // Screen component
 // NOTE: LEGACY CODE. MIGRATED TO ScreenElement.
 struct Screen
@@ -345,7 +357,17 @@ enum class TEXTURE_ASSET_ID
 	FIREBALL_10 = FIREBALL_9 + 1,
 	FIREBALL_11 = FIREBALL_10 + 1,
 
-  TEXTURE_COUNT = FIREBALL_11 + 1,
+	// Story frames
+	STORYFRAME_INTRO_1 = FIREBALL_11 + 1,
+	STORYFRAME_INTRO_2 = STORYFRAME_INTRO_1 + 1,
+	STORYFRAME_INTRO_3 = STORYFRAME_INTRO_2 + 1,
+	STORYFRAME_INTRO_4 = STORYFRAME_INTRO_3 + 1,
+	STORYFRAME_CONCLUSION_1 = STORYFRAME_INTRO_4 + 1,
+	STORYFRAME_CONCLUSION_2 = STORYFRAME_CONCLUSION_1 + 1,
+	STORYFRAME_CONCLUSION_3 = STORYFRAME_CONCLUSION_2 + 1,
+	STORYFRAME_CONCLUSION_4 = STORYFRAME_CONCLUSION_3 + 1,
+
+  TEXTURE_COUNT = STORYFRAME_CONCLUSION_4 + 1,
 };
 const int texture_count = (int)TEXTURE_ASSET_ID::TEXTURE_COUNT;
 
@@ -357,7 +379,10 @@ enum class MUSIC
   WINDCATCHER = PARADRIZZLE + 1,
   PROMENADE = WINDCATCHER + 1,
 
-  MUSIC_COUNT = PROMENADE + 1,
+  STORY_INTRO = PROMENADE + 1,
+  STORY_CONCLUSION = STORY_INTRO + 1,
+
+  MUSIC_COUNT = STORY_CONCLUSION + 1,
 };
 const int music_count = (int)MUSIC::MUSIC_COUNT;
 

@@ -15,6 +15,8 @@ public:
 	ComponentContainer<CurrentScreen> currentScreen;
 	ComponentContainer<ScreenElement> screenElements;
 	ComponentContainer<Button> buttons;
+	ComponentContainer<Level> levels;
+	ComponentContainer<StoryFrame> storyFrames;
 	ComponentContainer<Screen> screens; // legacy code. remove support after finishing screen element
 	ComponentContainer<DeathTimer> deathTimers;
 	ComponentContainer<Motion> motions;
@@ -55,6 +57,8 @@ public:
 		registry_list.push_back(&currentScreen);
 		registry_list.push_back(&screenElements);
 		registry_list.push_back(&buttons);
+		registry_list.push_back(&levels);
+		registry_list.push_back(&storyFrames);
 		registry_list.push_back(&screens); // remove after implementation of screenElement/Button
 		registry_list.push_back(&deathTimers);
 		registry_list.push_back(&motions);

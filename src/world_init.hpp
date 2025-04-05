@@ -29,6 +29,14 @@ Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int wid
 */
 Entity createButton(std::string function, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center);
 
+// Makes buttons that are used to select levels. Specify the level, and the function is auto-set to be handled as a LEVEL BUTTON.
+Entity createLevelButton(int level, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center);
+
+// Creates individual frames for the intro/conclusion story animations. These are treated as buttons, where the user clicks to go to next frame.
+// - Use frameNumber to define which frame this is
+// - MUST DEFINE MAX FRAME FOR STORY SEQUENCE TO TERMINATE
+Entity createStoryFrame(int frameNumber, int maxFrame, std::string screen, TEXTURE_ASSET_ID texture);
+
 // screen
 // NOTE: LEGACY CODE PORTED OVER TO createScreenElement
 Entity createScreen(std::string screen_type);

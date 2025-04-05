@@ -592,6 +592,41 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 		}
 	}
+	// STORY SCREENS
+	else if (currentScreen.current_screen == "STORY INTRO" || currentScreen.current_screen == "STORY CONCLUSION") {
+
+		Entity cameraEntity = registry.players.entities[0];
+		vec2 cameraPosition = registry.cameras.get(cameraEntity).position;
+
+		// We're only rendering one of the story frames (smallest one)
+		Entity entityToRender;
+		int lowest_frame = 9999;
+
+		// Go over all story frame entities and find the smallest one to render
+		for (Entity entity : registry.storyFrames.entities) {
+
+			// We only want story frames for the current screen
+			ScreenElement screenElement = registry.screenElements.get(entity);
+			if (screenElement.screen == currentScreen.current_screen) {
+
+				// If this story frame's the lowest in the sequence then we want to render it.
+				StoryFrame storyFrame = registry.storyFrames.get(entity);
+				if (storyFrame.frame < lowest_frame) {
+					entityToRender = entity;
+					lowest_frame = storyFrame.frame;
+				}
+			}
+		}
+
+		// Re-center screen onto camera
+		ScreenElement screenElement = registry.screenElements.get(entityToRender);
+		Motion& screenMotion = registry.motions.get(entityToRender);
+		screenMotion.position = vec2(cameraPosition.x + screenElement.position.x, cameraPosition.y + screenElement.position.y);
+
+		// Render the story frame
+		drawTexturedMesh(entityToRender, projection_2D, elapsed_ms, game_active);
+
+	}
 	// SCREENS TO RENDER WHEN NOT PLAYING
 	else {
 
@@ -601,7 +636,7 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 		for (Entity entity : registry.renderRequests.entities) {
 
 			// We're only interested in screen elements
-			if (registry.screenElements.has(entity)) {
+			if (registry.screenElements.has(entity) && !registry.storyFrames.has(entity)) {
 
 				ScreenElement screenElement = registry.screenElements.get(entity);
 				Motion& screenMotion = registry.motions.get(entity);
@@ -617,26 +652,6 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 				}
 
 			}
-
-			/* LEGACY CODE FOR SCREEN RENDERING 
-			// filter to screen entities
-			if (registry.screens.has(entity)) {
-
-				Screen screen = registry.screens.get(entity);
-				Motion& screenMotion = registry.motions.get(entity);
-
-				// Ensure that we're only rendering the screen that we're on right now
-				if (currentScreen.current_screen == screen.screen) {
-
-					// Re-center screen onto camera
-					screenMotion.position = vec2(cameraPosition.x, cameraPosition.y);
-
-					// Then render
-					drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
-				}
-
-			}
-			*/
 		}
 	}
 

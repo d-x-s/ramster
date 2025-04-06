@@ -215,24 +215,6 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	Motion& motion = registry.motions.get(entity);
 	Transform transform;
 
-	// Get the actual physics body from registry
-	//if (registry.physicsBodies.has(entity)) {
-	//	PhysicsBody& phys = registry.physicsBodies.get(entity);
-
-	//	// Get body's world position (correct physics position)
-	//	// b2Vec2 p = b2Body_GetWorldPoint(phys.bodyId, { 0.0f, 0.0f });
-	//	// motion.position = vec2(p.x, p.y); // Sync motion position with physics
-
-	//	// Get body's rotation
-	//	b2Rot rotation = b2Body_GetRotation(phys.bodyId);
-	//	float angleRadians = b2Rot_GetAngle(rotation);
-
-	//	motion.angle = glm::degrees(angleRadians); // Convert radians to degrees
-
-	//	// Report data
-	//	// std::cout << "Box2D Ball Body position = (" << b2Body_GetPosition(phys.bodyId).x << ", " << b2Body_GetPosition(phys.bodyId).y << ")\n";
-	//}
-
 	// TRANSLATE: Move to the correct position
 	transform.translate(motion.position);
 
@@ -253,9 +235,6 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	//else { // otherwise just set to the static size
 	//	transform.scale(motion.scale);
 	//}
-
-	// ROTATE
-	// transform.rotate(radians(motion.angle));
 
 	// handle animation if this render request has animation data embedded
 	assert(registry.renderRequests.has(entity));

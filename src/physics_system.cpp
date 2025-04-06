@@ -411,9 +411,6 @@ void PhysicsSystem::step(float elapsed_ms)
   prev_x = camX;
   prev_y = camY;
 
-  // Debugging output
-  // std::cout << "Box2D Ball Body position = (" << position.x << ", " << position.y << ")\n";
-
   // COLLISION HANDLING
   // This just iterates over all motion entities to check. 
   // The collision check is handled by collides() helper function.
@@ -470,11 +467,6 @@ void PhysicsSystem::step(float elapsed_ms)
                   player_wins_collision = true;
               }
 
-              // DEBUG
-              //std::cout << "ENTITY 1 SPEED: " << entity1_speedFactor << std::endl;
-              //std::cout << "ENTITY 2 SPEED: " << entity2_speedFactor << std::endl;
-              //std::cout << "PLAYER SPEED: " << playerSpeed << std::endl;
-
               // Create a collisions event
               // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
               // CK: why the duplication, except to allow searching by entity_id
@@ -485,7 +477,6 @@ void PhysicsSystem::step(float elapsed_ms)
       
     }
   }
-
 
   if (grappleActive) {
 		updateGrappleLines();

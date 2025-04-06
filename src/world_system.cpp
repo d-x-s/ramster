@@ -899,75 +899,6 @@ bool WorldSystem::load_level(const std::string &filename)
   return true;
 }
 
-void WorldSystem::generateTestTerrain()
-{
-  if (lines.empty())
-  {
-    std::vector<b2Vec2> testPoints = generateTestPoints();
-
-    // reverse vertices for counter-clockwise winding order
-    std::reverse(testPoints.begin(), testPoints.end());
-
-    // render the line segments between enemies_killed
-    int count = testPoints.size();
-    for (int i = 0; i < count - 1; ++i)
-    {
-      lines.push_back(
-          createLine(
-              glm::vec2(testPoints[i].x, testPoints[i].y),
-              glm::vec2(testPoints[i + 1].x, testPoints[i + 1].y)));
-    }
-
-    b2ChainDef chainDef = b2DefaultChainDef();
-    chainDef.count = count;
-    chainDef.points = testPoints.data();
-    chainDef.isLoop = true;
-    chainDef.friction = TERRAIN_DEFAULT_FRICTION;
-    chainDef.restitution = TERRAIN_DEFAULT_RESTITUTION;
-
-    b2BodyDef bodyDef = b2DefaultBodyDef();
-    b2BodyId _ = b2CreateBody(worldId, &bodyDef);
-    b2CreateChain(_, &chainDef);
-  }
-}
-
-std::vector<b2Vec2> WorldSystem::generateTestPoints()
-{
-  // hardcoded enemies_killed that make up a ramp
-  return {
-      {0.0f, 288.0f},
-      {16.67f, 288.0f},
-      {33.33f, 288.0f},
-      {50.0f, 288.0f},
-      {66.67f, 288.0f},
-      {83.33f, 288.0f},
-      {100.0f, 288.0f},
-      {116.67f, 258.67f},
-      {133.33f, 229.33f},
-      {150.0f, 200.0f},
-      {166.67f, 176.0f},
-      {183.33f, 152.0f},
-      {200.0f, 128.0f},
-      {216.67f, 109.33f},
-      {233.33f, 90.67f},
-      {250.0f, 72.0f},
-      {266.67f, 58.67f},
-      {283.33f, 45.33f},
-      {300.0f, 32.0f},
-      {316.67f, 24.0f},
-      {333.33f, 16.0f},
-      {350.0f, 8.0f},
-      {366.67f, 5.33f},
-      {383.33f, 2.67f},
-      {400.0f, 0.0f},
-      {266.67f, 0.0f},
-      {133.33f, 0.0f},
-      {0.0f, 0.0f},
-      {0.0f, 96.0f},
-      {0.0f, 192.0f},
-      {0.0f, 288.0f}};
-}
-
 // Reset the world state to its initial state
 void WorldSystem::restart_game(int level)
 {
@@ -985,13 +916,9 @@ void WorldSystem::restart_game(int level)
   // Reset the game speed
   current_speed = 1.f;
 
-  // LLTEST
   // Clear spawn map
   spawnMap.clear();
-  // Add some spawning to test
-  // insertToSpawnMap(ivec2(0, 0), ivec2(10, 10), SWARM, 1, ivec2(2, 3), ivec2(0, 0), ivec2(0, 0));
-  // insertToSpawnMap(ivec2(0, 0), ivec2(11, 10), OBSTACLE, 1, ivec2(9, 3), ivec2(9, 3), ivec2(13, 2));
-  // insertToSpawnMap(ivec2(0, 0), ivec2(9, 10), OBSTACLE, 1, ivec2(7, 3), ivec2(7, 3), ivec2(7, 6));
+
 
   player_reached_finish_line = false;
   timer_game_end_screen = TIMER_GAME_END;

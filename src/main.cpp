@@ -14,7 +14,6 @@
 #include "render_system.hpp"
 #include "world_system.hpp"
 #include "world_init.hpp"
-#include "terrain.hpp"
 
 using Clock = std::chrono::high_resolution_clock;
 
@@ -35,7 +34,6 @@ int main()
 	gravity_vector.x = 0.f;
 	gravity_vector.y = GRAVITY;
 	b2World_SetGravity(worldId, gravity_vector);
-
 
 	// Current Screen tracker
 	createCurrentScreen();

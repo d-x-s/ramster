@@ -31,7 +31,6 @@ class RenderSystem
   // Make sure these paths remain in sync with the associated enumerators (see TEXTURE_ASSET_ID).
   const std::array<std::string, texture_count> texture_paths = {
       // Ramster
-      textures_path("projectiles/gold_bubble.png"),
       textures_path("player/run_0.png"),
       textures_path("player/run_1.png"),
       textures_path("player/run_2.png"),
@@ -90,27 +89,7 @@ class RenderSystem
       textures_path("screens/pause.png"),
       textures_path("screens/game_ended_screen.png"),
 
-      // Legacy Invaders
-      textures_path("invaders/blue_1.png"),
-      textures_path("invaders/blue_2.png"),
-      textures_path("invaders/blue_3.png"),
-      textures_path("invaders/red_1.png"),
-      textures_path("invaders/red_2.png"),
-      textures_path("invaders/red_3.png"),
-      textures_path("invaders/green_1.png"),
-      textures_path("invaders/green_2.png"),
-      textures_path("invaders/green_3.png"),
-      textures_path("invaders/grey_1.png"),
-      textures_path("invaders/grey_2.png"),
-      textures_path("invaders/grey_3.png"),
-      textures_path("towers/tower01.png"),
-      textures_path("effects/explosion1.png"),
-      textures_path("effects/explosion2.png"),
-      textures_path("effects/explosion3.png"),
-      textures_path("invaders/floater_1.png"),
-      textures_path("invaders/floater_2.png"),
-      textures_path("invaders/floater_3.png"),
-
+      // Invaders
       textures_path("invaders/common_1.png"),
       textures_path("invaders/common_2.png"),
       textures_path("invaders/common_3.png"),
@@ -126,40 +105,6 @@ class RenderSystem
       textures_path("invaders/obstacle_2.png"),
       textures_path("invaders/obstacle_3.png"),
       textures_path("invaders/obstacle_4.png"),
-
-      // Tiles
-      textures_path("tiles/half-ramp-bl.png"),
-      textures_path("tiles/half-ramp-br.png"),
-      textures_path("tiles/half-ramp-tl.png"),
-      textures_path("tiles/half-ramp-tr.png"),
-      textures_path("tiles/half-square-2-bottom.png"),
-      textures_path("tiles/half-square-2-left.png"),
-      textures_path("tiles/half-square-2-right.png"),
-      textures_path("tiles/half-square-2-top.png"),
-      textures_path("tiles/half-square-bottom.png"),
-      textures_path("tiles/half-square-left.png"),
-      textures_path("tiles/half-square-right.png"),
-      textures_path("tiles/half-square-top.png"),
-      textures_path("tiles/smooth-ramp-bl.png"),
-      textures_path("tiles/smooth-ramp-br.png"),
-      textures_path("tiles/smooth-ramp-tl.png"),
-      textures_path("tiles/smooth-ramp-tr.png"),
-      textures_path("tiles/square-tile-1.png"),
-      textures_path("tiles/square-tile-2.png"),
-      textures_path("tiles/tall-ramp-bl.png"),
-      textures_path("tiles/tall-ramp-br.png"),
-      textures_path("tiles/tall-ramp-tl.png"),
-      textures_path("tiles/tall-ramp-tr.png"),
-      textures_path("tiles/tesla-trap-1-bottom.png"),
-      textures_path("tiles/tesla-trap-1-left.png"),
-      textures_path("tiles/tesla-trap-1-right.png"),
-      textures_path("tiles/tesla-trap-1-top.png"),
-
-      // Tutorial
-      textures_path("tutorial/space.png"),
-      textures_path("tutorial/move.png"),
-      textures_path("tutorial/grapple.png"),
-      textures_path("tutorial/destroy.png"),
 
       // Levels
       textures_path("levels/level1.png"),

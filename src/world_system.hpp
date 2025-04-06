@@ -142,10 +142,6 @@ private:
 	// restart level
 	void restart_game(int level);
 
-	// prototype for generating chain terrain
-	void generateTestTerrain();
-	std::vector<b2Vec2> generateTestPoints();
-
 	// OpenGL window handle
 	GLFWwindow* window;
 

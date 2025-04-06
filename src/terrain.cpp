@@ -31,11 +31,6 @@ b2BodyId create_vertical_wall(b2WorldId worldId, float x, float y, float height)
     shapeDef.friction = 0.1f;
     b2CreatePolygonShape(bodyId, &shapeDef, &polygon);
 
-    // Draw the vertical wall
-    vec2 top = { x, y + halfHeight };
-    vec2 bottom = { x, y - halfHeight };
-    createLine(bottom, top);
-
     // create PhysicsBody component
     Entity entity = Entity();
     PhysicsBody& physicsBody = registry.physicsBodies.emplace(entity);
@@ -69,11 +64,6 @@ b2BodyId create_horizontal_wall(b2WorldId worldId, float x, float y, float width
     b2ShapeDef shapeDef = b2DefaultShapeDef();
     shapeDef.friction = 0.1f;
     b2CreatePolygonShape(bodyId, &shapeDef, &polygon);
-
-    // Draw the horizontal wall
-    vec2 left = { x - halfWidth, y };
-    vec2 right = { x + halfWidth, y };
-    createLine(left, right);
 
     // create PhysicsBody component
     Entity entity = Entity();

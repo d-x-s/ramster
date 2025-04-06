@@ -340,7 +340,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
   auto now = std::chrono::steady_clock::now();
   auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count();
-
   updateTimer(elapsed_ms);
 
   // Game logic only runs when playing
@@ -2137,6 +2136,13 @@ void WorldSystem::updateScore(Entity scoreEntity)
   Score &score = registry.scores.get(scoreEntity);
   int value = score.score;
 
+  const int MAX_SCORE = 9999;
+
+  if (value > MAX_SCORE)
+  {
+    value = MAX_SCORE;
+  }
+
   Entity *digits = score.digits;
 
   for (int i = 0; i < 4; i++)
@@ -2157,6 +2163,11 @@ void WorldSystem::updateScore(Entity scoreEntity)
 
 void WorldSystem::updateTimer(long long time_elapsed)
 {
+  const long long MAX_DISPLAY_TIME = (59 * 60 * 1000) + (59 * 1000) + 900;
+
+  if (time_elapsed > MAX_DISPLAY_TIME)
+    time_elapsed = MAX_DISPLAY_TIME;
+
   for (Entity &timerEntity : registry.timers.entities)
   {
     Timer &timer = registry.timers.get(timerEntity);

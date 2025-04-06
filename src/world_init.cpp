@@ -300,7 +300,7 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 	// ========================================================================================================
 	// create new entity for fireball fx
 	// ========================================================================================================
-	// createFireball(startPos);
+	createFireball(startPos);
 
 	return mainEntity;
 }

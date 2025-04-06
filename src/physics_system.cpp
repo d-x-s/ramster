@@ -531,7 +531,7 @@ void PhysicsSystem::update_fireball() {
     const float fireballAspectRatio = 774.f / 260.f;
 
     // Check if the player is moving at or above the minimum collision speed
-    if (playerSpeed >= MIN_COLLISION_SPEED/1000) {
+    if (playerSpeed >= 1000) {
         // Set the fireball render request to visible
         for (Entity fireballEntity : registry.fireballs.entities) {
             RenderRequest& fireballRenderRequest = registry.renderRequests.get(fireballEntity);

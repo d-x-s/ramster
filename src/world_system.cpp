@@ -2187,7 +2187,7 @@ void WorldSystem::createScreenElements()
 
     // Title
     createScreenElement(
-        "DEFEAT", TEXTURE_ASSET_ID::TITLE_VICTORY,
+        "DEFEAT", TEXTURE_ASSET_ID::TITLE_DEFEAT,
         900, 400,
         vec2(0, 100));
 

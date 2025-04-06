@@ -863,7 +863,7 @@ Entity createTimer()
 	vec2 basePosition = vec2(150, WINDOW_HEIGHT_PX - 50);
 	vec2 digitSize = vec2(40, 50);
 
-	for (int i = 0; i < 4; ++i)
+	for (int i = 0; i < 5; ++i)
 	{
 		Entity digitEntity = Entity();
 
@@ -876,12 +876,22 @@ Entity createTimer()
 		registry.uis.emplace(digitEntity);
 
 		// Render
-		registry.renderRequests.insert(
-			digitEntity,
-			{TEXTURE_ASSET_ID::NUMBER_0,
-			 EFFECT_ASSET_ID::TEXTURED,
-			 GEOMETRY_BUFFER_ID::SPRITE});
-
+		if (i == 2)
+		{
+			registry.renderRequests.insert(
+				digitEntity,
+				{TEXTURE_ASSET_ID::COLON,
+				 EFFECT_ASSET_ID::TEXTURED,
+				 GEOMETRY_BUFFER_ID::SPRITE});
+		}
+		else
+		{
+			registry.renderRequests.insert(
+				digitEntity,
+				{TEXTURE_ASSET_ID::NUMBER_0,
+				 EFFECT_ASSET_ID::TEXTURED,
+				 GEOMETRY_BUFFER_ID::SPRITE});
+		}
 		timer.digits[i] = digitEntity;
 	}
 

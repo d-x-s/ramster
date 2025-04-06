@@ -43,6 +43,8 @@ class RenderSystem
       textures_path("numbers/8.png"),
       textures_path("numbers/9.png"),
 
+      textures_path("numbers/colon.png"),
+
       // Screen Elements
       textures_path("screenElements/menu_title.png"),
       textures_path("screenElements/pause_title.png"),

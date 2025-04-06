@@ -587,7 +587,7 @@ void PhysicsSystem::updateScore(vec2 camPos)
 
 void PhysicsSystem::updateTimer(vec2 camPos)
 {
-  const float fullScoreWidth = 4 * 40.f + 3 * 4.f;                              // 4 digits * width + 3 gaps
+  const float fullScoreWidth = 5 * 40.f + 3 * 4.f;                              // 4 digits * width + 3 gaps
   const float baseX = camPos.x + WINDOW_WIDTH_PX / 2.f - fullScoreWidth - 40.f; // 40 px margin from right edge
   const float baseY = camPos.y + WINDOW_HEIGHT_PX / 2.f - 40.f;                 // 40 px from top
 
@@ -596,14 +596,13 @@ void PhysicsSystem::updateTimer(vec2 camPos)
     Timer &timer = registry.timers.get(timerEntity);
     vec2 digitSize = vec2(40.f, 50.f);
 
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 5; ++i)
     {
       Entity digitEntity = timer.digits[i];
       Motion &motion = registry.motions.get(digitEntity);
 
       vec2 offset = vec2(i * (digitSize.x + 4.f), 0); // 4 px spacing between digits
       motion.position = vec2(baseX + offset.x, baseY);
-      motion.scale = digitSize;
     }
   }
 }

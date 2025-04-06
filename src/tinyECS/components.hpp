@@ -209,8 +209,10 @@ enum class TEXTURE_ASSET_ID
   NUMBER_8 = NUMBER_7 + 1,
   NUMBER_9 = NUMBER_8 + 1,
 
+  COLON = NUMBER_9 + 1,
+
   // Screen Elements
-  TITLE_MENU = NUMBER_9 + 1,
+  TITLE_MENU = COLON + 1,
   TITLE_PAUSE = TITLE_MENU + 1,
   TITLE_VICTORY = TITLE_PAUSE + 1,
   TITLE_DEFEAT = TITLE_VICTORY + 1,
@@ -502,7 +504,7 @@ struct Score
 
 struct Timer
 {
-  Entity digits[4];
+  Entity digits[5];
 };
 
 struct UI

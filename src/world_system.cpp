@@ -353,7 +353,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     // Time elapsed
     if (time_granularity <= 0)
     {
-      time_elapsed += 1; // note: this only works if granularity is 1000 ms and time is in seconds
+      time_elapsed += 1;
+      // note: this only works if granularity is 1000 ms and time is in seconds
       time_granularity = TIME_GRANULARITY;
       updateTimer(time_elapsed);
     }
@@ -2162,13 +2163,21 @@ void WorldSystem::updateTimer(int time_elapsed)
         seconds / 10,
         seconds % 10};
 
-    for (int i = 0; i < 4; ++i)
+    int digitIndex = 0;
+    for (int i = 0; i < 5; ++i)
     {
+      // Skip colon entity at index 2
+      if (i == 2)
+        continue;
+
       Entity digitEntity = timer.digits[i];
       if (!registry.renderRequests.has(digitEntity))
         continue;
+
       RenderRequest &rr = registry.renderRequests.get(digitEntity);
-      rr.used_texture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + digits[i]);
+      rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
+          static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + digits[digitIndex]);
+      digitIndex++;
     }
   }
 }

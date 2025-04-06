@@ -145,7 +145,6 @@ class RenderSystem
       textures_path("storyFrames/conclusion_1.png"),
       textures_path("storyFrames/conclusion_2.png"),
       textures_path("storyFrames/conclusion_3.png"),
-      textures_path("storyFrames/conclusion_4.png"),
 
       // Confetti
       textures_path("victory_confetti/frame_00_delay-0.03s.png"),

@@ -2220,10 +2220,9 @@ void WorldSystem::createScreenElements()
 
     // STORY CONCLUSION ///////////////////////////////////////////////////
 
-    createStoryFrame(1, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_1);
-    createStoryFrame(2, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_2);
-    createStoryFrame(3, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_3);
-    createStoryFrame(4, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_4);
+    createStoryFrame(1, 3, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_1);
+    createStoryFrame(2, 3, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_2);
+    createStoryFrame(3, 3, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_3);
 
     // GAME COMPLETE ///////////////////////////////////////////////////////
 

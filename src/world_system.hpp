@@ -242,6 +242,9 @@ private:
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
 
+	// clock for timer
+	std::chrono::steady_clock::time_point game_start_time;
+
 	// use this to handle enemy spawning.
 	/*
 	INPUTS
@@ -282,5 +285,5 @@ private:
 	void shootGrapplePoint();
 	void shootGrapple(vec2 worldMousePos);
 	void updateScore(Entity scoreEntity);
-	void updateTimer(int time_elapsed);
+	void updateTimer(long long time_elapsed);
 };

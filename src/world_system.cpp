@@ -10,6 +10,7 @@
 #include <vector>
 #include <json/json.h>
 #include <box2d/box2d.h>
+#include <chrono>
 
 // internal
 #include "physics_system.hpp"
@@ -337,6 +338,11 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
   title_ss << "Ramster | Level : " << level_selection << " | Time : " << time_elapsed << "s | Kills : " << enemies_killed << " | HP : " << hp << " | FPS : " << fps;
   glfwSetWindowTitle(window, title_ss.str().c_str());
 
+  auto now = std::chrono::steady_clock::now();
+  auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count();
+
+  updateTimer(elapsed_ms);
+
   // Game logic only runs when playing
   if (currentScreen.current_screen == "PLAYING")
   {
@@ -356,7 +362,6 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
       time_elapsed += 1;
       // note: this only works if granularity is 1000 ms and time is in seconds
       time_granularity = TIME_GRANULARITY;
-      updateTimer(time_elapsed);
     }
     else
     {
@@ -953,6 +958,8 @@ std::vector<b2Vec2> WorldSystem::generateTestPoints()
 // Reset the world state to its initial state
 void WorldSystem::restart_game(int level)
 {
+  // start clock
+  game_start_time = std::chrono::steady_clock::now();
 
   // Figure out what we're using for each level
   std::tuple<std::string, TEXTURE_ASSET_ID, MUSIC> level_specs = levelMap.find(level_selection)->second;
@@ -2148,26 +2155,29 @@ void WorldSystem::updateScore(Entity scoreEntity)
   }
 }
 
-void WorldSystem::updateTimer(int time_elapsed)
+void WorldSystem::updateTimer(long long time_elapsed)
 {
   for (Entity &timerEntity : registry.timers.entities)
   {
     Timer &timer = registry.timers.get(timerEntity);
 
-    int minutes = time_elapsed / 60;
-    int seconds = time_elapsed % 60;
+    int minutes = time_elapsed / 60000;
+    int seconds = (time_elapsed / 1000) % 60;
+    int milliseconds = time_elapsed % 1000;
 
-    int digits[4] = {
+    int digits[7] = {
         minutes / 10,
         minutes % 10,
         seconds / 10,
-        seconds % 10};
+        seconds % 10,
+        milliseconds / 100,
+    };
 
     int digitIndex = 0;
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 7; ++i)
     {
       // Skip colon entity at index 2
-      if (i == 2)
+      if (i == 2 || i == 5)
         continue;
 
       Entity digitEntity = timer.digits[i];

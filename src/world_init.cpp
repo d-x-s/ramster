@@ -826,7 +826,7 @@ Entity createScore()
 	registry.uis.emplace(scoreEntity);
 
 	vec2 basePosition = vec2(150, WINDOW_HEIGHT_PX - 50);
-	vec2 digitSize = vec2(40, 50);
+	vec2 digitSize = vec2(30, 40);
 
 	for (int i = 0; i < 4; ++i)
 	{
@@ -861,9 +861,9 @@ Entity createTimer()
 	registry.uis.emplace(timerEntity);
 
 	vec2 basePosition = vec2(150, WINDOW_HEIGHT_PX - 50);
-	vec2 digitSize = vec2(40, 50);
+	vec2 digitSize = vec2(30, 40);
 
-	for (int i = 0; i < 5; ++i)
+	for (int i = 0; i < 7; ++i)
 	{
 		Entity digitEntity = Entity();
 
@@ -876,7 +876,7 @@ Entity createTimer()
 		registry.uis.emplace(digitEntity);
 
 		// Render
-		if (i == 2)
+		if (i == 2 || i == 5)
 		{
 			registry.renderRequests.insert(
 				digitEntity,

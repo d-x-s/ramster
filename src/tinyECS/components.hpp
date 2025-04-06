@@ -504,7 +504,7 @@ struct Score
 
 struct Timer
 {
-  Entity digits[5];
+  Entity digits[7];
 };
 
 struct UI

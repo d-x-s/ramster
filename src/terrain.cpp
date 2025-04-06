@@ -244,7 +244,7 @@ b2BodyId create_chain(b2WorldId worldId, std::vector<vec2> points, bool isLoop, 
     // create physicsBody component to track the terrain shapes.
     Entity entity = Entity();
     PhysicsBody& pb = registry.physicsBodies.emplace(entity);
-	pb.bodyId = bodyId;
+	  pb.bodyId = bodyId;
 
     return bodyId;
 }

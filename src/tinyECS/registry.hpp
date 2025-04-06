@@ -46,9 +46,15 @@ public:
 	ComponentContainer<TutorialTile> tutorialTiles;
 	ComponentContainer<LevelLayer> levelLayers;
 	ComponentContainer<BackgroundLayer> backgroundLayers;
-	ComponentContainer<PlayerVisualLayer> playerVisualLayers;
+	ComponentContainer<PlayerRotatableLayer> playerRotatableLayers;
+	ComponentContainer<PlayerNonRotatableLayer> playerNonRotatableLayers;
+	ComponentContainer<PlayerTopLayer> playerTopLayer;
+	ComponentContainer<PlayerMidLayer> playerMidLayer;
+	ComponentContainer<PlayerBottomLayer> playerBottomLayer;
 	ComponentContainer<GoalZone> goalZones;
 	ComponentContainer<FireBall> fireballs;
+	ComponentContainer<RunAnimation> runAnimations;
+	ComponentContainer<IdleAnimation> idleAnimations;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()

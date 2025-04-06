@@ -211,7 +211,21 @@ enum class TEXTURE_ASSET_ID
 {
 	// Ramster 
 	RAMSTER_DEBUG = 0,
-	RAMSTER_GLASS_FRONT = RAMSTER_DEBUG + 1,
+	RAMSTER_RUN_0 = RAMSTER_DEBUG + 1,
+	RAMSTER_RUN_1 = RAMSTER_RUN_0 + 1,
+	RAMSTER_RUN_2 = RAMSTER_RUN_1 + 1,
+	RAMSTER_RUN_3 = RAMSTER_RUN_2 + 1,
+	RAMSTER_RUN_4 = RAMSTER_RUN_3 + 1,
+	RAMSTER_RUN_5 = RAMSTER_RUN_4 + 1,
+	RAMSTER_RUN_6 = RAMSTER_RUN_5 + 1,
+	RAMSTER_RUN_7 = RAMSTER_RUN_6 + 1,
+	RAMSTER_IDLE_0 = RAMSTER_RUN_7 + 1,
+	RAMSTER_IDLE_1 = RAMSTER_IDLE_0 + 1,
+	RAMSTER_IDLE_2 = RAMSTER_IDLE_1 + 1,
+	RAMSTER_IDLE_3 = RAMSTER_IDLE_2 + 1,
+	RAMSTER_IDLE_4 = RAMSTER_IDLE_3 + 1,
+	RAMSTER_IDLE_5 = RAMSTER_IDLE_4 + 1,
+	RAMSTER_GLASS_FRONT = RAMSTER_IDLE_5 + 1,
 	RAMSTER_GLASS_BACK = RAMSTER_GLASS_FRONT + 1,
 	RAMSTER_GLASS_WALL = RAMSTER_GLASS_BACK + 1,
 
@@ -407,7 +421,8 @@ enum class EFFECT_ASSET_ID
   PARALLAX = VIGNETTE + 1,
   TRANSLUCENT = PARALLAX + 1,
   FIREBALL = TRANSLUCENT + 1,
-  EFFECT_COUNT = FIREBALL + 1
+  RAMSTER = FIREBALL + 1,
+  EFFECT_COUNT = RAMSTER + 1
 };
 const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
@@ -523,7 +538,37 @@ struct BackgroundLayer
 
 };
 
-struct PlayerVisualLayer
+struct PlayerRotatableLayer
+{
+
+};
+
+struct PlayerNonRotatableLayer
+{
+
+};
+
+struct PlayerTopLayer
+{
+
+};
+
+struct PlayerMidLayer
+{
+
+};
+
+struct PlayerBottomLayer
+{
+
+};
+
+struct IdleAnimation
+{
+
+};
+
+struct RunAnimation
 {
 
 };

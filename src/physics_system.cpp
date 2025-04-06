@@ -3,6 +3,7 @@
 #include "world_init.hpp"
 #include <iostream>
 #include "world_system.hpp"
+#include <glm/trigonometric.hpp>
 
 // Constructor
 PhysicsSystem::PhysicsSystem(b2WorldId worldId) : worldId(worldId)
@@ -139,18 +140,51 @@ void PhysicsSystem::step(float elapsed_ms)
 
   PhysicsBody &playerComponent_physicsBody = registry.physicsBodies.get(playerEntity_physicsBody);
   b2BodyId playerBodyID = playerComponent_physicsBody.bodyId;
+
+  // Update player position
   b2Vec2 playerPosition = b2Body_GetPosition(playerBodyID);
-  // Update motion component
   Motion &playerComponent_motion = registry.motions.get(playerEntity_physicsBody);
   playerComponent_motion.position = vec2(playerPosition.x, playerPosition.y);
 
-  // Update all sprite layers related to the player
-  for (int i = 0; i < registry.playerVisualLayers.entities.size(); i++)
+  // Update player rotation
+  b2Rot rotation = b2Body_GetRotation(playerBodyID);
+  float angleRadians = b2Rot_GetAngle(rotation);
+  playerComponent_motion.angle = glm::degrees(angleRadians); 
+
+  // Update rotatable sprite layers related to the player
+  for (int i = 0; i < registry.playerRotatableLayers.entities.size(); i++)
   {
-      Entity playerVisualLayer = registry.playerVisualLayers.entities[i];
-      Motion& visualMotion = registry.motions.get(playerVisualLayer);
-      visualMotion.position = vec2(playerPosition.x, playerPosition.y);
-      visualMotion.angle = playerComponent_motion.angle;
+      Entity rotatableLayer = registry.playerRotatableLayers.entities[i];
+      Motion& rotatableMotion = registry.motions.get(rotatableLayer);
+      rotatableMotion.position = vec2(playerPosition.x, playerPosition.y);
+      rotatableMotion.angle = playerComponent_motion.angle;
+  }
+
+  // Special behavior for the Ramster sprite layers
+  for (int i = 0; i < registry.playerNonRotatableLayers.entities.size(); i++)
+  {
+      Entity nonRotatableLayer = registry.playerNonRotatableLayers.entities[i];
+      Motion& nonRotatableMotion = registry.motions.get(nonRotatableLayer);
+      nonRotatableMotion.position = vec2(playerPosition.x, playerPosition.y);
+
+      if (registry.runAnimations.has(nonRotatableLayer)) {
+          // Tilt angle based on velocity
+          b2Vec2 velocity = b2Body_GetLinearVelocity(playerBodyID);
+          float maxTiltAngle = 15.f;
+          float tilt = -(glm::clamp(velocity.x * 3.f, -maxTiltAngle, maxTiltAngle));
+          nonRotatableMotion.angle = glm::mix(nonRotatableMotion.angle, tilt, 0.25f);
+
+          // Set animation frame time based on speed
+          RenderRequest& rr = registry.renderRequests.get(nonRotatableLayer);
+          float speed = b2Length(velocity);
+
+          const float minFrameTime = 50.f;   // Faster animation when moving quickly
+          const float maxFrameTime = 300.f;  // Slower animation when stationary
+
+          float calculatedFrameTime = maxFrameTime - speed * 0.25;
+
+          rr.animation_frame_time = glm::clamp(calculatedFrameTime, minFrameTime, maxFrameTime);
+      }
   }
 
   // ENEMY ENTITIES
@@ -458,8 +492,7 @@ void PhysicsSystem::step(float elapsed_ms)
   }
 
   update_fireball();
-
-
+  update_player_animation();
 }
 
 void PhysicsSystem::updateGrappleLines() {
@@ -493,7 +526,6 @@ void PhysicsSystem::update_fireball() {
     // Get the player's velocity from Box2D
     b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerPhysics.bodyId);
     float playerSpeed = b2Length(playerVelocity);
-
     b2Vec2 playerDirection = b2Normalize(playerVelocity);
 
     const float fireballAspectRatio = 774.f / 260.f;
@@ -513,7 +545,6 @@ void PhysicsSystem::update_fireball() {
             // Rotate the fireball to point in the same direction as the ball's movement
             float angle = atan2(playerDirection.y, playerDirection.x) * (180.f / M_PI);
             fireballMotion.angle = angle;
-
         }
     }
     else {
@@ -528,4 +559,46 @@ void PhysicsSystem::update_fireball() {
         }
     }
 
+
 }
+
+void PhysicsSystem::update_player_animation() {
+    // Check if there is a player entity
+    if (registry.players.entities.empty() ||
+        registry.idleAnimations.entities.empty() ||
+        registry.runAnimations.entities.empty()) {
+        return;
+    }
+
+    // Get the player entity and its motion and physics components
+    Entity playerEntity = registry.players.entities[0];
+    Motion& playerMotion = registry.motions.get(playerEntity);
+    PhysicsBody& playerPhysics = registry.physicsBodies.get(playerEntity);
+
+    // Get the player's velocity from Box2D
+    b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerPhysics.bodyId);
+    float playerSpeed = b2Length(playerVelocity);
+
+    // Switch between running and idle animation based on player speed
+    if (playerSpeed > 20.0) {
+        for (Entity runAnimation : registry.runAnimations.entities) {
+            RenderRequest& runRenderRequest = registry.renderRequests.get(runAnimation);
+            runRenderRequest.is_visible = true;
+        }
+        for (Entity idleAnimation : registry.idleAnimations.entities) {
+            RenderRequest& idleRenderRequest = registry.renderRequests.get(idleAnimation);
+            idleRenderRequest.is_visible = false;
+        }
+    }
+    else {
+        for (Entity idleAnimation : registry.idleAnimations.entities) {
+            RenderRequest& idleRenderRequest = registry.renderRequests.get(idleAnimation);
+            idleRenderRequest.is_visible = true;
+        }
+        for (Entity runAnimation : registry.runAnimations.entities) {
+            RenderRequest& runRenderRequest = registry.renderRequests.get(runAnimation);
+            runRenderRequest.is_visible = false;
+        }
+    }
+}
+

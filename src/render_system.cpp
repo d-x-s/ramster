@@ -216,21 +216,22 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	Transform transform;
 
 	// Get the actual physics body from registry
-	if (registry.physicsBodies.has(entity)) {
-		PhysicsBody& phys = registry.physicsBodies.get(entity);
+	//if (registry.physicsBodies.has(entity)) {
+	//	PhysicsBody& phys = registry.physicsBodies.get(entity);
 
-		// Get body's world position (correct physics position)
-		// b2Vec2 p = b2Body_GetWorldPoint(phys.bodyId, { 0.0f, 0.0f });
-		// motion.position = vec2(p.x, p.y); // Sync motion position with physics
+	//	// Get body's world position (correct physics position)
+	//	// b2Vec2 p = b2Body_GetWorldPoint(phys.bodyId, { 0.0f, 0.0f });
+	//	// motion.position = vec2(p.x, p.y); // Sync motion position with physics
 
-		// Get body's rotation
-		b2Rot rotation = b2Body_GetRotation(phys.bodyId);
-		float angleRadians = b2Rot_GetAngle(rotation);
-		motion.angle = glm::degrees(angleRadians); // Convert radians to degrees
+	//	// Get body's rotation
+	//	b2Rot rotation = b2Body_GetRotation(phys.bodyId);
+	//	float angleRadians = b2Rot_GetAngle(rotation);
 
-		// Report data
-		// std::cout << "Box2D Ball Body position = (" << b2Body_GetPosition(phys.bodyId).x << ", " << b2Body_GetPosition(phys.bodyId).y << ")\n";
-	}
+	//	motion.angle = glm::degrees(angleRadians); // Convert radians to degrees
+
+	//	// Report data
+	//	// std::cout << "Box2D Ball Body position = (" << b2Body_GetPosition(phys.bodyId).x << ", " << b2Body_GetPosition(phys.bodyId).y << ")\n";
+	//}
 
 	// TRANSLATE: Move to the correct position
 	transform.translate(motion.position);
@@ -259,6 +260,9 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	// handle animation if this render request has animation data embedded
 	assert(registry.renderRequests.has(entity));
 	RenderRequest& render_request = registry.renderRequests.get(entity);
+
+	if (!render_request.is_visible) { return; }
+
 	if (!render_request.animation_frames.empty() && game_active && render_request.is_visible) {
 		render_request.animation_elapsed_time += elapsed_ms;
 
@@ -327,12 +331,12 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 		glBindTexture(GL_TEXTURE_2D, texture_id);
 		gl_has_errors();
 
-		float translucency_factor = 0.40f;
+		float translucency_factor = 0.25f;
 		GLint translucency_factor_loc = glGetUniformLocation(program, "translucent_alpha");
 		glUniform1f(translucency_factor_loc, translucency_factor);
 		gl_has_errors();
 
-		float fireball_factor = 0.60f;
+		float fireball_factor = 0.50f;
 		GLint fireball_factor_loc = glGetUniformLocation(program, "fireball_alpha");
 		glUniform1f(fireball_factor_loc, fireball_factor);
 		gl_has_errors();
@@ -377,6 +381,45 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 		vec2 texture_size = vec2(640.0f, 564.0f);
 		GLint tex_size_loc = glGetUniformLocation(program, "texture_size");
 		glUniform2fv(tex_size_loc, 1, (float*)&texture_size);
+		gl_has_errors();
+	}
+	else if (render_request.used_effect == EFFECT_ASSET_ID::RAMSTER)
+	{
+		GLint in_position_loc = glGetAttribLocation(program, "in_position");
+		GLint in_texcoord_loc = glGetAttribLocation(program, "in_texcoord");
+		gl_has_errors();
+		assert(in_texcoord_loc >= 0);
+
+		glEnableVertexAttribArray(in_position_loc);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
+			sizeof(TexturedVertex), (void*)0);
+		gl_has_errors();
+
+		glEnableVertexAttribArray(in_texcoord_loc);
+		glVertexAttribPointer(
+			in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
+			(void*)sizeof(
+				vec3)); // note the stride to skip the preceeding vertex position
+
+		// Enabling and binding texture to slot 0
+		glActiveTexture(GL_TEXTURE0);
+		gl_has_errors();
+
+		assert(registry.renderRequests.has(entity));
+		GLuint texture_id =
+			texture_gl_handles[(GLuint)registry.renderRequests.get(entity).used_texture];
+
+		glBindTexture(GL_TEXTURE_2D, texture_id);
+		gl_has_errors();
+
+		Entity playerEntity_physicsBody = registry.players.entities[0];
+		PhysicsBody &playerComponent_physicsBody = registry.physicsBodies.get(playerEntity_physicsBody);
+		b2BodyId playerBodyID = playerComponent_physicsBody.bodyId;		
+		b2Vec2 velocity = b2Body_GetLinearVelocity(playerBodyID);
+
+		bool flipTextureX = velocity.x < -0.1f;
+		GLint flip_loc = glGetUniformLocation(program, "u_flipTextureX");
+		glUniform1i(flip_loc, flipTextureX ? 1 : 0);
 		gl_has_errors();
 	}
 	// .obj entities
@@ -563,19 +606,31 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 		}
 
 		// draw all entities (except player entities) with a render request to the frame buffer
-		std::vector<Entity> player_entities;
+		std::vector<Entity> playerBackLayer;
+		std::vector<Entity> playerMidLayer;
+		std::vector<Entity> playerTopLayer;
 		for (Entity entity : registry.renderRequests.entities)
 		{			 
 			RenderRequest& rr = registry.renderRequests.get(entity);
 
-			// collect player related entity for processing last
-			if (registry.players.has(entity) || registry.playerVisualLayers.has(entity))
+			// collect player related entities for processing later
+			if (registry.playerBottomLayer.has(entity))
 			{
-				player_entities.push_back(entity);
+				playerBackLayer.push_back(entity);
+				continue;
+			}
+			if (registry.playerMidLayer.has(entity))
+			{
+				playerMidLayer.push_back(entity);
+				continue;
+			}
+			if (registry.playerTopLayer.has(entity))
+			{
+				playerTopLayer.push_back(entity);
 				continue;
 			}
 			// filter to entities that have a motion component (but not a screen)
-			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity) && !registry.screenElements.has(entity) && rr.is_visible) {
+			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity) && !registry.screenElements.has(entity)) {
 				// Note, its not very efficient to access elements indirectly via the entity
 				// albeit iterating through all Sprites in sequence. A good point to optimize
 				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
@@ -586,8 +641,17 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 			}
 		}
 
-		// draw player layers last
-		for (Entity entity : player_entities)
+		for (Entity entity : playerBackLayer)
+		{
+			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+		}
+
+		for (Entity entity : playerMidLayer)
+		{
+			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+		}
+
+		for (Entity entity : playerTopLayer)
 		{
 			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 		}

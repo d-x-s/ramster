@@ -15,9 +15,8 @@ public:
 	explicit PhysicsSystem(b2WorldId worldId);
 	~PhysicsSystem();
 	void updateGrappleLines();
-
 	void update_fireball();
-
+	void update_player_animation();
 private:
 	b2WorldId worldId;
 };

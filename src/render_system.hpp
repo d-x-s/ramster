@@ -32,6 +32,20 @@ class RenderSystem
   const std::array<std::string, texture_count> texture_paths = {
     // Ramster
     textures_path("projectiles/gold_bubble.png"),
+    textures_path("player/run_0.png"),
+    textures_path("player/run_1.png"),
+    textures_path("player/run_2.png"),
+    textures_path("player/run_3.png"),
+    textures_path("player/run_4.png"),
+    textures_path("player/run_5.png"),
+    textures_path("player/run_6.png"),
+    textures_path("player/run_7.png"),
+    textures_path("player/idle_0.png"),
+    textures_path("player/idle_1.png"),
+    textures_path("player/idle_2.png"),
+    textures_path("player/idle_3.png"),
+    textures_path("player/idle_4.png"),
+    textures_path("player/idle_5.png"),
     textures_path("projectiles/ramster-glass-front.png"),
     textures_path("projectiles/ramster-glass-back.png"),
     textures_path("projectiles/ramster-glass-wall.png"),
@@ -200,6 +214,7 @@ class RenderSystem
       shader_path("parallax"),
       shader_path("translucent"),
       shader_path("fireball"),
+      shader_path("ramster"),
   };
 
   std::array<GLuint, geometry_count> vertex_buffers;

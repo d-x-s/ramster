@@ -1001,21 +1001,44 @@ void WorldSystem::restart_game(int level)
     registry.remove_all_components_of(goalEntity);
   }
 
-  // if (registry.backgroundLayers.size() > 0) {
-  //     // clear parallax entities
-  //     Entity& backgroundEntity = registry.backgroundLayers.entities.back();
-  //     registry.remove_all_components_of(backgroundEntity);
-  //     registry.backgroundLayers.remove(backgroundEntity);
-  // }
-
   while (registry.backgroundLayers.entities.size() > 0)
   {
     registry.backgroundLayers.remove(registry.backgroundLayers.entities.back());
   }
 
-  while (registry.playerVisualLayers.entities.size() > 0)
+  while (registry.playerRotatableLayers.entities.size() > 0)
   {
-    registry.playerVisualLayers.remove(registry.playerVisualLayers.entities.back());
+    registry.playerRotatableLayers.remove(registry.playerRotatableLayers.entities.back());
+  }
+
+  while (registry.playerNonRotatableLayers.entities.size() > 0)
+  {
+      registry.playerNonRotatableLayers.remove(registry.playerNonRotatableLayers.entities.back());
+  }
+
+  while (registry.playerTopLayer.entities.size() > 0)
+  {
+      registry.playerTopLayer.remove(registry.playerTopLayer.entities.back());
+  }
+
+  while (registry.playerMidLayer.entities.size() > 0)
+  {
+      registry.playerMidLayer.remove(registry.playerMidLayer.entities.back());
+  }
+
+  while (registry.playerBottomLayer.entities.size() > 0)
+  {
+      registry.playerBottomLayer.remove(registry.playerBottomLayer.entities.back());
+  }
+
+  while (registry.runAnimations.entities.size() > 0)
+  {
+      registry.runAnimations.remove(registry.runAnimations.entities.back());
+  }
+
+  while (registry.idleAnimations.entities.size() > 0)
+  {
+      registry.idleAnimations.remove(registry.idleAnimations.entities.back());
   }
 
   int grid_line_width = GRID_LINE_WIDTH_PX;

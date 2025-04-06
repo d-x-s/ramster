@@ -174,46 +174,133 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 	auto& camera = registry.cameras.emplace(mainEntity);
 	camera.position = startPos;
 
-	// Helper to create additional visual layer entities
-	auto createVisualLayer = [&](TEXTURE_ASSET_ID textureId, EFFECT_ASSET_ID effectId) {
-		Entity visualEntity = Entity();
+	// Helpers to create additional visual layer entities
+	auto createRotatableLayer = [&](TEXTURE_ASSET_ID textureId, EFFECT_ASSET_ID effectId, std::string layer) {
+		Entity ballVisualEntity = Entity();
 
-		auto& m = registry.motions.emplace(visualEntity);
+		if (layer == "front") {
+			registry.playerTopLayer.emplace(ballVisualEntity);
+		} 
+		else if (layer == "middle") {
+			registry.playerMidLayer.emplace(ballVisualEntity);
+		}
+		else {
+			registry.playerBottomLayer.emplace(ballVisualEntity);
+		}
+
+		auto& m = registry.motions.emplace(ballVisualEntity);
 		m.angle = 0.f;
 		m.position = startPos;
 		m.scale = vec2(2 * circle.radius, 2 * circle.radius);
 
-		registry.playerVisualLayers.emplace(visualEntity);
+		registry.playerRotatableLayers.emplace(ballVisualEntity);
 
 		registry.renderRequests.insert(
-			visualEntity,
+			ballVisualEntity,
 			{
 				textureId,
 				effectId,
 				GEOMETRY_BUFFER_ID::SPRITE
 			}
 		);
+	};
+
+	auto createRamsterRunLayer = [&]() {
+		Entity ramsterVisualEntity = Entity();
+
+		auto& m = registry.motions.emplace(ramsterVisualEntity);
+		m.angle = 0.f;
+		m.position = startPos;
+		m.scale = vec2(2 * circle.radius, 2 * circle.radius);
+
+		registry.playerMidLayer.emplace(ramsterVisualEntity);
+		registry.playerNonRotatableLayers.emplace(ramsterVisualEntity);
+		registry.runAnimations.emplace(ramsterVisualEntity);
+
+		std::vector<TEXTURE_ASSET_ID> frames;
+		frames = {
+			TEXTURE_ASSET_ID::RAMSTER_RUN_0,
+			TEXTURE_ASSET_ID::RAMSTER_RUN_1,
+			TEXTURE_ASSET_ID::RAMSTER_RUN_2,
+			TEXTURE_ASSET_ID::RAMSTER_RUN_3,
+			TEXTURE_ASSET_ID::RAMSTER_RUN_4,
+			TEXTURE_ASSET_ID::RAMSTER_RUN_5,
+			TEXTURE_ASSET_ID::RAMSTER_RUN_6,
+			TEXTURE_ASSET_ID::RAMSTER_RUN_7,
 		};
 
-	// Extra visual sprite layers
-	createVisualLayer(TEXTURE_ASSET_ID::RAMSTER_GLASS_WALL, EFFECT_ASSET_ID::TRANSLUCENT);
-	createVisualLayer(TEXTURE_ASSET_ID::RAMSTER_GLASS_BACK, EFFECT_ASSET_ID::TEXTURED);
+		registry.renderRequests.insert(
+			ramsterVisualEntity,
+			{
+				frames[0],
+				EFFECT_ASSET_ID::RAMSTER,
+				GEOMETRY_BUFFER_ID::SPRITE,
+				frames,
+				{},
+				true,
+				true,
+				100.0f,
+				0.0f,
+				0
+			}
+		);
+	};
 
-	// Main render layer
-	registry.renderRequests.insert(
-		mainEntity,
-		{
-			TEXTURE_ASSET_ID::RAMSTER_GLASS_FRONT,
-			EFFECT_ASSET_ID::TEXTURED,
-			GEOMETRY_BUFFER_ID::SPRITE
-		}
-	);
+	auto createRamsterIdleLayer = [&]() {
+		Entity ramsterVisualEntity = Entity();
+
+		auto& m = registry.motions.emplace(ramsterVisualEntity);
+		m.angle = 0.f;
+		m.position = startPos;
+		m.scale = vec2(2 * circle.radius, 2 * circle.radius);
+
+		registry.playerMidLayer.emplace(ramsterVisualEntity);
+		registry.playerNonRotatableLayers.emplace(ramsterVisualEntity);
+		registry.idleAnimations.emplace(ramsterVisualEntity);
+
+		std::vector<TEXTURE_ASSET_ID> frames;
+		frames = {
+			TEXTURE_ASSET_ID::RAMSTER_IDLE_0,
+			TEXTURE_ASSET_ID::RAMSTER_IDLE_1,
+			TEXTURE_ASSET_ID::RAMSTER_IDLE_2,
+			TEXTURE_ASSET_ID::RAMSTER_IDLE_3,
+			TEXTURE_ASSET_ID::RAMSTER_IDLE_4,
+			TEXTURE_ASSET_ID::RAMSTER_IDLE_5,
+		};
+
+		registry.renderRequests.insert(
+			ramsterVisualEntity,
+			{
+				frames[0],
+				EFFECT_ASSET_ID::RAMSTER,
+				GEOMETRY_BUFFER_ID::SPRITE,
+				frames,
+				{},
+				true,
+				false,
+				200.0f,
+				0.0f,
+				0
+			}
+		);
+	};
+
+	// ========================================================================================================
+	// create entities for Ball and Ramster layers
+	// ========================================================================================================
+	// Glass ball (rotatable)
+	createRotatableLayer(TEXTURE_ASSET_ID::RAMSTER_GLASS_WALL, EFFECT_ASSET_ID::TRANSLUCENT, "front");
+	createRotatableLayer(TEXTURE_ASSET_ID::RAMSTER_GLASS_BACK, EFFECT_ASSET_ID::TEXTURED, "back");
+	createRotatableLayer(TEXTURE_ASSET_ID::RAMSTER_GLASS_FRONT, EFFECT_ASSET_ID::TEXTURED, "front");
+
+	// Ramster (non-rotatable)
+	createRamsterRunLayer();
+	createRamsterIdleLayer();
 
 	// ========================================================================================================
 	// create new entity for fireball fx
 	// ========================================================================================================
-
-	createFireball(startPos);
+	// createFireball(startPos);
 
 	return mainEntity;
 }
@@ -229,7 +316,6 @@ Entity createFireball(vec2 startPos) {
 	fireball_motion.scale = vec2(200.f, 75.f);
 	fireball_motion.angle = 0.f;
 	fireball_motion.position = startPos;
-
 
 	std::vector<TEXTURE_ASSET_ID> frames;
 

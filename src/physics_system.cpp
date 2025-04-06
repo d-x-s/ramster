@@ -564,44 +564,50 @@ void PhysicsSystem::updateHealthBar(vec2 camPos)
 
 void PhysicsSystem::updateScore(vec2 camPos)
 {
-  const float fullScoreWidth = 4 * 40.f + 3 * 4.f;                              // 4 digits * width + 3 gaps
-  const float baseX = camPos.x + WINDOW_WIDTH_PX / 2.f - fullScoreWidth - 40.f; // 40 px margin from right edge
+  const float digitSpacing = 4.f;
+  const float digitWidth = 30.f;
+  const float fullDigitWidth = digitWidth + digitSpacing;
+  const float rightMargin = 40.f;
+
+  const float rightEdge = camPos.x + WINDOW_WIDTH_PX / 2.f - rightMargin;
   const float baseY = camPos.y + WINDOW_HEIGHT_PX / 2.f - 40.f - 60.0f;
 
   for (Entity scoreEntity : registry.scores.entities)
   {
     Score &score = registry.scores.get(scoreEntity);
-    vec2 digitSize = vec2(30.f, 40.f);
 
     for (int i = 0; i < 4; ++i)
     {
       Entity digitEntity = score.digits[i];
       Motion &motion = registry.motions.get(digitEntity);
 
-      vec2 offset = vec2(i * (digitSize.x + 4.f), 0); // 4 px spacing between digits
-      motion.position = vec2(baseX + offset.x, baseY);
+      float x = rightEdge - (3 - i) * fullDigitWidth;
+      motion.position = vec2(x, baseY);
     }
   }
 }
 
 void PhysicsSystem::updateTimer(vec2 camPos)
 {
-  const float fullScoreWidth = 7 * 40.f + 3 * 4.f;                              // 7 digits * width + 3 gaps
-  const float baseX = camPos.x + WINDOW_WIDTH_PX / 2.f - fullScoreWidth - 40.f; // 40 px margin from right edge
-  const float baseY = camPos.y + WINDOW_HEIGHT_PX / 2.f - 40.f;                 // 40 px from top
+  const float digitSpacing = 4.f;
+  const float digitWidth = 30.f;
+  const float fullDigitWidth = digitWidth + digitSpacing;
+  const float rightMargin = 40.f;
+
+  const float rightEdge = camPos.x + WINDOW_WIDTH_PX / 2.f - rightMargin;
+  const float baseY = camPos.y + WINDOW_HEIGHT_PX / 2.f - 40.f;
 
   for (Entity timerEntity : registry.timers.entities)
   {
     Timer &timer = registry.timers.get(timerEntity);
-    vec2 digitSize = vec2(30.f, 40.f);
 
     for (int i = 0; i < 7; ++i)
     {
       Entity digitEntity = timer.digits[i];
       Motion &motion = registry.motions.get(digitEntity);
 
-      vec2 offset = vec2(i * (digitSize.x + 4.f), 0); // 4 px spacing between digits
-      motion.position = vec2(baseX + offset.x, baseY);
+      float x = rightEdge - (6 - i) * fullDigitWidth;
+      motion.position = vec2(x, baseY);
     }
   }
 }

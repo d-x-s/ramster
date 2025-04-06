@@ -46,9 +46,9 @@ class RenderSystem
     textures_path("player/idle_3.png"),
     textures_path("player/idle_4.png"),
     textures_path("player/idle_5.png"),
-    textures_path("projectiles/ramster-glass-front.png"),
-    textures_path("projectiles/ramster-glass-back.png"),
-    textures_path("projectiles/ramster-glass-wall.png"),
+    textures_path("projectiles/glass-front.png"),
+    textures_path("projectiles/glass-back.png"),
+    textures_path("projectiles/glass-wall.png"),
 
     // Grapple
     textures_path("projectiles/grapple_point.png"),

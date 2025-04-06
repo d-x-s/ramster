@@ -332,15 +332,19 @@ void WorldSystem::handleRollingSfx() {
     PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
     b2BodyId bodyId = phys.bodyId;
 
+    // Current Screen
+    Entity currScreenEntity = registry.currentScreen.entities[0];
+    CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
+
     bool& isGroundedRef = registry.playerPhysics.get(playerEntity).isGrounded;
     b2Vec2 playerVelocity = b2Body_GetLinearVelocity(bodyId);
 
-    if (isGroundedRef && b2Length(playerVelocity) >=70) {
+    if (isGroundedRef && b2Length(playerVelocity) >=70 && game_active && currentScreen.current_screen == "PLAYING") {
         // start audio on loop.
         if (!player.isCurrentlyRolling) {
 			player.isCurrentlyRolling = true;
             Mix_HaltChannel(7);
-            Mix_FadeInChannelTimed(7, ball_rolling, -1, 320, -1);
+            Mix_FadeInChannelTimed(7, ball_rolling, -1, 600, -1);
 			Mix_Volume(7, 75);
         }
 
@@ -348,7 +352,7 @@ void WorldSystem::handleRollingSfx() {
     else {
 		// stop audio and update isCurrentlyRolling
         player.isCurrentlyRolling = false;
-        Mix_FadeOutChannel(7, 300);
+        Mix_FadeOutChannel(7, 450);
     }
 }
 
@@ -359,9 +363,13 @@ void WorldSystem::handleFlammingSfx() {
     PhysicsBody& phys = registry.physicsBodies.get(playerEntity);
     b2BodyId bodyId = phys.bodyId;
 
+    // Current Screen
+    Entity currScreenEntity = registry.currentScreen.entities[0];
+    CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
+
     b2Vec2 playerVelocity = b2Body_GetLinearVelocity(bodyId);
 
-    if (b2Length(playerVelocity) >= MIN_COLLISION_SPEED) {
+    if (b2Length(playerVelocity) >= MIN_COLLISION_SPEED && game_active && currentScreen.current_screen == "PLAYING") {
         // start audio on loop.
         if (!player.isCurrentlyFlamming) {
             player.isCurrentlyFlamming = true;

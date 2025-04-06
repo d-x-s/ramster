@@ -214,7 +214,7 @@ class RenderSystem
       shader_path("parallax"),
       shader_path("translucent"),
       shader_path("fireball"),
-      shader_path("ramster"),
+      shader_path("player"),
   };
 
   std::array<GLuint, geometry_count> vertex_buffers;

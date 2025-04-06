@@ -62,6 +62,14 @@ WorldSystem::~WorldSystem()
     Mix_FreeMusic(background_music_windcatcher);
   if (background_music_promenade != nullptr)
     Mix_FreeMusic(background_music_promenade);
+  if (background_music_spaba != nullptr)
+    Mix_FreeMusic(background_music_spaba);
+  if (background_music_cottonplanes != nullptr)
+    Mix_FreeMusic(background_music_cottonplanes);
+  if (background_music_pencilcrayons != nullptr)
+    Mix_FreeMusic(background_music_pencilcrayons);
+  if (background_music_moontownshores != nullptr)
+    Mix_FreeMusic(background_music_moontownshores);
   if (fx_destroy_enemy != nullptr)
     Mix_FreeChunk(fx_destroy_enemy);
   if (fx_destroy_enemy_fail != nullptr)
@@ -76,6 +84,10 @@ WorldSystem::~WorldSystem()
     Mix_FreeChunk(chicken_dead_sound);
   if (chicken_eat_sound != nullptr)
     Mix_FreeChunk(chicken_eat_sound);
+  if (ball_rolling != nullptr)
+    Mix_FreeChunk(ball_rolling);
+  if (ball_flamming != nullptr)
+    Mix_FreeChunk(ball_flamming);
   Mix_CloseAudio();
 
   // Destroy all created components
@@ -187,6 +199,10 @@ bool WorldSystem::start_and_load_sounds()
   background_music_paradrizzle = Mix_LoadMUS(audio_path("music_paradrizzle.wav").c_str());
   background_music_windcatcher = Mix_LoadMUS(audio_path("music_windcatcher.wav").c_str());
   background_music_promenade = Mix_LoadMUS(audio_path("music_promenade.wav").c_str());
+  background_music_spaba = Mix_LoadMUS(audio_path("music_spaba.wav").c_str());
+  background_music_cottonplanes = Mix_LoadMUS(audio_path("music_cottonplanes.wav").c_str());
+  background_music_pencilcrayons = Mix_LoadMUS(audio_path("music_pencilcrayons.wav").c_str());
+  background_music_moontownshores = Mix_LoadMUS(audio_path("music_moontownshores.wav").c_str());
 
   // sound fx
   fx_destroy_enemy = Mix_LoadWAV(audio_path("fx_destroy_enemy.wav").c_str());
@@ -196,6 +212,8 @@ bool WorldSystem::start_and_load_sounds()
   fx_victory = Mix_LoadWAV(audio_path("fx_victory.wav").c_str());
   chicken_dead_sound = Mix_LoadWAV(audio_path("chicken_dead.wav").c_str());
   chicken_eat_sound = Mix_LoadWAV(audio_path("chicken_eat.wav").c_str());
+  ball_rolling = Mix_LoadWAV(audio_path("ball_rolling_sfx.wav").c_str());
+  ball_flamming = Mix_LoadWAV(audio_path("fire_woosh_sfx.wav").c_str());
 
   if (
       background_music == nullptr ||
@@ -204,6 +222,12 @@ bool WorldSystem::start_and_load_sounds()
       background_music_paradrizzle == nullptr ||
       background_music_windcatcher == nullptr ||
       background_music_promenade == nullptr ||
+      background_music_spaba == nullptr ||
+      background_music_cottonplanes == nullptr ||
+      background_music_pencilcrayons == nullptr ||
+      background_music_moontownshores == nullptr ||
+      ball_rolling == nullptr ||
+      ball_flamming == nullptr ||
       fx_destroy_enemy == nullptr ||
       fx_destroy_enemy_fail == nullptr ||
       fx_jump == nullptr ||
@@ -219,6 +243,10 @@ bool WorldSystem::start_and_load_sounds()
             audio_path("music_paradrizzle.wav").c_str(),
             audio_path("music_windcatcher.wav").c_str(),
             audio_path("music_promenade.wav").c_str(),
+            audio_path("music_spaba.wav").c_str(),
+            audio_path("music_cottonplanes.wav").c_str(),
+            audio_path("music_pencilcrayons.wav").c_str(),
+            audio_path("music_moontownshores.wav").c_str(),
 
             // sound fx
             audio_path("fx_destroy_enemy.wav").c_str(),
@@ -239,56 +267,128 @@ void WorldSystem::playMusic(MUSIC music)
   {
   case MUSIC::MENU:
     Mix_PlayMusic(background_music_memorybranch, -1);
-    // current_music = MUSIC::MENU;
     break;
   case MUSIC::OBLANKA:
     Mix_PlayMusic(background_music_oblanka, -1);
-    // current_music = MUSIC::LEVEL_1;
     break;
   case MUSIC::PARADRIZZLE:
     Mix_PlayMusic(background_music_paradrizzle, -1);
-    // current_music = MUSIC::LEVEL_2;
     break;
   case MUSIC::WINDCATCHER:
     Mix_PlayMusic(background_music_windcatcher, -1);
-    // current_music = MUSIC::LEVEL_3;
     break;
   case MUSIC::PROMENADE:
     Mix_PlayMusic(background_music_promenade, -1);
-    // current_music = MUSIC::LEVEL_4;
     break;
-  case MUSIC::STORY_INTRO:
-    Mix_PlayMusic(background_music_story_intro, -1);
+  case MUSIC::SPABA:
+    Mix_PlayMusic(background_music_spaba, -1);
     break;
-  case MUSIC::STORY_CONCLUSION:
-    Mix_PlayMusic(background_music_story_conclusion, -1);
+  case MUSIC::COTTONPLANES:
+    Mix_PlayMusic(background_music_cottonplanes, -1);
+    break;
+  case MUSIC::PENCILCRAYONS:
+    Mix_PlayMusic(background_music_pencilcrayons, -1);
+    break;
+  case MUSIC::MOONTOWNSHORES:
+    Mix_PlayMusic(background_music_moontownshores, -1);
     break;
   default:
     Mix_PlayMusic(background_music_memorybranch, -1);
-    // current_music = MUSIC::MENU;
     break;
   }
+
+  Mix_VolumeMusic(4);
 }
 
 void WorldSystem::playSoundEffect(FX effect)
 {
+  int channel;
   switch (effect)
   {
   case FX::FX_DESTROY_ENEMY:
-    Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+    channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
     break;
   case FX::FX_DESTROY_ENEMY_FAIL:
-    Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
+    channel = Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
     break;
   case FX::FX_JUMP:
-    Mix_PlayChannel(-1, fx_jump, 0);
+    channel = Mix_PlayChannel(-1, fx_jump, 0);
     break;
   case FX::FX_GRAPPLE:
-    Mix_PlayChannel(-1, fx_grapple, 0);
+    channel = Mix_PlayChannel(-1, fx_grapple, 0);
     break;
   default:
-    Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+    channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
     break;
+  }
+
+  Mix_Volume(channel, 5);
+}
+
+// NOTE: function should be called after update_isGrounded() call for accuracy.
+void WorldSystem::handleRollingSfx()
+{
+  Entity playerEntity = registry.players.entities[0];
+  Player &player = registry.players.get(playerEntity);
+  PhysicsBody &phys = registry.physicsBodies.get(playerEntity);
+  b2BodyId bodyId = phys.bodyId;
+
+  // Current Screen
+  Entity currScreenEntity = registry.currentScreen.entities[0];
+  CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
+
+  bool &isGroundedRef = registry.playerPhysics.get(playerEntity).isGrounded;
+  b2Vec2 playerVelocity = b2Body_GetLinearVelocity(bodyId);
+
+  if (isGroundedRef && b2Length(playerVelocity) >= 70 && game_active && currentScreen.current_screen == "PLAYING")
+  {
+    // start audio on loop.
+    if (!player.isCurrentlyRolling)
+    {
+      player.isCurrentlyRolling = true;
+      Mix_HaltChannel(7);
+      Mix_FadeInChannelTimed(7, ball_rolling, -1, 600, -1);
+      Mix_Volume(7, 75);
+    }
+  }
+  else
+  {
+    // stop audio and update isCurrentlyRolling
+    player.isCurrentlyRolling = false;
+    Mix_FadeOutChannel(7, 450);
+  }
+}
+
+// NOTE: function should be called after update_isGrounded() call for accuracy.
+void WorldSystem::handleFlammingSfx()
+{
+  Entity playerEntity = registry.players.entities[0];
+  Player &player = registry.players.get(playerEntity);
+  PhysicsBody &phys = registry.physicsBodies.get(playerEntity);
+  b2BodyId bodyId = phys.bodyId;
+
+  // Current Screen
+  Entity currScreenEntity = registry.currentScreen.entities[0];
+  CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
+
+  b2Vec2 playerVelocity = b2Body_GetLinearVelocity(bodyId);
+
+  if (b2Length(playerVelocity) >= MIN_COLLISION_SPEED && game_active && currentScreen.current_screen == "PLAYING")
+  {
+    // start audio on loop.
+    if (!player.isCurrentlyFlamming)
+    {
+      player.isCurrentlyFlamming = true;
+      Mix_HaltChannel(6);
+      Mix_FadeInChannelTimed(6, ball_flamming, -1, 100, -1);
+      Mix_Volume(6, 75);
+    }
+  }
+  else
+  {
+    // stop audio and update isCurrentlyRolling
+    player.isCurrentlyFlamming = false;
+    Mix_FadeOutChannel(6, 200);
   }
 }
 
@@ -353,80 +453,12 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
     if (game_active)
     {
-
       handleGameover(currentScreen);
       update_isGrounded();
       handle_movement();
       checkGrappleGrounded();
-
-      //        // LLNOTE
-      //        // Check if player reached spawn enemies_killed of enemies.
-      //        // iterate over every point that player needs to reach, and if they haven't reached it yet, check if they've reached it.
-      //        for (auto& i : spawnMap)
-      //        {
-      //            if (!i.second)
-      //            {
-      //
-      //                i.second = playerReachedTile(ivec2(i.first[0], i.first[1])); // note conversion from vector<int> to ivec2
-      //                // debug
-      //// if (playerReachedTile(ivec2(i.first[0], i.first[1]))) {
-      ////     std::cout << "PLAYER REACHED POINT: " << i.first[0] << ", " << i.first[1] << std::endl;
-      ////     std::cout << "WHAT MAP SAYS: " << spawnMap[i.first] << std::endl;
-      //// }
-      //            }
-      //        }
-
-      // Removing out of screen entities
-      auto &motions_registry = registry.motions;
-
-      /* Given that stuff bounce off map walls we will not need this..
-      // {{{ OK }}} ??? this is outdated code --> change to remove entities that leave on both the LEFT or RIGHT side
-      // Remove entities that leave the screen on the left side
-      // Iterate backwards to be able to remove without interfering with the next object to visit
-      // (the containers exchange the last element with the current)
-      for (int i = (int)motions_registry.components.size() - 1; i >= 0; --i) {
-        Motion& motion = motions_registry.components[i];
-
-        float right_edge = motion.position.x + abs(motion.scale.x);  // Rightmost x-coordinate
-        float left_edge = motion.position.x - motion.scale.x * 0.5f; // Leftmost x-coordinate
-
-        if (right_edge < 0.f || left_edge > WINDOW_WIDTH_PX) {
-          if (!registry.players.has(motions_registry.entities[i])) { // don't remove the player (outdated?)
-            // if it is an invader that has exited the screen, trigger game over
-            if (registry.invaders.has(motions_registry.entities[i])) { stop_game(); };
-            registry.remove_all_components_of(motions_registry.entities[i]);
-          }
-        }
-      }
-      */
-
-      // Spawns new enemies. borrows code from invader spawning.
-      next_enemy_spawn -= elapsed_ms_since_last_update * current_speed;
-      if (next_enemy_spawn <= 0.f)
-      {
-
-        // reset timer
-        next_enemy_spawn = (ENEMY_SPAWN_RATE_MS / 2) + uniform_dist(rng) * (ENEMY_SPAWN_RATE_MS / 2);
-
-        // figure out x and y coordinates
-        float max_x = WORLD_WIDTH_PX * 3.0;  // this is also the room width
-        float max_y = WORLD_HEIGHT_PX - 100; // this is also room height, adjust by -100 to account for map border
-
-        // random x and y coordinates on the map to spawn enemy
-        float pos_x = uniform_dist(rng) * max_x;
-        float pos_y = max_y; // just spawn on top of screen for now until terrain defined uniform_dist(rng) * max_y;
-
-        // create enemy at random position
-        // setting arbitrary pos_y will allow the enemies to spawn pretty much everywhere. Add 50 so it doesn't spawn on edge.
-        // handleEnemySpawning(true, COMMON, 1, vec2(pos_x, pos_y + 50), vec2(-1, -1));
-        // handleEnemySpawning(true, SWARM, 5, vec2(pos_x, pos_y + 50), vec2(-1, -1));
-
-        // LLNOTE
-        // example of spawning using player-reached-point map:
-        // note: there might be a delay before this happens because of next_enemy_spawn
-        // handleEnemySpawning(spawnMap[{9, 6}], OBSTACLE, 1, vec2(9, 6), vec2(9, 11));
-        // spawnMap[{9, 6}] = false;
-      }
+      handleRollingSfx();
+      handleFlammingSfx();
     }
 
     // This handles the enemy spawning. Refer copied comment from spawn map in header file:
@@ -511,7 +543,15 @@ bool WorldSystem::is_in_goal()
     {
       if (!goalZone.hasTriggered)
       {
-        Mix_PlayChannel(-1, fx_victory, 0);
+        //         std::cout << "=====================================================<VICTORY!>=====================================================" << std::endl;
+        // std::cout << "player location: " << player_position.x << ", " << player_position.y << std::endl;
+        // std::cout << "goal zone location (bl): " << bl.x << ", " << bl.y << std::endl;
+        // std::cout << "goal zone location (tr): " << tr.x << ", " << tr.y << std::endl;
+        // std::cout << "number of goal posts: " << registry.goalZones.entities.size() << std::endl;
+
+        int channel = Mix_PlayChannel(-1, fx_victory, 0);
+        Mix_Volume(channel, 4);
+        createConfetti(vec2((bl.x + tr.x) / 2, bl.y + 60.f));
       }
 
       goalZone.hasTriggered = true;
@@ -1013,32 +1053,32 @@ void WorldSystem::restart_game(int level)
 
   while (registry.playerNonRotatableLayers.entities.size() > 0)
   {
-      registry.playerNonRotatableLayers.remove(registry.playerNonRotatableLayers.entities.back());
+    registry.playerNonRotatableLayers.remove(registry.playerNonRotatableLayers.entities.back());
   }
 
   while (registry.playerTopLayer.entities.size() > 0)
   {
-      registry.playerTopLayer.remove(registry.playerTopLayer.entities.back());
+    registry.playerTopLayer.remove(registry.playerTopLayer.entities.back());
   }
 
   while (registry.playerMidLayer.entities.size() > 0)
   {
-      registry.playerMidLayer.remove(registry.playerMidLayer.entities.back());
+    registry.playerMidLayer.remove(registry.playerMidLayer.entities.back());
   }
 
   while (registry.playerBottomLayer.entities.size() > 0)
   {
-      registry.playerBottomLayer.remove(registry.playerBottomLayer.entities.back());
+    registry.playerBottomLayer.remove(registry.playerBottomLayer.entities.back());
   }
 
   while (registry.runAnimations.entities.size() > 0)
   {
-      registry.runAnimations.remove(registry.runAnimations.entities.back());
+    registry.runAnimations.remove(registry.runAnimations.entities.back());
   }
 
   while (registry.idleAnimations.entities.size() > 0)
   {
-      registry.idleAnimations.remove(registry.idleAnimations.entities.back());
+    registry.idleAnimations.remove(registry.idleAnimations.entities.back());
   }
 
   int grid_line_width = GRID_LINE_WIDTH_PX;
@@ -1853,13 +1893,13 @@ bool WorldSystem::checkPlayerReachedArea(ivec2 area_bottom_left, ivec2 area_top_
   return player_inside_trigger_area;
 }
 
-void WorldSystem::levelHelper(int level, CurrentScreen& currentScreen)
+void WorldSystem::levelHelper(int level, CurrentScreen &currentScreen)
 {
   // Player sent to intro if they select level 1
-  if (level == 1) 
+  if (level == 1)
   {
-      currentScreen.current_screen = "STORY INTRO";
-      playMusic(MUSIC::STORY_INTRO);
+    currentScreen.current_screen = "STORY INTRO";
+    playMusic(MUSIC::MENU);
   }
   else if (level <= levelMap.size() && level > 0)
   {
@@ -1868,7 +1908,6 @@ void WorldSystem::levelHelper(int level, CurrentScreen& currentScreen)
 
     currentScreen.current_screen = "PLAYING";
     restart_game(level);
-
   }
 }
 
@@ -1912,14 +1951,16 @@ void WorldSystem::handleGameover(CurrentScreen &currentScreen)
   {
     if (timer_game_end_screen <= 0)
     {
-        // Make sure to show conclusion sequence if finished level 12
-        if (current_level == 12) {
-            currentScreen.current_screen = "STORY CONCLUSION";
-            playMusic(MUSIC::STORY_CONCLUSION);
-        }
-        else {
-            currentScreen.current_screen = "VICTORY";
-        }
+      // Make sure to show conclusion sequence if finished level 12
+      if (current_level == 12)
+      {
+        currentScreen.current_screen = "STORY CONCLUSION";
+        playMusic(MUSIC::MENU);
+      }
+      else
+      {
+        currentScreen.current_screen = "VICTORY";
+      }
     }
     else
     {
@@ -1978,63 +2019,70 @@ void WorldSystem::handleButtonPress(Entity buttonEntity)
 
   if (function == "LEVEL BUTTON")
   {
-      // Level buttons have an extra level component that we can use to select the level with
-      Level level = registry.levels.get(buttonEntity);
+    // Level buttons have an extra level component that we can use to select the level with
+    Level level = registry.levels.get(buttonEntity);
 
-      levelHelper(level.level, currentScreen);
+    levelHelper(level.level, currentScreen);
   }
-  else if (function == "STORY FRAME BUTTON") {
+  else if (function == "STORY FRAME BUTTON")
+  {
 
-      // This button is a bit of a special case, as it could be any of the frames, but we only want to deal with the smallest one in the sequence. So we'll be looking
-      // for the entity representing the EARLIEST frame as opposed to the button entity itself.
+    // This button is a bit of a special case, as it could be any of the frames, but we only want to deal with the smallest one in the sequence. So we'll be looking
+    // for the entity representing the EARLIEST frame as opposed to the button entity itself.
 
-      // Get the smallest story frame on current screen
-      Entity storyFrameToHandle;
-      int lowest_frame = 9999;
+    // Get the smallest story frame on current screen
+    Entity storyFrameToHandle;
+    int lowest_frame = 9999;
 
-      for (Entity entity : registry.storyFrames.entities) {
+    for (Entity entity : registry.storyFrames.entities)
+    {
 
-          // We only want story frames for the current screen
-          ScreenElement screenElement = registry.screenElements.get(entity);
-          if (screenElement.screen == currentScreen.current_screen) {
+      // We only want story frames for the current screen
+      ScreenElement screenElement = registry.screenElements.get(entity);
+      if (screenElement.screen == currentScreen.current_screen)
+      {
 
-              // If this story frame's the lowest in the sequence then we want to render it.
-              StoryFrame storyFrame = registry.storyFrames.get(entity);
-              if (storyFrame.frame < lowest_frame) {
-                  storyFrameToHandle = entity;
-                  lowest_frame = storyFrame.frame;
-              }
-          }
+        // If this story frame's the lowest in the sequence then we want to render it.
+        StoryFrame storyFrame = registry.storyFrames.get(entity);
+        if (storyFrame.frame < lowest_frame)
+        {
+          storyFrameToHandle = entity;
+          lowest_frame = storyFrame.frame;
+        }
+      }
+    }
+
+    // Get the storyframe for this entity
+    StoryFrame storyFrame = registry.storyFrames.get(storyFrameToHandle);
+    std::cout << "STORY FRAME: " << storyFrame.frame << "MAX FRAME: " << storyFrame.max_frame << std::endl;
+
+    // If it's the last frame in the sequence we go to the next screen
+    if (storyFrame.frame == storyFrame.max_frame)
+    {
+
+      if (currentScreen.current_screen == "STORY INTRO")
+      {
+
+        current_level = 1;
+        currentScreen.current_screen = "PLAYING";
+        restart_game(1);
       }
 
-      // Get the storyframe for this entity
-      StoryFrame storyFrame = registry.storyFrames.get(storyFrameToHandle);
-      std::cout << "STORY FRAME: " << storyFrame.frame << "MAX FRAME: " << storyFrame.max_frame << std::endl;
-
-      // If it's the last frame in the sequence we go to the next screen
-      if (storyFrame.frame == storyFrame.max_frame) {
-
-          if (currentScreen.current_screen == "STORY INTRO") {
-
-              current_level = 1;
-              currentScreen.current_screen = "PLAYING";
-              restart_game(1);
-
-          }
-
-          else if (currentScreen.current_screen == "STORY CONCLUSION") {
-              currentScreen.current_screen = "GAME COMPLETE";
-              playMusic(MUSIC::MENU);
-          }
+      else if (currentScreen.current_screen == "STORY CONCLUSION")
+      {
+        currentScreen.current_screen = "GAME COMPLETE";
+        playMusic(MUSIC::MENU);
       }
-      // Otherwise we delete the EARLIEST story frame so the remaining frames get rendered
-      else {
-          registry.remove_all_components_of(storyFrameToHandle);
-      }
-
+    }
+    // Otherwise we delete the EARLIEST story frame so the remaining frames get rendered
+    else
+    {
+      registry.remove_all_components_of(storyFrameToHandle);
+    }
   }
-  else if (function == "NEXT LEVEL") {
-      levelHelper(current_level + 1, currentScreen);
+  else if (function == "NEXT LEVEL")
+  {
+    levelHelper(current_level + 1, currentScreen);
   }
   else if (function == "EXIT GAME")
   {
@@ -2043,7 +2091,7 @@ void WorldSystem::handleButtonPress(Entity buttonEntity)
   else if (function == "START GAME")
   {
 
-      currentScreen.current_screen = "LEVEL SELECT";
+    currentScreen.current_screen = "LEVEL SELECT";
   }
   else if (function == "RESUME")
   {
@@ -2093,7 +2141,6 @@ void WorldSystem::createScreenElements()
         "EXIT GAME", "MAIN MENU", TEXTURE_ASSET_ID::BUTTON_EXITGAME,
         256, 128,
         vec2(200, -200));
-
 
     // LEVEL SELECT ////////////////////////////////////////////////////////
     // Row 1
@@ -2187,7 +2234,6 @@ void WorldSystem::createScreenElements()
         256, 128,
         vec2(400, -200));
 
-
     // VICTORY ////////////////////////////////////////////////////////
 
     // Title
@@ -2209,7 +2255,6 @@ void WorldSystem::createScreenElements()
         "NEXT LEVEL", "VICTORY", TEXTURE_ASSET_ID::BUTTON_LVLUP,
         256, 128,
         vec2(200, -200));
-
 
     // DEFEAT ////////////////////////////////////////////////////////
 
@@ -2238,8 +2283,7 @@ void WorldSystem::createScreenElements()
         "MAIN MENU", "DEFEAT", TEXTURE_ASSET_ID::BUTTON_MAINMENU,
         256, 128,
         vec2(400, -200));
-  
-    
+
     // STORY INTRO /////////////////////////////////////////////////////////
 
     createStoryFrame(1, 4, "STORY INTRO", TEXTURE_ASSET_ID::STORYFRAME_INTRO_1);
@@ -2247,14 +2291,12 @@ void WorldSystem::createScreenElements()
     createStoryFrame(3, 4, "STORY INTRO", TEXTURE_ASSET_ID::STORYFRAME_INTRO_3);
     createStoryFrame(4, 4, "STORY INTRO", TEXTURE_ASSET_ID::STORYFRAME_INTRO_4);
 
-
     // STORY CONCLUSION ///////////////////////////////////////////////////
 
     createStoryFrame(1, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_1);
     createStoryFrame(2, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_2);
     createStoryFrame(3, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_3);
     createStoryFrame(4, 4, "STORY CONCLUSION", TEXTURE_ASSET_ID::STORYFRAME_CONCLUSION_4);
-
 
     // GAME COMPLETE ///////////////////////////////////////////////////////
 
@@ -2271,6 +2313,5 @@ void WorldSystem::createScreenElements()
         "MAIN MENU", "GAME COMPLETE", TEXTURE_ASSET_ID::BUTTON_MAINMENU,
         256, 128,
         vec2(0, -200));
-
-    }
+  }
 }

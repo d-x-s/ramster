@@ -97,6 +97,10 @@ private:
   Mix_Music* background_music_paradrizzle;
   Mix_Music* background_music_windcatcher;
   Mix_Music* background_music_promenade;
+  Mix_Music* background_music_spaba;
+  Mix_Music* background_music_cottonplanes;
+  Mix_Music* background_music_pencilcrayons;
+  Mix_Music* background_music_moontownshores;
 
   // fx references
   Mix_Chunk* fx_destroy_enemy;
@@ -107,9 +111,14 @@ private:
 	Mix_Chunk* chicken_dead_sound;
 	Mix_Chunk* chicken_eat_sound;
 
+	Mix_Chunk* ball_rolling;
+	Mix_Chunk* ball_flamming;
+
   // audio control
   void playMusic(MUSIC music);
   void playSoundEffect(FX effect);
+  void handleRollingSfx();
+  void handleFlammingSfx();
 
 	// player movement
 	void handle_movement();
@@ -165,10 +174,10 @@ private:
 		{6, {"level6.tmj", TEXTURE_ASSET_ID::LEVEL_6, MUSIC::PROMENADE}},
 		{7, {"tutorial.tmj", TEXTURE_ASSET_ID::LEVEL_TUTORIAL, MUSIC::PARADRIZZLE}},
 		{8, {"tower.tmj", TEXTURE_ASSET_ID::LEVEL_TOWER, MUSIC::WINDCATCHER}},
-		{9, {"lab.tmj", TEXTURE_ASSET_ID::LEVEL_LAB, MUSIC::WINDCATCHER}},
-		{10, {"under.tmj", TEXTURE_ASSET_ID::LEVEL_UNDER, MUSIC::WINDCATCHER}},
-		{11, {"snake.tmj", TEXTURE_ASSET_ID::LEVEL_SNAKE, MUSIC::WINDCATCHER}},
-		{12, {"tunnelsmall.tmj", TEXTURE_ASSET_ID::LEVEL_TUNNELSMALL, MUSIC::WINDCATCHER}}
+		{9, {"lab.tmj", TEXTURE_ASSET_ID::LEVEL_LAB, MUSIC::COTTONPLANES}},
+		{10, {"under.tmj", TEXTURE_ASSET_ID::LEVEL_UNDER, MUSIC::SPABA}},
+		{11, {"snake.tmj", TEXTURE_ASSET_ID::LEVEL_SNAKE, MUSIC::PENCILCRAYONS}},
+		{12, {"tunnelsmall.tmj", TEXTURE_ASSET_ID::LEVEL_TUNNELSMALL, MUSIC::MOONTOWNSHORES}}
 
 		// How to Add Levels:
 		// 1. Add both TMJ (/levels) and PNG (/data/textures/levels) to the project

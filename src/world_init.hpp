@@ -37,10 +37,6 @@ Entity createLevelButton(int level, std::string screen, TEXTURE_ASSET_ID texture
 // - MUST DEFINE MAX FRAME FOR STORY SEQUENCE TO TERMINATE
 Entity createStoryFrame(int frameNumber, int maxFrame, std::string screen, TEXTURE_ASSET_ID texture);
 
-// screen
-// NOTE: LEGACY CODE PORTED OVER TO createScreenElement
-Entity createScreen(std::string screen_type);
-
 // enemy
 Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_range_point_a, vec2 movement_range_point_b);
 

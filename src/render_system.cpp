@@ -59,7 +59,7 @@ void RenderSystem::drawGridLine(Entity entity, const mat3& projection) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	gl_has_errors();
 
-	if (render_request.used_effect == EFFECT_ASSET_ID::EGG)
+	if (render_request.used_effect == EFFECT_ASSET_ID::LEGACY_EGG)
 	{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		gl_has_errors();
@@ -154,7 +154,7 @@ void RenderSystem::drawLine(Entity entity, const mat3& projection) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	gl_has_errors();
 
-	if (render_request.used_effect == EFFECT_ASSET_ID::EGG) {
+	if (render_request.used_effect == EFFECT_ASSET_ID::LEGACY_EGG) {
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		gl_has_errors();
 
@@ -402,7 +402,7 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 		gl_has_errors();
 	}
 	// .obj entities
-	else if (render_request.used_effect == EFFECT_ASSET_ID::CHICKEN || render_request.used_effect == EFFECT_ASSET_ID::EGG)
+	else if (render_request.used_effect == EFFECT_ASSET_ID::LEGACY_CHICKEN || render_request.used_effect == EFFECT_ASSET_ID::LEGACY_EGG)
 	{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		GLint in_color_loc = glGetAttribLocation(program, "in_color");

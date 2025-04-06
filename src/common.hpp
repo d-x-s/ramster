@@ -184,7 +184,7 @@ const float GRAPPLE_DETRACT_GROUNDED =  20.0f;
 const float GRAPPLE_DETRACT_W = 5.0f;
 const float GRAPPLE_HERTZ_GROUNDED = 1.0f;
 const float GRAPPLE_DAMPING_GROUNDED = 0.5f;
-const float GRAPPLE_MAX_LENGTH = 450.0f; //450.0f;
+const float GRAPPLE_MAX_LENGTH = 450.0f;
 const float GRAPPLE_MIN_LENGTH = 100.0f;
 
 // change this to change the clickable area to attach to a grapple point

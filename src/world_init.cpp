@@ -89,50 +89,6 @@ Entity createStoryFrame(int frameNumber, int maxFrame, std::string screen, TEXTU
 	return buttonElement;
 }
 
-// This will create the screens that we are going to be using.
-// NOTE: THIS IS LEGACY CODE. PORTED OVER TO createScreenElement
-Entity createScreen(std::string screen_type) {
-	Entity entity = Entity();
-
-	Screen& screen = registry.screens.emplace(entity);
-	screen.screen = screen_type;
-
-	// Configure size (for some reason we need motion to render?)
-	auto& motion = registry.motions.emplace(entity);
-	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // This is a placeholder. Actual position computed during runtime.
-	motion.scale = vec2(VIEWPORT_WIDTH_PX/6, VIEWPORT_HEIGHT_PX/2); // Scale to window size
-
-	// Attach camera to center screen
-	Entity camera = registry.cameras.entities[0];
-	screen.screen_center = camera;
-
-	// Figure out which screen to display
-	TEXTURE_ASSET_ID screen_texture{};
-
-	if (screen_type == "MAIN MENU") {
-		screen_texture = TEXTURE_ASSET_ID::MAIN_MENU_TEXTURE;
-	}
-	else if (screen_type == "PLAYING") {
-		screen_texture = TEXTURE_ASSET_ID::PLAYING_TEXTURE;
-	}
-	else if (screen_type == "PAUSE") {
-		screen_texture = TEXTURE_ASSET_ID::PAUSE_TEXTURE;
-	}
-	else if (screen_type == "END OF GAME") {
-		screen_texture = TEXTURE_ASSET_ID::END_OF_GAME_TEXTURE;
-	}
-
-	registry.renderRequests.insert(
-		entity,
-		{
-			screen_texture,
-			EFFECT_ASSET_ID::TEXTURED,
-			GEOMETRY_BUFFER_ID::SPRITE
-		}
-	);
-
-	return entity;
-}
 
 Entity createBall(b2WorldId worldId, vec2 startPos)
 {
@@ -317,8 +273,6 @@ Entity createConfetti(vec2 position) {
 	confetti_motion.position = position;
 
 	// render request and frames
-
-
 	std::vector<TEXTURE_ASSET_ID> frames;
 
 	frames = {
@@ -711,7 +665,7 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos)
 		entity,
 		{
 			TEXTURE_ASSET_ID::TEXTURE_COUNT,
-			EFFECT_ASSET_ID::EGG,
+			EFFECT_ASSET_ID::LEGACY_EGG,
 			GEOMETRY_BUFFER_ID::DEBUG_LINE
 		}
 	);
@@ -735,7 +689,7 @@ Entity createLine(vec2 start_pos, vec2 end_pos)
 		entity,
 		{
 			TEXTURE_ASSET_ID::TEXTURE_COUNT,
-			EFFECT_ASSET_ID::EGG,
+			EFFECT_ASSET_ID::LEGACY_EGG,
 			GEOMETRY_BUFFER_ID::DEBUG_LINE
 		}
 	);

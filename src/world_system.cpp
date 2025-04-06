@@ -348,7 +348,7 @@ void WorldSystem::handleRollingSfx()
       player.isCurrentlyRolling = true;
       Mix_HaltChannel(7);
       Mix_FadeInChannelTimed(7, ball_rolling, -1, 600, -1);
-      Mix_Volume(7, 75);
+      Mix_Volume(7, 50);
     }
   }
   else

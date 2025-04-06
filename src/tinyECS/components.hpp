@@ -82,35 +82,6 @@ struct Enemy
   vec2 movement_area_point_b;
 };
 
-// Tower
-struct Tower
-{
-  float range;  // for vision / detection
-  int timer_ms; // when to shoot - this could also be a separate timer component...
-};
-
-// Invader
-struct Invader
-{
-  int health;
-};
-
-// Projectile
-struct Projectile
-{
-  int damage;
-};
-
-// used for Entities that cause damage
-struct Deadly
-{
-};
-
-// used for edible entities
-struct Eatable
-{
-};
-
 // All data relevant to the shape and motion of entities
 struct Motion
 {
@@ -426,10 +397,9 @@ const int fx_count = (int)FX::FX_COUNT;
 
 enum class EFFECT_ASSET_ID
 {
-  COLOURED = 0,
-  EGG = COLOURED + 1,
-  CHICKEN = EGG + 1,
-  TEXTURED = CHICKEN + 1,
+  LEGACY_EGG = 0,
+  LEGACY_CHICKEN = LEGACY_EGG + 1,
+  TEXTURED = LEGACY_CHICKEN + 1,
   VIGNETTE = TEXTURED + 1,
   PARALLAX = VIGNETTE + 1,
   TRANSLUCENT = PARALLAX + 1,
@@ -441,10 +411,10 @@ const int effect_count = (int)EFFECT_ASSET_ID::EFFECT_COUNT;
 
 enum class GEOMETRY_BUFFER_ID
 {
-  CHICKEN = 0,
-  SPRITE = CHICKEN + 1,
-  EGG = SPRITE + 1,
-  DEBUG_LINE = EGG + 1,
+  LEGACY_CHICKEN = 0,
+  SPRITE = LEGACY_CHICKEN + 1,
+  LEGACY_EGG = SPRITE + 1,
+  DEBUG_LINE = LEGACY_EGG + 1,
   SCREEN_TRIANGLE = DEBUG_LINE + 1,
   GEOMETRY_COUNT = SCREEN_TRIANGLE + 1
 };
@@ -479,10 +449,6 @@ struct RenderRequest
   int animation_current_frame = 0;                // current frame index
 };
 
-struct Explosion
-{
-};
-
 struct FireBall
 {
 };
@@ -499,7 +465,6 @@ struct GoalZone
   bool hasTriggered;
 };
 
-// TODO remove this?
 struct Grapple
 {
   b2JointId jointId;
@@ -535,10 +500,6 @@ struct Line
 struct EnemyPhysics
 {
   bool isGrounded;
-};
-
-struct TutorialTile
-{
 };
 
 struct LevelLayer

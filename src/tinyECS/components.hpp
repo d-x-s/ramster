@@ -561,6 +561,22 @@ struct RunAnimation
 {
 };
 
+struct HealthBar
+{
+  float health;
+};
+
+struct Score
+{
+  int score;
+  Entity digits[4];
+};
+
+struct Timer
+{
+  Entity digits[7];
+};
+
 struct UI
 {
 };

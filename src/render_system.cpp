@@ -599,6 +599,7 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 		std::vector<Entity> playerMidLayer;
 		std::vector<Entity> playerTopLayer;
 		std::vector<Entity> fireballs;
+    std::vector<Entity> overlay;
 		for (Entity entity : registry.renderRequests.entities)
 		{			 
 			RenderRequest& rr = registry.renderRequests.get(entity);
@@ -622,6 +623,11 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 			if (registry.fireballs.has(entity))
 			{
 				fireballs.push_back(entity);
+				continue;
+			}
+      if (registry.uis.has(entity))
+			{
+				overlay.push_back(entity);
 				continue;
 			}
 			// filter to entities that have a motion component (but not a screen)
@@ -653,6 +659,11 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 		}
 
 		for (Entity entity : fireballs)
+		{
+			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+		}
+
+    for (Entity entity : overlay)
 		{
 			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 		}

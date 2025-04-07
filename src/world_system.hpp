@@ -293,7 +293,7 @@ private:
 	void createScreenElements();
 
 	// Handles button presses based on the function of said button.
-	void handleButtonPress(std::string function);
+  void handleButtonPress(Entity buttonEntity);
 	void shootGrapplePoint();
 	void shootGrapple(vec2 worldMousePos);
 	void updateScore(Entity scoreEntity);

@@ -995,10 +995,11 @@ void WorldSystem::restart_game(int level)
   enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
   total_pause_duration = 0;
   is_paused = false;
-  if (grappleActive)
+  if (grapplePointActive || grappleActive)
   {
     removeGrapple();
     grappleActive = false;
+    grapplePointActive = false;
   }
 
   // remove all box2d bodies

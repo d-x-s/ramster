@@ -92,40 +92,40 @@ private:
 	std::vector<Entity> lines;
 
 	// music references
-	Mix_Music* background_music;
-	Mix_Music* background_music_story_intro;
-	Mix_Music* background_music_story_conclusion;
-  Mix_Music* background_music_memorybranch;
-  Mix_Music* background_music_oblanka;
-  Mix_Music* background_music_paradrizzle;
-  Mix_Music* background_music_windcatcher;
-  Mix_Music* background_music_promenade;
-  Mix_Music* background_music_spaba;
-  Mix_Music* background_music_cottonplanes;
-  Mix_Music* background_music_pencilcrayons;
-  Mix_Music* background_music_moontownshores;
+	Mix_Music *background_music;
+	Mix_Music *background_music_story_intro;
+	Mix_Music *background_music_story_conclusion;
+	Mix_Music *background_music_memorybranch;
+	Mix_Music *background_music_oblanka;
+	Mix_Music *background_music_paradrizzle;
+	Mix_Music *background_music_windcatcher;
+	Mix_Music *background_music_promenade;
+	Mix_Music *background_music_spaba;
+	Mix_Music *background_music_cottonplanes;
+	Mix_Music *background_music_pencilcrayons;
+	Mix_Music *background_music_moontownshores;
 
-  // fx references
-  Mix_Chunk* fx_destroy_enemy;
-  Mix_Chunk* fx_destroy_enemy_fail;
-  Mix_Chunk* fx_jump;
-  Mix_Chunk* fx_grapple;
-  Mix_Chunk* fx_victory;
-	Mix_Chunk* chicken_dead_sound;
-	Mix_Chunk* chicken_eat_sound;
+	// fx references
+	Mix_Chunk *fx_destroy_enemy;
+	Mix_Chunk *fx_destroy_enemy_fail;
+	Mix_Chunk *fx_jump;
+	Mix_Chunk *fx_grapple;
+	Mix_Chunk *fx_victory;
+	Mix_Chunk *chicken_dead_sound;
+	Mix_Chunk *chicken_eat_sound;
 
-	Mix_Chunk* ball_rolling;
-	Mix_Chunk* ball_flamming;
+	Mix_Chunk *ball_rolling;
+	Mix_Chunk *ball_flamming;
 
-	Mix_Chunk* ramster_scream;
-	Mix_Chunk* im_going_ham;
+	Mix_Chunk *ramster_scream;
+	Mix_Chunk *im_going_ham;
 
-  // audio control
-  void playMusic(MUSIC music);
-  void playSoundEffect(FX effect);
-  void handleRamsterVoicelines();
-  void handleRollingSfx();
-  void handleFlammingSfx();
+	// audio control
+	void playMusic(MUSIC music);
+	void playSoundEffect(FX effect);
+	void handleRamsterVoicelines();
+	void handleRollingSfx();
+	void handleFlammingSfx();
 
 	// player movement
 	void handle_movement(float elapsed_ms);
@@ -182,11 +182,11 @@ private:
 		{11, {"snake.tmj", TEXTURE_ASSET_ID::LEVEL_SNAKE, MUSIC::PENCILCRAYONS}},
 		{12, {"tunnelsmall.tmj", TEXTURE_ASSET_ID::LEVEL_TUNNELSMALL, MUSIC::MOONTOWNSHORES}}
 
-		// How to Add Levels:
-		// 1. Add both TMJ (/levels) and PNG (/data/textures/levels) to the project
-		// 2. Add TMJ file, asset, and music here
-		// 3. Add ASSET_ID in components.hpp
-		// 4. Load map texture in render_system.hpp
+				// How to Add Levels:
+				// 1. Add both TMJ (/levels) and PNG (/data/textures/levels) to the project
+				// 2. Add TMJ file, asset, and music here
+				// 3. Add ASSET_ID in components.hpp
+				// 4. Load map texture in render_system.hpp
 	};
 
 	// NOTE THAT ALL POSITIONS ARE GRID COORDINATES!!!
@@ -237,7 +237,9 @@ private:
 	int enemies_killed = 0;
 	// Player hp.
 	int hp = PLAYER_STARTING_HP;
-
+	// Screen we're routing to, used for scoreboard
+	// LLNOTE FOR ANDREW
+	std::string scoreboard_next_screen; // Need to set to either VICTORY OR DEFEAT
 	// Frames per second
 	int fps = 0; // 0 is default val
 	// Do an FPS cooldown to prevent flickering
@@ -247,6 +249,8 @@ private:
 	int time_elapsed = 0;
 	// Time cooldown to prevent flickering (also determines granularity of time)
 	int time_granularity = TIME_GRANULARITY;
+
+	bool first_goal = false;
 
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
@@ -276,7 +280,7 @@ private:
 	void checkGrappleGrounded();
 
 	// Starts the game at specified level
-	void levelHelper(int level, CurrentScreen& currentScreen);
+	void levelHelper(int level, CurrentScreen &currentScreen);
 
 	// Returns total number of (destructible) enemies per level.
 	int countEnemiesOnLevel();
@@ -293,17 +297,18 @@ private:
 	void createScreenElements();
 
 	// Handles button presses based on the function of said button.
-  void handleButtonPress(Entity buttonEntity);
+	void handleButtonPress(Entity buttonEntity);
 	void shootGrapplePoint();
 	void shootGrapple(vec2 worldMousePos);
 	void updateScore(Entity scoreEntity);
 	void updateTimer(long long time_elapsed);
 
 	std::vector<long long> best_times;
-	const std::string BEST_TIMES_FILE = "../data/best_times/best_times.txt";
+	const std::string BEST_TIMES_FILE = "../data/best_times/";
 
 	std::string getBestTimeFilePath(int level);
 	void loadBestTimes(int level);
 	void saveBestTimes(int level);
-	void tryAddBestTime(long long time_elapsed, int level);
+	long long tryAddBestTime(long long time_elapsed);
+	void createBestTimes(long long new_time);
 };

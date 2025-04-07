@@ -53,31 +53,33 @@ Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int wid
 	return entity;
 }
 
-
 // Makes button and renders as screen element.
-Entity createButton(std::string function, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
+Entity createButton(std::string function, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center)
+{
 
 	Entity buttonElement = createScreenElement(screen, texture, width_px, height_px, pos_relative_center);
-	Button& button = registry.buttons.emplace(buttonElement);
+	UIButton &button = registry.buttons.emplace(buttonElement);
 	button.function = function;
 
 	return buttonElement;
 }
 
 // Same as create button, but ties a level component onto it.
-Entity createLevelButton(int level, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
+Entity createLevelButton(int level, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center)
+{
 
 	Entity buttonElement = createButton("LEVEL BUTTON", screen, texture, width_px, height_px, pos_relative_center);
-	Level& levelComponent = registry.levels.emplace(buttonElement);
+	Level &levelComponent = registry.levels.emplace(buttonElement);
 	levelComponent.level = level;
 
 	return buttonElement;
 }
 
-Entity createStoryFrame(int frameNumber, int maxFrame, std::string screen, TEXTURE_ASSET_ID texture) {
+Entity createStoryFrame(int frameNumber, int maxFrame, std::string screen, TEXTURE_ASSET_ID texture)
+{
 
 	Entity buttonElement = createButton("STORY FRAME BUTTON", screen, texture, 1366, 768, vec2(0, 0));
-	StoryFrame& storyFrame = registry.storyFrames.emplace(buttonElement);
+	StoryFrame &storyFrame = registry.storyFrames.emplace(buttonElement);
 	storyFrame.frame = frameNumber;
 	storyFrame.max_frame = maxFrame;
 
@@ -89,11 +91,11 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 	Entity mainEntity = Entity();
 
 	// Add physics and player components
-	PhysicsBody& ball = registry.physicsBodies.emplace(mainEntity);
-	PlayerPhysics& ball_physics = registry.playerPhysics.emplace(mainEntity);
+	PhysicsBody &ball = registry.physicsBodies.emplace(mainEntity);
+	PlayerPhysics &ball_physics = registry.playerPhysics.emplace(mainEntity);
 	ball_physics.isGrounded = false;
 
-	Player& player = registry.players.emplace(mainEntity);
+	Player &player = registry.players.emplace(mainEntity);
 	player.isCurrentlyFlamming = false;
 	player.isCurrentlyRolling = false;
 	player.enemiesRecentlyDestroyed = 0;
@@ -103,7 +105,7 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 	// Define a dynamic body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
-	bodyDef.position = b2Vec2{ startPos.x, startPos.y };
+	bodyDef.position = b2Vec2{startPos.x, startPos.y};
 	bodyDef.fixedRotation = false;
 	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
@@ -121,29 +123,33 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 	b2Body_SetAngularDamping(bodyId, BALL_ANGULAR_DAMPING);
 
 	// Add motion & render request
-	auto& motion = registry.motions.emplace(mainEntity);
+	auto &motion = registry.motions.emplace(mainEntity);
 	motion.angle = 0.f;
 	motion.position = startPos;
 	motion.scale = vec2(2 * circle.radius, 2 * circle.radius);
 
-	auto& camera = registry.cameras.emplace(mainEntity);
+	auto &camera = registry.cameras.emplace(mainEntity);
 	camera.position = startPos;
 
 	// Helpers to create additional visual layer entities
-	auto createRotatableLayer = [&](TEXTURE_ASSET_ID textureId, EFFECT_ASSET_ID effectId, std::string layer) {
+	auto createRotatableLayer = [&](TEXTURE_ASSET_ID textureId, EFFECT_ASSET_ID effectId, std::string layer)
+	{
 		Entity ballVisualEntity = Entity();
 
-		if (layer == "front") {
+		if (layer == "front")
+		{
 			registry.playerTopLayer.emplace(ballVisualEntity);
-		} 
-		else if (layer == "middle") {
+		}
+		else if (layer == "middle")
+		{
 			registry.playerMidLayer.emplace(ballVisualEntity);
 		}
-		else {
+		else
+		{
 			registry.playerBottomLayer.emplace(ballVisualEntity);
 		}
 
-		auto& m = registry.motions.emplace(ballVisualEntity);
+		auto &m = registry.motions.emplace(ballVisualEntity);
 		m.angle = 0.f;
 		m.position = startPos;
 		m.scale = vec2(2 * circle.radius, 2 * circle.radius);
@@ -152,18 +158,16 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 
 		registry.renderRequests.insert(
 			ballVisualEntity,
-			{
-				textureId,
-				effectId,
-				GEOMETRY_BUFFER_ID::SPRITE
-			}
-		);
+			{textureId,
+			 effectId,
+			 GEOMETRY_BUFFER_ID::SPRITE});
 	};
 
-	auto createRamsterRunLayer = [&]() {
+	auto createRamsterRunLayer = [&]()
+	{
 		Entity ramsterVisualEntity = Entity();
 
-		auto& m = registry.motions.emplace(ramsterVisualEntity);
+		auto &m = registry.motions.emplace(ramsterVisualEntity);
 		m.angle = 0.f;
 		m.position = startPos;
 		m.scale = vec2(2 * circle.radius, 2 * circle.radius);
@@ -186,25 +190,23 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 
 		registry.renderRequests.insert(
 			ramsterVisualEntity,
-			{
-				frames[0],
-				EFFECT_ASSET_ID::RAMSTER,
-				GEOMETRY_BUFFER_ID::SPRITE,
-				frames,
-				{},
-				true,
-				true,
-				100.0f,
-				0.0f,
-				0
-			}
-		);
+			{frames[0],
+			 EFFECT_ASSET_ID::RAMSTER,
+			 GEOMETRY_BUFFER_ID::SPRITE,
+			 frames,
+			 {},
+			 true,
+			 true,
+			 100.0f,
+			 0.0f,
+			 0});
 	};
 
-	auto createRamsterIdleLayer = [&]() {
+	auto createRamsterIdleLayer = [&]()
+	{
 		Entity ramsterVisualEntity = Entity();
 
-		auto& m = registry.motions.emplace(ramsterVisualEntity);
+		auto &m = registry.motions.emplace(ramsterVisualEntity);
 		m.angle = 0.f;
 		m.position = startPos;
 		m.scale = vec2(2 * circle.radius, 2 * circle.radius);
@@ -225,19 +227,16 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 
 		registry.renderRequests.insert(
 			ramsterVisualEntity,
-			{
-				frames[0],
-				EFFECT_ASSET_ID::RAMSTER,
-				GEOMETRY_BUFFER_ID::SPRITE,
-				frames,
-				{},
-				true,
-				false,
-				200.0f,
-				0.0f,
-				0
-			}
-		);
+			{frames[0],
+			 EFFECT_ASSET_ID::RAMSTER,
+			 GEOMETRY_BUFFER_ID::SPRITE,
+			 frames,
+			 {},
+			 true,
+			 false,
+			 200.0f,
+			 0.0f,
+			 0});
 	};
 
 	// ========================================================================================================
@@ -260,11 +259,12 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 	return mainEntity;
 }
 
-Entity createConfetti(vec2 position) {
+Entity createConfetti(vec2 position)
+{
 	Entity entity = Entity();
 
 	// Add motion
-	auto& confetti_motion = registry.motions.emplace(entity);
+	auto &confetti_motion = registry.motions.emplace(entity);
 	confetti_motion.scale = vec2(700.f, 700.f);
 	confetti_motion.angle = 0.f;
 	confetti_motion.position = position;
@@ -273,82 +273,79 @@ Entity createConfetti(vec2 position) {
 	std::vector<TEXTURE_ASSET_ID> frames;
 
 	frames = {
-	TEXTURE_ASSET_ID::CONFETTI_0,
-	TEXTURE_ASSET_ID::CONFETTI_1,
-	TEXTURE_ASSET_ID::CONFETTI_2,
-	TEXTURE_ASSET_ID::CONFETTI_3,
-	TEXTURE_ASSET_ID::CONFETTI_4,
-	TEXTURE_ASSET_ID::CONFETTI_5,
-	TEXTURE_ASSET_ID::CONFETTI_6,
-	TEXTURE_ASSET_ID::CONFETTI_7,
-	TEXTURE_ASSET_ID::CONFETTI_8,
-	TEXTURE_ASSET_ID::CONFETTI_9,
-	TEXTURE_ASSET_ID::CONFETTI_10,
-	TEXTURE_ASSET_ID::CONFETTI_11,
-	TEXTURE_ASSET_ID::CONFETTI_12,
-	TEXTURE_ASSET_ID::CONFETTI_13,
-	TEXTURE_ASSET_ID::CONFETTI_14,
-	TEXTURE_ASSET_ID::CONFETTI_15,
-	TEXTURE_ASSET_ID::CONFETTI_16,
-	TEXTURE_ASSET_ID::CONFETTI_17,
-	TEXTURE_ASSET_ID::CONFETTI_18,
-	TEXTURE_ASSET_ID::CONFETTI_19,
-	TEXTURE_ASSET_ID::CONFETTI_20,
-	TEXTURE_ASSET_ID::CONFETTI_21,
-	TEXTURE_ASSET_ID::CONFETTI_22,
-	TEXTURE_ASSET_ID::CONFETTI_23,
-	TEXTURE_ASSET_ID::CONFETTI_24,
-	TEXTURE_ASSET_ID::CONFETTI_25,
-	TEXTURE_ASSET_ID::CONFETTI_26,
-	TEXTURE_ASSET_ID::CONFETTI_27,
-	TEXTURE_ASSET_ID::CONFETTI_28,
-	TEXTURE_ASSET_ID::CONFETTI_29,
-	TEXTURE_ASSET_ID::CONFETTI_30,
-	TEXTURE_ASSET_ID::CONFETTI_31,
-	TEXTURE_ASSET_ID::CONFETTI_32,
-	TEXTURE_ASSET_ID::CONFETTI_33,
-	TEXTURE_ASSET_ID::CONFETTI_34,
-	TEXTURE_ASSET_ID::CONFETTI_35,
-	TEXTURE_ASSET_ID::CONFETTI_36,
-	TEXTURE_ASSET_ID::CONFETTI_37,
-	TEXTURE_ASSET_ID::CONFETTI_38,
-	TEXTURE_ASSET_ID::CONFETTI_39,
-	TEXTURE_ASSET_ID::CONFETTI_40,
-	TEXTURE_ASSET_ID::CONFETTI_41,
-	TEXTURE_ASSET_ID::CONFETTI_42,
-	TEXTURE_ASSET_ID::CONFETTI_43,
-	TEXTURE_ASSET_ID::CONFETTI_44,
-	TEXTURE_ASSET_ID::CONFETTI_45,
-	TEXTURE_ASSET_ID::CONFETTI_46,
-	TEXTURE_ASSET_ID::CONFETTI_47,
-	TEXTURE_ASSET_ID::CONFETTI_48,
-	TEXTURE_ASSET_ID::CONFETTI_49,
-	TEXTURE_ASSET_ID::CONFETTI_50,
-	TEXTURE_ASSET_ID::CONFETTI_51,
-	TEXTURE_ASSET_ID::CONFETTI_52,
-	TEXTURE_ASSET_ID::CONFETTI_53,
-	TEXTURE_ASSET_ID::CONFETTI_54,
-	TEXTURE_ASSET_ID::CONFETTI_55,
-	TEXTURE_ASSET_ID::CONFETTI_56,
-	TEXTURE_ASSET_ID::CONFETTI_57,
-	TEXTURE_ASSET_ID::CONFETTI_58,
+		TEXTURE_ASSET_ID::CONFETTI_0,
+		TEXTURE_ASSET_ID::CONFETTI_1,
+		TEXTURE_ASSET_ID::CONFETTI_2,
+		TEXTURE_ASSET_ID::CONFETTI_3,
+		TEXTURE_ASSET_ID::CONFETTI_4,
+		TEXTURE_ASSET_ID::CONFETTI_5,
+		TEXTURE_ASSET_ID::CONFETTI_6,
+		TEXTURE_ASSET_ID::CONFETTI_7,
+		TEXTURE_ASSET_ID::CONFETTI_8,
+		TEXTURE_ASSET_ID::CONFETTI_9,
+		TEXTURE_ASSET_ID::CONFETTI_10,
+		TEXTURE_ASSET_ID::CONFETTI_11,
+		TEXTURE_ASSET_ID::CONFETTI_12,
+		TEXTURE_ASSET_ID::CONFETTI_13,
+		TEXTURE_ASSET_ID::CONFETTI_14,
+		TEXTURE_ASSET_ID::CONFETTI_15,
+		TEXTURE_ASSET_ID::CONFETTI_16,
+		TEXTURE_ASSET_ID::CONFETTI_17,
+		TEXTURE_ASSET_ID::CONFETTI_18,
+		TEXTURE_ASSET_ID::CONFETTI_19,
+		TEXTURE_ASSET_ID::CONFETTI_20,
+		TEXTURE_ASSET_ID::CONFETTI_21,
+		TEXTURE_ASSET_ID::CONFETTI_22,
+		TEXTURE_ASSET_ID::CONFETTI_23,
+		TEXTURE_ASSET_ID::CONFETTI_24,
+		TEXTURE_ASSET_ID::CONFETTI_25,
+		TEXTURE_ASSET_ID::CONFETTI_26,
+		TEXTURE_ASSET_ID::CONFETTI_27,
+		TEXTURE_ASSET_ID::CONFETTI_28,
+		TEXTURE_ASSET_ID::CONFETTI_29,
+		TEXTURE_ASSET_ID::CONFETTI_30,
+		TEXTURE_ASSET_ID::CONFETTI_31,
+		TEXTURE_ASSET_ID::CONFETTI_32,
+		TEXTURE_ASSET_ID::CONFETTI_33,
+		TEXTURE_ASSET_ID::CONFETTI_34,
+		TEXTURE_ASSET_ID::CONFETTI_35,
+		TEXTURE_ASSET_ID::CONFETTI_36,
+		TEXTURE_ASSET_ID::CONFETTI_37,
+		TEXTURE_ASSET_ID::CONFETTI_38,
+		TEXTURE_ASSET_ID::CONFETTI_39,
+		TEXTURE_ASSET_ID::CONFETTI_40,
+		TEXTURE_ASSET_ID::CONFETTI_41,
+		TEXTURE_ASSET_ID::CONFETTI_42,
+		TEXTURE_ASSET_ID::CONFETTI_43,
+		TEXTURE_ASSET_ID::CONFETTI_44,
+		TEXTURE_ASSET_ID::CONFETTI_45,
+		TEXTURE_ASSET_ID::CONFETTI_46,
+		TEXTURE_ASSET_ID::CONFETTI_47,
+		TEXTURE_ASSET_ID::CONFETTI_48,
+		TEXTURE_ASSET_ID::CONFETTI_49,
+		TEXTURE_ASSET_ID::CONFETTI_50,
+		TEXTURE_ASSET_ID::CONFETTI_51,
+		TEXTURE_ASSET_ID::CONFETTI_52,
+		TEXTURE_ASSET_ID::CONFETTI_53,
+		TEXTURE_ASSET_ID::CONFETTI_54,
+		TEXTURE_ASSET_ID::CONFETTI_55,
+		TEXTURE_ASSET_ID::CONFETTI_56,
+		TEXTURE_ASSET_ID::CONFETTI_57,
+		TEXTURE_ASSET_ID::CONFETTI_58,
 	};
 
 	registry.renderRequests.insert(
 		entity,
-		{
-			frames[29],
-			EFFECT_ASSET_ID::TEXTURED,
-			GEOMETRY_BUFFER_ID::SPRITE,
-			frames,
-			{},
-			true,
-			true,
-			30.0f,
-			0.0f,
-			29
-		}
-	);
+		{frames[29],
+		 EFFECT_ASSET_ID::TEXTURED,
+		 GEOMETRY_BUFFER_ID::SPRITE,
+		 frames,
+		 {},
+		 true,
+		 true,
+		 30.0f,
+		 0.0f,
+		 29});
 
 	return entity;
 }
@@ -368,8 +365,8 @@ Entity createFireball(vec2 startPos)
 
 	std::vector<TEXTURE_ASSET_ID> frames;
 
-	frames = { 
-		TEXTURE_ASSET_ID::FIREBALL_0, 
+	frames = {
+		TEXTURE_ASSET_ID::FIREBALL_0,
 		TEXTURE_ASSET_ID::FIREBALL_1,
 		TEXTURE_ASSET_ID::FIREBALL_2,
 		TEXTURE_ASSET_ID::FIREBALL_3,
@@ -380,24 +377,20 @@ Entity createFireball(vec2 startPos)
 		TEXTURE_ASSET_ID::FIREBALL_8,
 		TEXTURE_ASSET_ID::FIREBALL_9,
 		TEXTURE_ASSET_ID::FIREBALL_10,
-		TEXTURE_ASSET_ID::FIREBALL_11
-	};
+		TEXTURE_ASSET_ID::FIREBALL_11};
 
 	registry.renderRequests.insert(
 		entity,
-		{
-			frames[0],
-			EFFECT_ASSET_ID::FIREBALL,
-			GEOMETRY_BUFFER_ID::SPRITE,
-			frames,
-			{},
-			true,
-			false,
-			60.0f,
-			0.0f,
-			0
-		}
-	);
+		{frames[0],
+		 EFFECT_ASSET_ID::FIREBALL,
+		 GEOMETRY_BUFFER_ID::SPRITE,
+		 frames,
+		 {},
+		 true,
+		 false,
+		 60.0f,
+		 0.0f,
+		 0});
 
 	return entity;
 }
@@ -666,14 +659,11 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos)
 
 	registry.renderRequests.insert(
 		entity,
-		{
-			TEXTURE_ASSET_ID::TEXTURE_COUNT,
-			EFFECT_ASSET_ID::LEGACY_EGG,
-			GEOMETRY_BUFFER_ID::DEBUG_LINE
-		}
-	);
-	
-	registry.colors.insert(entity, vec3(0.0f, 1.0f, 0.0f)); 
+		{TEXTURE_ASSET_ID::TEXTURE_COUNT,
+		 EFFECT_ASSET_ID::LEGACY_EGG,
+		 GEOMETRY_BUFFER_ID::DEBUG_LINE});
+
+	registry.colors.insert(entity, vec3(0.0f, 1.0f, 0.0f));
 	return entity;
 }
 
@@ -690,12 +680,9 @@ Entity createLine(vec2 start_pos, vec2 end_pos)
 
 	registry.renderRequests.insert(
 		entity,
-		{
-			TEXTURE_ASSET_ID::TEXTURE_COUNT,
-			EFFECT_ASSET_ID::LEGACY_EGG,
-			GEOMETRY_BUFFER_ID::DEBUG_LINE
-		}
-	);
+		{TEXTURE_ASSET_ID::TEXTURE_COUNT,
+		 EFFECT_ASSET_ID::LEGACY_EGG,
+		 GEOMETRY_BUFFER_ID::DEBUG_LINE});
 
 	registry.colors.insert(entity, vec3(1.0f, 1.0f, 1.0f));
 	return entity;
@@ -719,7 +706,7 @@ Entity createHealthBar(float health)
 	registry.renderRequests.insert(
 		entity,
 		{TEXTURE_ASSET_ID::TEXTURE_COUNT,  // No texture
-		 EFFECT_ASSET_ID::LEGACY_EGG,			   // Uses colored shader
+		 EFFECT_ASSET_ID::LEGACY_EGG,	   // Uses colored shader
 		 GEOMETRY_BUFFER_ID::DEBUG_LINE}); // Use existing filled shape geometry
 
 	return entity;
@@ -772,19 +759,16 @@ Entity createBackgroundLayer()
 
 	registry.renderRequests.insert(
 		entity,
-		{
-			frames[0],
-			EFFECT_ASSET_ID::PARALLAX,
-			GEOMETRY_BUFFER_ID::SPRITE,
-			frames,
-			{},
-			true,
-			true,
-			300.0f,
-			0.0f,
-			0
-		}
-	);
+		{frames[0],
+		 EFFECT_ASSET_ID::PARALLAX,
+		 GEOMETRY_BUFFER_ID::SPRITE,
+		 frames,
+		 {},
+		 true,
+		 true,
+		 300.0f,
+		 0.0f,
+		 0});
 
 	return entity;
 }
@@ -884,4 +868,55 @@ Entity createTimer()
 	}
 
 	return timerEntity;
+}
+
+Entity createLeaderboardTimer(long long time_elapsed, size_t rank)
+{
+	Entity lbTimerEntity = Entity();
+	LBTimer &lbtimer = registry.lbtimers.emplace(lbTimerEntity);
+
+	vec2 basePosition = vec2(150, WINDOW_HEIGHT_PX - 50);
+	vec2 digitSize = vec2(40, 60);
+
+	for (int i = 0; i < 10; ++i)
+	{
+		Entity digitEntity = Entity();
+		auto &motion = registry.motions.emplace(digitEntity);
+		motion.scale = digitSize;
+		if (i == 0)
+		{
+			vec2 offset = vec2(i * (digitSize.x + 4), 0); // 4px padding
+			motion.position = basePosition + offset;
+			registry.renderRequests.insert(
+				digitEntity,
+				{TEXTURE_ASSET_ID::NUMBER_0,
+				 EFFECT_ASSET_ID::TEXTURED,
+				 GEOMETRY_BUFFER_ID::SPRITE});
+		}
+		else
+		{
+			vec2 offset = vec2(i * (digitSize.x + 4), 0); // 4px padding
+			motion.position = basePosition + offset;
+
+			if (i == 3 || i == 6)
+			{
+				registry.renderRequests.insert(
+					digitEntity,
+					{TEXTURE_ASSET_ID::COLON,
+					 EFFECT_ASSET_ID::TEXTURED,
+					 GEOMETRY_BUFFER_ID::SPRITE});
+			}
+			else
+			{
+				registry.renderRequests.insert(
+					digitEntity,
+					{TEXTURE_ASSET_ID::NUMBER_0,
+					 EFFECT_ASSET_ID::TEXTURED,
+					 GEOMETRY_BUFFER_ID::SPRITE});
+			}
+		}
+		lbtimer.digits[i] = digitEntity;
+	}
+
+	return lbTimerEntity;
 }

@@ -14,7 +14,7 @@ public:
 	// TODO: A1 add a LightUp component
 	ComponentContainer<CurrentScreen> currentScreen;
 	ComponentContainer<ScreenElement> screenElements;
-	ComponentContainer<Button> buttons;
+	ComponentContainer<UIButton> buttons;
 	ComponentContainer<Level> levels;
 	ComponentContainer<StoryFrame> storyFrames;
 	ComponentContainer<Screen> screens; // legacy code. remove support after finishing screen element
@@ -51,6 +51,7 @@ public:
 	ComponentContainer<Score> scores;
 	ComponentContainer<Timer> timers;
 	ComponentContainer<UI> uis;
+	ComponentContainer<LBTimer> lbtimers;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -86,6 +87,7 @@ public:
 		registry_list.push_back(&scores);
 		registry_list.push_back(&timers);
 		registry_list.push_back(&uis);
+		registry_list.push_back(&lbtimers);
 	}
 
 	void clear_all_components()

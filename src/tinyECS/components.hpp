@@ -24,7 +24,7 @@ struct ScreenElement
 };
 
 // Indicates that a screen element is a button.
-struct Button
+struct UIButton
 {
 
   // Identifies the button
@@ -64,11 +64,11 @@ struct CurrentScreen
 // Player component
 struct Player
 {
-	bool isCurrentlyRolling;
-	bool isCurrentlyFlamming;
-	int enemiesRecentlyDestroyed;
-	float voicelineProbability;
-	std::chrono::steady_clock::time_point lastVoicelineTime;
+  bool isCurrentlyRolling;
+  bool isCurrentlyFlamming;
+  int enemiesRecentlyDestroyed;
+  float voicelineProbability;
+  std::chrono::steady_clock::time_point lastVoicelineTime;
 };
 
 // Enemy component
@@ -188,21 +188,41 @@ struct Mesh
  */
 enum class TEXTURE_ASSET_ID
 {
-    // Numbers
-    NUMBER_0 = 0,
-    NUMBER_1 = NUMBER_0 + 1,
-    NUMBER_2 = NUMBER_1 + 1,
-    NUMBER_3 = NUMBER_2 + 1,
-    NUMBER_4 = NUMBER_3 + 1,
-    NUMBER_5 = NUMBER_4 + 1,
-    NUMBER_6 = NUMBER_5 + 1,
-    NUMBER_7 = NUMBER_6 + 1,
-    NUMBER_8 = NUMBER_7 + 1,
-    NUMBER_9 = NUMBER_8 + 1,
-    COLON = NUMBER_9 + 1,
+  // Numbers
+  NUMBER_0 = 0,
+  NUMBER_1 = NUMBER_0 + 1,
+  NUMBER_2 = NUMBER_1 + 1,
+  NUMBER_3 = NUMBER_2 + 1,
+  NUMBER_4 = NUMBER_3 + 1,
+  NUMBER_5 = NUMBER_4 + 1,
+  NUMBER_6 = NUMBER_5 + 1,
+  NUMBER_7 = NUMBER_6 + 1,
+  NUMBER_8 = NUMBER_7 + 1,
+  NUMBER_9 = NUMBER_8 + 1,
+
+  // Red numbers
+  R_NUMBER_0 = NUMBER_9 + 1,
+  R_NUMBER_1 = R_NUMBER_0 + 1,
+  R_NUMBER_2 = R_NUMBER_1 + 1,
+  R_NUMBER_3 = R_NUMBER_2 + 1,
+  R_NUMBER_4 = R_NUMBER_3 + 1,
+  R_NUMBER_5 = R_NUMBER_4 + 1,
+  R_NUMBER_6 = R_NUMBER_5 + 1,
+  R_NUMBER_7 = R_NUMBER_6 + 1,
+  R_NUMBER_8 = R_NUMBER_7 + 1,
+  R_NUMBER_9 = R_NUMBER_8 + 1,
+
+  W_NUMBER_1 = R_NUMBER_9 + 1,
+  W_NUMBER_2 = W_NUMBER_1 + 1,
+  W_NUMBER_3 = W_NUMBER_2 + 1,
+  W_NUMBER_4 = W_NUMBER_3 + 1,
+  W_NUMBER_5 = W_NUMBER_4 + 1,
+
+  COLON = W_NUMBER_5 + 1,
+  R_COLON = COLON + 1,
 
   // Ramster
-  RAMSTER_RUN_0 = COLON + 1,
+  RAMSTER_RUN_0 = R_COLON + 1,
   RAMSTER_RUN_1 = RAMSTER_RUN_0 + 1,
   RAMSTER_RUN_2 = RAMSTER_RUN_1 + 1,
   RAMSTER_RUN_3 = RAMSTER_RUN_2 + 1,
@@ -232,8 +252,9 @@ enum class TEXTURE_ASSET_ID
   TEXT_MENU = TITLE_DEFEAT + 1,
   TEXT_PAUSE = TEXT_MENU + 1,
   TEXT_GAMEOVER = TEXT_PAUSE + 1,
-  
-  BUTTON_LVLUP = TEXT_GAMEOVER + 1,
+  LEADERBOARD = TEXT_GAMEOVER + 1,
+
+  BUTTON_LVLUP = LEADERBOARD + 1,
   BUTTON_LVLDOWN = BUTTON_LVLUP + 1,
   BUTTON_START = BUTTON_LVLDOWN + 1,
   BUTTON_RESUME = BUTTON_START + 1,
@@ -579,4 +600,9 @@ struct Timer
 
 struct UI
 {
+};
+
+struct LBTimer
+{
+  Entity digits[10];
 };

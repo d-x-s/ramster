@@ -41,7 +41,26 @@ class RenderSystem
       textures_path("numbers/7.png"),
       textures_path("numbers/8.png"),
       textures_path("numbers/9.png"),
+
+      textures_path("numbers/R0.png"),
+      textures_path("numbers/R1.png"),
+      textures_path("numbers/R2.png"),
+      textures_path("numbers/R3.png"),
+      textures_path("numbers/R4.png"),
+      textures_path("numbers/R5.png"),
+      textures_path("numbers/R6.png"),
+      textures_path("numbers/R7.png"),
+      textures_path("numbers/R8.png"),
+      textures_path("numbers/R9.png"),
+
+      textures_path("numbers/W1.png"),
+      textures_path("numbers/W2.png"),
+      textures_path("numbers/W3.png"),
+      textures_path("numbers/W4.png"),
+      textures_path("numbers/W5.png"),
+
       textures_path("numbers/colon.png"),
+      textures_path("numbers/Rcolon.png"),
 
       // Ramster
       textures_path("player/run_0.png"),
@@ -66,7 +85,6 @@ class RenderSystem
       textures_path("projectiles/grapple_point.png"),
       textures_path("projectiles/grapple_outline.png"),
 
-
       // Screen Elements
       textures_path("screenElements/menu_title.png"),
       textures_path("screenElements/pause_title.png"),
@@ -75,6 +93,7 @@ class RenderSystem
       textures_path("screenElements/menu_text.png"),
       textures_path("screenElements/pause_text.png"),
       textures_path("screenElements/gameover_text.png"),
+      textures_path("screenElements/scoreboard.png"),
 
       textures_path("screenElements/button_lvlUp.png"),
       textures_path("screenElements/button_lvlDown.png"),

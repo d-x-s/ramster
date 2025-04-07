@@ -1204,7 +1204,7 @@ void WorldSystem::handle_collisions(float elapsed_ms)
           playSoundEffect(FX::FX_DESTROY_ENEMY_FAIL);
 
           // Only lose HP if what we hit was NOT an obstacle
-          if (enemyComponent.destructable)
+          if (enemyComponent.destructable || true) // enable damage from obstacles for now
           {
             hp -= 1; // small penalty for now
             for (Entity &hpEntity : registry.healthbars.entities)
@@ -1253,7 +1253,7 @@ void WorldSystem::handle_collisions(float elapsed_ms)
           playSoundEffect(FX::FX_DESTROY_ENEMY_FAIL);
 
           // Only lose HP if what we hit was NOT an obstacle
-          if (enemyComponent.destructable)
+          if (enemyComponent.destructable || true) // enable damage from obstacles for now
           {
             hp -= 1; // small penalty for now
             for (Entity &hpEntity : registry.healthbars.entities)

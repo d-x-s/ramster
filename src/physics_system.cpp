@@ -476,7 +476,7 @@ void PhysicsSystem::step(float elapsed_ms)
               // NOTE: this depends on MIN_COLLISION_SPEED, which will need some fine-tuning to find a good speed at which we can hit the enemy.
               bool player_wins_collision = false;
 
-              if (b2Length(playerVelocity) > MIN_COLLISION_SPEED * 0.85) {
+              if (b2Length(playerVelocity) > MIN_COLLISION_SPEED * 0.7) {
                   player_wins_collision = true;
               }
 

@@ -81,7 +81,7 @@ int main()
 		if (game_active) {
 			ai_system.step(elapsed_ms);
 			physics_system.step(elapsed_ms);
-			world_system.handle_collisions();
+			world_system.handle_collisions(elapsed_ms);
 		};
 
 		renderer_system.draw(elapsed_ms, game_active);

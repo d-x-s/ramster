@@ -48,6 +48,5 @@ x64/*
 ramster.dir/*
 ALL_BUILD*
 INSTALL*
-ramster*
 ZERO_CHECK*
 /CMakeSettings.json

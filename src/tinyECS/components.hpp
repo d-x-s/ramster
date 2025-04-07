@@ -1,5 +1,6 @@
 #pragma once
 #include "common.hpp"
+#include <chrono>
 #include <vector>
 #include <unordered_map>
 #include "../ext/stb_image/stb_image.h"
@@ -51,6 +52,9 @@ struct Player
 {
 	bool isCurrentlyRolling;
 	bool isCurrentlyFlamming;
+	int enemiesRecentlyDestroyed;
+	float voicelineProbability;
+	std::chrono::steady_clock::time_point lastVoicelineTime;
 };
 
 // Enemy component

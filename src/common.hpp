@@ -169,6 +169,8 @@ const float ENEMY_DENSITY = 0.00125f; // kg/cm� (kilograms per square centimet
 const float ENEMY_FRICTION = 0.1f; //enemy friction. for now we're setting it low so it's less affected by contact with floor slowing it down.
 const float ENEMY_RESTITUTION = 0.5f; //enemy bounciness... increase this number to make things more chaotic.
 
+const float KILLSTREAK_RESET_TIME = 60.f;
+
 // SWARM ENEMY PROXIMITY - MAX DELTA X OR DELTA Y FROM SWARM BEFORE REJOINING
 const float SWARM_ENEMY_PROXIMITY = 1.5 * GRID_CELL_WIDTH_PX;
 

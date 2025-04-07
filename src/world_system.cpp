@@ -316,22 +316,25 @@ void WorldSystem::playSoundEffect(FX effect)
   {
     case FX::FX_DESTROY_ENEMY:
       channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+      Mix_Volume(channel, 5);
       break;
     case FX::FX_DESTROY_ENEMY_FAIL:
         channel = Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
+        Mix_Volume(channel, 5);
       break;
     case FX::FX_JUMP:
         channel = Mix_PlayChannel(-1, fx_jump, 0);
+        Mix_Volume(channel, 20);
       break;
     case FX::FX_GRAPPLE:
         channel = Mix_PlayChannel(-1, fx_grapple, 0);
+        Mix_Volume(channel, 5);
       break;
     default:
         channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+        Mix_Volume(channel, 5);
       break;
   } 
-
-  Mix_Volume(channel, 5);
 }
 
 
@@ -1450,6 +1453,7 @@ void WorldSystem::handle_movement(float elapsed_ms)
         // if jump is registered, it should override any other force being applied.
         if (jump_impulse != b2Vec2_zero && isGrounded)
         {
+		  playSoundEffect(FX::FX_JUMP);
           b2Body_ApplyLinearImpulseToCenter(bodyId, jump_impulse, true);
         }
         else if (nonjump_movement_force != b2Vec2_zero)
@@ -1516,95 +1520,6 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
       close_window();
     }
   }
-
-  // Reset game when R is released
-  /* DISABLED. REPLACED WITH MOUSE INPUT HANDLING.
-  if (action == GLFW_RELEASE && key == GLFW_KEY_R)
-  {
-    // Pause and End of Game screen - restarts game
-    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "VICTORY" || currentScreen.current_screen == "DEFEAT")
-    {
-      currentScreen.current_screen = "PLAYING";
-      int w, h;
-      glfwGetWindowSize(window, &w, &h);
-      restart_game(current_level);
-    }
-  }
-  */
-  // Select level - only active on MAIN MENU screen
-  /* DISABLED. REPLACED WITH MOUSE INPUT HANDLING.
-  if (currentScreen.current_screen == "MAIN MENU")
-  {
-    // Level keys 1-9
-    if (action == GLFW_RELEASE && key == GLFW_KEY_1)
-    {
-      levelHelper(1, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_2)
-    {
-      levelHelper(2, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_3)
-    {
-      levelHelper(3, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_4)
-    {
-      levelHelper(4, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_5)
-    {
-      levelHelper(5, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_6)
-    {
-      levelHelper(6, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_7)
-    {
-      levelHelper(7, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_8)
-    {
-      levelHelper(8, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_9)
-    {
-      levelHelper(9, currentScreen);
-    }
-    // Increment or decrement selected level by 1
-    if (action == GLFW_RELEASE && key == GLFW_KEY_UP)
-    {
-      levelHelper(current_level + 1, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_DOWN)
-    {
-      levelHelper(current_level - 1, currentScreen);
-    }
-  }
-  */
-
-  // ENTER key press handling
-  /* DISABLED. REPLACED WITH MOUSE INPUT HANDLING.
-  if (action == GLFW_RELEASE && key == GLFW_KEY_ENTER)
-  {
-
-    // Main menu screen - Loads the selected level and starts the game
-    if (currentScreen.current_screen == "MAIN MENU")
-    {
-      currentScreen.current_screen = "PLAYING";
-      restart_game(current_level);
-      return;
-    }
-    // Pause and End of Game screen - back to main menu
-    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "VICTORY" || currentScreen.current_screen == "DEFEAT")
-    {
-      currentScreen.current_screen = "MAIN MENU";
-      restart_game(current_level);
-      return;
-    }
-  }
-  */
 
   // Debug toggle with D
   if (key == GLFW_KEY_P && action == GLFW_RELEASE)

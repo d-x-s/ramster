@@ -747,7 +747,6 @@ Entity createBackgroundLayer()
 		TEXTURE_ASSET_ID::BACKGROUND_5,
 		TEXTURE_ASSET_ID::BACKGROUND_6,
 		TEXTURE_ASSET_ID::BACKGROUND_7,
-
 	};
 
 	registry.renderRequests.insert(

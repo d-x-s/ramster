@@ -520,7 +520,7 @@ void PhysicsSystem::update_fireball() {
     b2Vec2 playerDirection = b2Normalize(playerVelocity);
 
     // Check if the player is moving at or above the minimum collision speed
-    if (playerSpeed >= 1000) {
+    if (playerSpeed >= MIN_COLLISION_SPEED) {
         // Set the fireball render request to visible
         for (Entity fireballEntity : registry.fireballs.entities) {
             RenderRequest& fireballRenderRequest = registry.renderRequests.get(fireballEntity);

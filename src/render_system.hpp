@@ -53,6 +53,12 @@ class RenderSystem
       textures_path("numbers/R8.png"),
       textures_path("numbers/R9.png"),
 
+      textures_path("numbers/W1.png"),
+      textures_path("numbers/W2.png"),
+      textures_path("numbers/W3.png"),
+      textures_path("numbers/W4.png"),
+      textures_path("numbers/W5.png"),
+
       textures_path("numbers/colon.png"),
       textures_path("numbers/Rcolon.png"),
 

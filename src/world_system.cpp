@@ -1531,94 +1531,6 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
       close_window();
     }
   }
-  if (action == GLFW_RELEASE && key == GLFW_KEY_L)
-  {
-    currentScreen.current_screen = scoreboard_next_screen;
-  }
-
-  // Reset game when R is released
-
-  if (action == GLFW_RELEASE && key == GLFW_KEY_R)
-  {
-    // Pause and End of Game screen - restarts game
-    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "VICTORY" || currentScreen.current_screen == "DEFEAT")
-    {
-      currentScreen.current_screen = "PLAYING";
-      int w, h;
-      glfwGetWindowSize(window, &w, &h);
-      restart_game(current_level);
-    }
-  }
-  // Select level - only active on MAIN MENU screen
-  if (currentScreen.current_screen == "MAIN MENU")
-  {
-    // Level keys 1-9
-    if (action == GLFW_RELEASE && key == GLFW_KEY_1)
-    {
-      levelHelper(1, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_2)
-    {
-      levelHelper(2, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_3)
-    {
-      levelHelper(3, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_4)
-    {
-      levelHelper(4, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_5)
-    {
-      levelHelper(5, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_6)
-    {
-      levelHelper(6, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_7)
-    {
-      levelHelper(7, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_8)
-    {
-      levelHelper(8, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_9)
-    {
-      levelHelper(9, currentScreen);
-    }
-    // Increment or decrement selected level by 1
-    if (action == GLFW_RELEASE && key == GLFW_KEY_UP)
-    {
-      levelHelper(current_level + 1, currentScreen);
-    }
-    if (action == GLFW_RELEASE && key == GLFW_KEY_DOWN)
-    {
-      levelHelper(current_level - 1, currentScreen);
-    }
-  }
-
-  // ENTER key press handling
-  if (action == GLFW_RELEASE && key == GLFW_KEY_ENTER)
-  {
-
-    // Main menu screen - Loads the selected level and starts the game
-    if (currentScreen.current_screen == "MAIN MENU")
-    {
-      currentScreen.current_screen = "PLAYING";
-      restart_game(current_level);
-      return;
-    }
-    // Pause and End of Game screen - back to main menu
-    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "VICTORY" || currentScreen.current_screen == "DEFEAT")
-    {
-      currentScreen.current_screen = "MAIN MENU";
-      restart_game(current_level);
-      return;
-    }
-  }
 
   // Debug toggle with D
   if (key == GLFW_KEY_P && action == GLFW_RELEASE)
@@ -2660,7 +2572,7 @@ void WorldSystem::createBestTimes(long long new_time)
       {
         RenderRequest &rr = registry.renderRequests.get(digitEntity);
         rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
-            static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + i + 1);
+            static_cast<int>(TEXTURE_ASSET_ID::W_NUMBER_1) + i);
       }
       else if (j == 3 || j == 6)
       {

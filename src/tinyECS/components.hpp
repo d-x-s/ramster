@@ -212,7 +212,13 @@ enum class TEXTURE_ASSET_ID
   R_NUMBER_8 = R_NUMBER_7 + 1,
   R_NUMBER_9 = R_NUMBER_8 + 1,
 
-  COLON = R_NUMBER_9 + 1,
+  W_NUMBER_1 = R_NUMBER_9 + 1,
+  W_NUMBER_2 = W_NUMBER_1 + 1,
+  W_NUMBER_3 = W_NUMBER_2 + 1,
+  W_NUMBER_4 = W_NUMBER_3 + 1,
+  W_NUMBER_5 = W_NUMBER_4 + 1,
+
+  COLON = W_NUMBER_5 + 1,
   R_COLON = COLON + 1,
 
   // Ramster

@@ -250,6 +250,8 @@ private:
 	// Time cooldown to prevent flickering (also determines granularity of time)
 	int time_granularity = TIME_GRANULARITY;
 
+	bool first_goal = false;
+
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
 

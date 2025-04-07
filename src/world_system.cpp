@@ -511,6 +511,15 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     if (is_in_goal())
     {
       // Commented out for debuggings
+      if (!first_goal)
+      {
+        auto now = std::chrono::steady_clock::now();
+        long long elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count() - total_pause_duration;
+        long long new_time = tryAddBestTime(elapsed_ms);
+        std::cout << elapsed_ms << std::endl;
+        createBestTimes(new_time);
+        first_goal = true;
+      }
       player_reached_finish_line = true;
     }
 
@@ -999,6 +1008,7 @@ void WorldSystem::restart_game(int level)
   enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
   total_pause_duration = 0;
   is_paused = false;
+  first_goal = false;
   if (grapplePointActive || grappleActive)
   {
     removeGrapple();
@@ -2075,10 +2085,6 @@ void WorldSystem::handleGameover(CurrentScreen &currentScreen)
         // LLNOTE FOR ANDREW
         // Set current screen to scoreboard
         // scoreboard_next_screen = "VICTORY";
-        auto now = std::chrono::steady_clock::now();
-        long long elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count() - total_pause_duration;
-        long long new_time = tryAddBestTime(elapsed_ms);
-        createBestTimes(new_time);
         scoreboard_next_screen = "VICTORY";
         currentScreen.current_screen = "LEADERBOARD";
       }

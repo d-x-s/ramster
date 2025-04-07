@@ -214,20 +214,26 @@ bool WorldSystem::start_and_load_sounds()
   chicken_eat_sound = Mix_LoadWAV(audio_path("chicken_eat.wav").c_str());
   ball_rolling = Mix_LoadWAV(audio_path("ball_rolling_sfx.wav").c_str());
   ball_flamming = Mix_LoadWAV(audio_path("fire_woosh_sfx.wav").c_str());
-
+  ramster_scream = Mix_LoadWAV(audio_path("ramster_scream.wav").c_str());
+  im_going_ham = Mix_LoadWAV(audio_path("im_going_ham.wav").c_str());
+  
   if (
       background_music == nullptr ||
       background_music_memorybranch == nullptr ||
       background_music_oblanka == nullptr ||
       background_music_paradrizzle == nullptr ||
       background_music_windcatcher == nullptr ||
-      background_music_promenade == nullptr ||
-      background_music_spaba == nullptr ||
-      background_music_cottonplanes == nullptr ||
-      background_music_pencilcrayons == nullptr ||
-      background_music_moontownshores == nullptr ||
-      ball_rolling == nullptr ||
-      ball_flamming == nullptr ||
+	  background_music_promenade == nullptr ||
+	  background_music_spaba == nullptr ||
+	  background_music_cottonplanes == nullptr ||
+	  background_music_pencilcrayons == nullptr ||
+	  background_music_moontownshores == nullptr ||
+
+	  ball_rolling == nullptr ||
+	  ball_flamming == nullptr ||
+	  ramster_scream == nullptr ||
+	  im_going_ham == nullptr ||
+
       fx_destroy_enemy == nullptr ||
       fx_destroy_enemy_fail == nullptr ||
       fx_jump == nullptr ||
@@ -305,24 +311,73 @@ void WorldSystem::playSoundEffect(FX effect)
   int channel;
   switch (effect)
   {
-  case FX::FX_DESTROY_ENEMY:
-    channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
-    break;
-  case FX::FX_DESTROY_ENEMY_FAIL:
-    channel = Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
-    break;
-  case FX::FX_JUMP:
-    channel = Mix_PlayChannel(-1, fx_jump, 0);
-    break;
-  case FX::FX_GRAPPLE:
-    channel = Mix_PlayChannel(-1, fx_grapple, 0);
-    break;
-  default:
-    channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
-    break;
-  }
+    case FX::FX_DESTROY_ENEMY:
+      channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+      break;
+    case FX::FX_DESTROY_ENEMY_FAIL:
+        channel = Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
+      break;
+    case FX::FX_JUMP:
+        channel = Mix_PlayChannel(-1, fx_jump, 0);
+      break;
+    case FX::FX_GRAPPLE:
+        channel = Mix_PlayChannel(-1, fx_grapple, 0);
+      break;
+    default:
+        channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+      break;
+  } 
 
   Mix_Volume(channel, 5);
+}
+
+
+// should only be called after ramster has defeated an enemy.
+void WorldSystem::handleRamsterVoicelines() {
+    Entity playerEntity = registry.players.entities[0];
+    Player& player = registry.players.get(playerEntity);
+
+    // Get the current time
+    auto now = std::chrono::steady_clock::now();
+
+    // Check if the cooldown period has passed
+    if (std::chrono::duration_cast<std::chrono::seconds>(now - player.lastVoicelineTime).count() < 2) {
+        return; // Cooldown period has not passed, do nothing
+    }
+
+    // Random number generator for probability increase
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(5, 15);
+
+    // Increment the probability by a random percentage between 5 and 15
+    player.voicelineProbability += dis(gen);
+
+    // Generate a random number between 0 and 100
+    std::uniform_int_distribution<> chance(0, 100);
+    int randomChance = chance(gen);
+
+    // Check if the random chance is less than or equal to the current probability
+    if (randomChance <= player.voicelineProbability) {
+        // Play voiceline and reset the probability
+        int channel;
+        int random = rand() % 2;
+
+        if (random == 0) {
+            channel = Mix_PlayChannel(-1, ramster_scream, 0);
+        }
+        else {
+            channel = Mix_PlayChannel(-1, im_going_ham, 0);
+        }
+
+        Mix_Volume(channel, 5);
+
+        // Reset the probability
+        player.voicelineProbability = 0;
+
+        // Update the last voiceline time
+        player.lastVoicelineTime = now;
+    }
 }
 
 // NOTE: function should be called after update_isGrounded() call for accuracy.
@@ -1008,6 +1063,11 @@ void WorldSystem::restart_game(int level)
     registry.idleAnimations.remove(registry.idleAnimations.entities.back());
   }
 
+  // stop all sounds playing currently
+  for (int i = 0; i < 8; i++) {
+      Mix_HaltChannel(i);
+  }
+
   int grid_line_width = GRID_LINE_WIDTH_PX;
 
   load_level(level_path);
@@ -1066,7 +1126,7 @@ void WorldSystem::restart_game(int level)
 }
 
 // Compute collisions between entities
-void WorldSystem::handle_collisions()
+void WorldSystem::handle_collisions(float elapsed_ms)
 {
 
   // This is mostly a repurposing of collision handling implementation from A1
@@ -1102,6 +1162,8 @@ void WorldSystem::handle_collisions()
           registry.remove_all_components_of(enemyEntity);
           playSoundEffect(FX::FX_DESTROY_ENEMY);
           enemies_killed++;
+
+          handleRamsterVoicelines();
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.
@@ -1136,6 +1198,8 @@ void WorldSystem::handle_collisions()
           registry.remove_all_components_of(other);
           playSoundEffect(FX::FX_DESTROY_ENEMY);
           enemies_killed++;
+
+		  handleRamsterVoicelines();
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.
@@ -1151,16 +1215,6 @@ void WorldSystem::handle_collisions()
           }
         }
       }
-
-      // LEGACY CODE (Pre-Box2D Collision Handling)
-      /*
-      b2Vec2 enemyPosition = b2Body_GetPosition(enemyBodyId);
-      b2Vec2 enemyVelocity = b2Body_GetLinearVelocity(enemyBodyId);
-      float enemySpeed = sqrt((enemyVelocity.x * enemyVelocity.x) + (enemyVelocity.y * enemyVelocity.y)); //pythagorean to get speed from velocity
-      b2Vec2 playerPosition = b2Body_GetPosition(playerBodyId);
-      b2Vec2 playerVelocity = b2Body_GetLinearVelocity(playerBodyId);
-      float playerSpeed = sqrt((playerVelocity.x * playerVelocity.x) + (playerVelocity.y * playerVelocity.y)); //pythagorean to get speed from velocity
-      */
     }
   }
   // Remove all collisions from this simulation step

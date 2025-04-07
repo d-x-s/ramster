@@ -102,6 +102,9 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 	Player& player = registry.players.emplace(mainEntity);
 	player.isCurrentlyFlamming = false;
 	player.isCurrentlyRolling = false;
+	player.enemiesRecentlyDestroyed = 0;
+	player.voicelineProbability = 0;
+	player.lastVoicelineTime = std::chrono::steady_clock::now();
 
 	// Define a dynamic body
 	b2BodyDef bodyDef = b2DefaultBodyDef();

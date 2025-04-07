@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.hpp"
+#include <chrono>
 #include "tinyECS/tiny_ecs.hpp"
 #include "render_system.hpp"
 

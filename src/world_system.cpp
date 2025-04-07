@@ -1649,42 +1649,52 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
     // For the playing screen specifically, mouse controls grapple
     if (currentScreen.current_screen == "PLAYING")
     {
-      // Find the grapple point closest to the click that is within the threshold.
-      GrapplePoint *selectedGp = nullptr;
-      float bestDist = GRAPPLE_ATTACH_ZONE_RADIUS; // distance threshold
+        // Find the grapple point closest to the click that is within the threshold.
+        GrapplePoint* selectedGp = nullptr;
+        float bestDist = GRAPPLE_ATTACH_ZONE_RADIUS; // distance threshold
 
-      // Deactivate all grapple enemies_killed.
-      for (Entity gpEntity : registry.grapplePoints.entities)
-      {
-        GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
-        gp.active = false;
-      }
+        for (Entity gpEntity : registry.grapplePoints.entities)
+        {
+            GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+            float dist = length(gp.position - worldMousePos);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                selectedGp = &gp;
+            }
+        }
 
-      // If a valid grapple point is found, mark it as active.
-      if (selectedGp != nullptr)
-      {
-        selectedGp->active = true;
-        std::cout << "Selected grapple point at ("
-                  << selectedGp->position.x << ", " << selectedGp->position.y
-                  << ") with active = " << selectedGp->active << std::endl;
-      }
+        // Deactivate all grapple enemies_killed.
+        for (Entity gpEntity : registry.grapplePoints.entities)
+        {
+            GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
+            gp.active = false;
+        }
 
-      // Now, if no grapple is currently attached and we found an active point, attach the grapple.
-      if (!grappleActive && selectedGp != nullptr)
-      {
-        shootGrapplePoint();
-      }
-      else if (!grappleActive && selectedGp == nullptr)
-      {
-        shootGrapple(worldMousePos);
-      }
-      else if (grappleActive)
-      {
-        removeGrapple();
-        grappleActive = false;
-        grapplePointActive = false;
-      }
+        // If a valid grapple point is found, mark it as active.
+        if (selectedGp != nullptr)
+        {
+            selectedGp->active = true;
+            std::cout << "Selected grapple point at ("
+                << selectedGp->position.x << ", " << selectedGp->position.y
+                << ") with active = " << selectedGp->active << std::endl;
+        }
 
+        // Now, if no grapple is currently attached and we found an active point, attach the grapple.
+        if (!grappleActive && selectedGp != nullptr)
+        {
+            shootGrapplePoint();
+        }
+        else if (!grappleActive && selectedGp == nullptr)
+        {
+            shootGrapple(worldMousePos);
+        }
+        else if (grappleActive)
+        {
+            removeGrapple();
+            grappleActive = false;
+            grapplePointActive = false;
+        }
     }
     // Every other screen, mouse deals with button presses.
     else

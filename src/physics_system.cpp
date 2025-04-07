@@ -421,8 +421,8 @@ void PhysicsSystem::step(float elapsed_ms)
   prev_x = camX;
   prev_y = camY;
 
-  // COLLISION HANDLING
-  // This just iterates over all motion entities to check.
+    // COLLISION HANDLING
+  // This just iterates over all motion entities to check. 
   // The collision check is handled by collides() helper function.
   ComponentContainer<Motion> &motion_container = registry.motions;
   for (uint i = 0; i < motion_container.components.size(); i++)
@@ -437,27 +437,9 @@ void PhysicsSystem::step(float elapsed_ms)
       Entity entity_j = motion_container.entities[j];
       // We really only want to check collisions if both of these are either players or enemies.
       if ((registry.players.has(entity_i) || registry.enemies.has(entity_i)) && // entity i is either a player or an enemy
-          (registry.players.has(entity_j) || registry.enemies.has(entity_j))    // entity j is either a player or an enemy
-      )
-      {
-        if (collides(entity_i, entity_j))
-        {
-          // Now that we know the 2 entities are colliding we also want to figure out which entity comes out on top.
-          // Current criteria for "top" is higher speed during collision.
-
-          // Get body IDs to identify entities in box2D (note that i, j, maps onto 1, 2)
-          b2BodyId entity1_id = registry.physicsBodies.get(entity_i).bodyId;
-          b2BodyId entity2_id = registry.physicsBodies.get(entity_j).bodyId;
-          // Get speeds
-          b2Vec2 entity1_velocity = b2Body_GetLinearVelocity(entity1_id);
-          float entity1_speedFactor = ((entity1_velocity.x * entity1_velocity.x) + (entity1_velocity.y * entity1_velocity.y)) / 100000;
-          b2Vec2 entity2_velocity = b2Body_GetLinearVelocity(entity2_id);
-          float entity2_speedFactor = ((entity2_velocity.x * entity2_velocity.x) + (entity2_velocity.y * entity2_velocity.y)) / 100000;
-
-          // ID the player
-          Entity playerEntity;
-          float playerSpeed;
-          if (registry.players.has(entity_i))
+          (registry.players.has(entity_j) || registry.enemies.has(entity_j)) // entity j is either a player or an enemy
+          ) {
+          if (collides(entity_i, entity_j))
           {
               // Now that we know the 2 entities are colliding we also want to figure out which entity comes out on top.
               // Current criteria for "top" is higher speed during collision.
@@ -473,13 +455,13 @@ void PhysicsSystem::step(float elapsed_ms)
 
               // ID the player
               Entity playerEntity;
-              float playerSpeed;
+              b2Vec2 playerVelocity;
               if (registry.players.has(entity_i)) {
-                playerSpeed = entity1_speedFactor;
+                playerVelocity = entity1_velocity;
                 playerEntity = entity_i;
               }
               else {
-                playerSpeed = entity2_speedFactor;
+                playerVelocity = entity2_velocity;
                 playerEntity = entity_j;
               }
 
@@ -491,7 +473,7 @@ void PhysicsSystem::step(float elapsed_ms)
               // NOTE: this depends on MIN_COLLISION_SPEED, which will need some fine-tuning to find a good speed at which we can hit the enemy.
               bool player_wins_collision = false;
 
-              if (playerSpeed > MIN_COLLISION_SPEED/1000) {
+              if (b2Length(playerVelocity) > MIN_COLLISION_SPEED * 0.85) {
                   player_wins_collision = true;
               }
 
@@ -501,36 +483,6 @@ void PhysicsSystem::step(float elapsed_ms)
               Collision& collision = registry.collisions.emplace_with_duplicates(entity_i, entity_j);
               collision.player_wins_collision = player_wins_collision;
           }
-          else
-          {
-            playerSpeed = entity2_speedFactor;
-            playerEntity = entity_j;
-          }
-
-          // To determine if the player "won" in that collision, what we ultimately want to find out is whether the player was moving fast enough.
-          // So, at a high enough speed, the player should be relatively resistant to damage. The goal of the enemy would then be to absorb as much of
-          // the player's speed as possible.
-          // Since the player is bouncy and our enemies are not very fast (at least not fast enough to make the player surpass the required speed to "win"),
-          // we can figure out if the player is fast enough by just checking on how much speed they retain after the collision.
-          // NOTE: this depends on MIN_COLLISION_SPEED, which will need some fine-tuning to find a good speed at which we can hit the enemy.
-          bool player_wins_collision = false;
-
-          if (playerSpeed > MIN_COLLISION_SPEED)
-          {
-            player_wins_collision = true;
-          }
-
-          // DEBUG
-          // std::cout << "ENTITY 1 SPEED: " << entity1_speedFactor << std::endl;
-          // std::cout << "ENTITY 2 SPEED: " << entity2_speedFactor << std::endl;
-          // std::cout << "PLAYER SPEED: " << playerSpeed << std::endl;
-
-          // Create a collisions event
-          // We are abusing the ECS system a bit in that we potentially insert muliple collisions for the same entity
-          // CK: why the duplication, except to allow searching by entity_id
-          Collision &collision = registry.collisions.emplace_with_duplicates(entity_i, entity_j);
-          collision.player_wins_collision = player_wins_collision;
-        }
       }
     }
   }

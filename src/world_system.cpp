@@ -11,6 +11,7 @@
 #include <json/json.h>
 #include <box2d/box2d.h>
 #include <chrono>
+#include <filesystem>
 
 // internal
 #include "physics_system.hpp"
@@ -370,7 +371,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     if (is_in_goal())
     {
       // Commented out for debuggings
-      // player_reached_finish_line = true;
+      player_reached_finish_line = true;
     }
 
     // Remove debug info from the last step
@@ -1954,6 +1955,9 @@ void WorldSystem::handleGameover(CurrentScreen &currentScreen)
       // Victory title
       createScreenElement("END OF GAME", TEXTURE_ASSET_ID::TITLE_VICTORY, VIEWPORT_WIDTH_PX / 2.5, VIEWPORT_HEIGHT_PX / 4.25, vec2(0, VIEWPORT_HEIGHT_PX / 4));
 
+      auto now = std::chrono::steady_clock::now();
+      long long elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count() - total_pause_duration;
+      tryAddBestTime(elapsed_ms, level_selection);
       currentScreen.current_screen = "END OF GAME";
     }
     else
@@ -2207,4 +2211,42 @@ void WorldSystem::updateTimer(long long time_elapsed)
       digitIndex++;
     }
   }
+}
+
+std::string WorldSystem::getBestTimeFilePath(int level)
+{
+  return "../data/best_times/" + std::to_string(level) + ".txt";
+}
+
+void WorldSystem::loadBestTimes(int level)
+{
+  best_times.clear();
+  std::ifstream infile(getBestTimeFilePath(level));
+  long long time;
+  while (infile >> time)
+  {
+    best_times.push_back(time);
+  }
+  std::sort(best_times.begin(), best_times.end());
+  if (best_times.size() > 5)
+    best_times.resize(5);
+}
+
+void WorldSystem::saveBestTimes(int level)
+{
+  std::ofstream outfile(getBestTimeFilePath(level), std::ios::trunc);
+  for (long long t : best_times)
+  {
+    outfile << t << "\n";
+  }
+}
+
+void WorldSystem::tryAddBestTime(long long time_elapsed, int level)
+{
+  loadBestTimes(level); // Load current ones before adding
+  best_times.push_back(time_elapsed);
+  std::sort(best_times.begin(), best_times.end());
+  if (best_times.size() > 5)
+    best_times.resize(5);
+  saveBestTimes(level);
 }

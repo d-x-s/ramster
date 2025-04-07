@@ -8,6 +8,7 @@
 #include <random>
 #include <map>
 #include <string>
+#include <filesystem>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -289,4 +290,12 @@ private:
 	void shootGrapple(vec2 worldMousePos);
 	void updateScore(Entity scoreEntity);
 	void updateTimer(long long time_elapsed);
+
+	std::vector<long long> best_times;
+	const std::string BEST_TIMES_FILE = "../data/best_times/best_times.txt";
+
+	std::string getBestTimeFilePath(int level);
+	void loadBestTimes(int level);
+	void saveBestTimes(int level);
+	void tryAddBestTime(long long time_elapsed, int level);
 };

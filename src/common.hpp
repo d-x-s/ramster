@@ -143,7 +143,7 @@ const float BALL_INITIAL_POSITION_Y = 800.0;
 // Player input related physics
 const float BALL_GROUNDED_MOVEMENT_FORCE = 25000.0f; // kg�cm/s� (dynes)
 const float BALL_AIR_STRAFE_FORCE_MULTIPLIER = 0.5f;
-const float BALL_JUMP_IMPULSE = 16000.0f; // kg�cm/s (dynes�s)
+const float BALL_JUMP_IMPULSE = 25000.0f; // kg�cm/s (dynes�s)
 const float JUMP_COOLDOWN = 0.5f;         // 0.5 seconds
 
 // A ball of radius 32cm has area ~3200cm�.

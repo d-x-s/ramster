@@ -352,13 +352,16 @@ void PhysicsSystem::step(float elapsed_ms)
         activeGrappleBodyId = gp.bodyId;
       }
     }
-    b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
-    camX = lerp(prev_x, grapplePos.x, grapple_shift.x);
-    camY = lerp(prev_y, grapplePos.y, grapple_shift.y);
 
-    if (camX != grapplePos.x || camY != grapplePos.y)
-    {
-      grapple_shift += 0.02;
+    if (!b2Body_IsValid(activeGrappleBodyId)) {
+        b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
+        camX = lerp(prev_x, grapplePos.x, grapple_shift.x);
+        camY = lerp(prev_y, grapplePos.y, grapple_shift.y);
+
+        if (camX != grapplePos.x || camY != grapplePos.y)
+        {
+            grapple_shift += 0.02;
+        }
     }
   }
   // Reset camera back to player
@@ -629,7 +632,19 @@ void PhysicsSystem::updateTimer(vec2 camPos)
   const float rightEdge = camPos.x + WINDOW_WIDTH_PX / 2.f - rightMargin;
   const float baseY = camPos.y + WINDOW_HEIGHT_PX / 2.f - 40.f;
 
+  for (Entity timerEntity : registry.timers.entities)
+  {
+    Timer &timer = registry.timers.get(timerEntity);
 
+    for (int i = 0; i < 7; ++i)
+    {
+      Entity digitEntity = timer.digits[i];
+      Motion &motion = registry.motions.get(digitEntity);
+
+      float x = rightEdge - (6 - i) * fullDigitWidth;
+      motion.position = vec2(x, baseY);
+    }
+  }
 }
 
 void PhysicsSystem::update_player_animation() {

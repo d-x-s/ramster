@@ -237,7 +237,9 @@ private:
 	int enemies_killed = 0;
 	// Player hp.
 	int hp = PLAYER_STARTING_HP;
-
+	// Screen we're routing to, used for scoreboard 
+	// LLNOTE FOR ANDREW
+	std::string scoreboard_next_screen; // Need to set to either VICTORY OR DEFEAT
 	// Frames per second
 	int fps = 0; // 0 is default val
 	// Do an FPS cooldown to prevent flickering

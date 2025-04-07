@@ -2046,7 +2046,10 @@ void WorldSystem::handleGameover(CurrentScreen &currentScreen)
   // If player HP reaches 0, game ends.
   if (hp <= 0)
   {
-    currentScreen.current_screen = "DEFEAT";
+    currentScreen.current_screen = "DEFEAT"; 
+    // LLNOTE FOR ANDREW
+    // Set current screen to scoreboard
+    //scoreboard_next_screen = "DEFEAT";
   }
   // If player reached finish line AND killed all enemies, game ends.
   else if (player_reached_finish_line)
@@ -2062,6 +2065,9 @@ void WorldSystem::handleGameover(CurrentScreen &currentScreen)
       else
       {
         currentScreen.current_screen = "VICTORY";
+        // LLNOTE FOR ANDREW
+        // Set current screen to scoreboard
+        //scoreboard_next_screen = "VICTORY";
       }
     }
     else
@@ -2172,6 +2178,8 @@ void WorldSystem::handleButtonPress(Entity buttonEntity)
       else if (currentScreen.current_screen == "STORY CONCLUSION")
       {
         currentScreen.current_screen = "GAME COMPLETE";
+        // LLNOTE FOR ANDREW
+        // Need to route this over to SCOREBOARD screen, set the next button to go to GAME COMPLETE
         playMusic(MUSIC::MENU);
       }
     }
@@ -2212,6 +2220,11 @@ void WorldSystem::handleButtonPress(Entity buttonEntity)
 
     currentScreen.current_screen = "MAIN MENU";
     restart_game(current_level);
+  }
+  else if (function == "SCOREBOARD NEXT") {
+      // LLNOTE FOR ANDREW
+      // 
+      //currentScreen.current_screen = scoreboard_next_screen; should be enough...?
   }
 }
 

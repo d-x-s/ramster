@@ -445,13 +445,13 @@ void PhysicsSystem::step(float elapsed_ms)
 
               // ID the player
               Entity playerEntity;
-              float playerSpeed;
+              b2Vec2 playerVelocity;
               if (registry.players.has(entity_i)) {
-                playerSpeed = entity1_speedFactor;
+                playerVelocity = entity1_velocity;
                 playerEntity = entity_i;
               }
               else {
-                playerSpeed = entity2_speedFactor;
+                playerVelocity = entity2_velocity;
                 playerEntity = entity_j;
               }
 
@@ -463,7 +463,7 @@ void PhysicsSystem::step(float elapsed_ms)
               // NOTE: this depends on MIN_COLLISION_SPEED, which will need some fine-tuning to find a good speed at which we can hit the enemy.
               bool player_wins_collision = false;
 
-              if (playerSpeed > MIN_COLLISION_SPEED/1000) {
+              if (b2Length(playerVelocity) > MIN_COLLISION_SPEED * 0.85) {
                   player_wins_collision = true;
               }
 

@@ -8,3 +8,4 @@ Reported Date,Reporter,Assignee,Severity,Status,Short Desc.,Expected Results,Act
 3/24/2025,Davis,Andrew,P3 - Major,Resolved,Grapple attachment zone is not perfectly centered,Grapple attachment zone should be centered,Grapple attachment feels offset to the right,Try to click to attach to grapple in left/right regions relative to the grapple point
 3/24/2025,Davis,Ning,P2 - Critical,Resolved,Bugged ramps exist in tutorial,All ramps should have perfect collision behavior,Some ramps in the tutorial cause the player to become stuck,Try the ramps in the tutorial level
 3/24/2025,Zach,Andrew,P2 - Critical,Resolved,Game crashes randomly when on the grapple,Game should never crash when grappling,Game crashes when grappling,Attempt to use the grapple enough times and you may encounter this bug
+4/7/2025,Zach,Andrew,P5 - Minor,In Progress,Multiple times are recorded when beating a level,Only one time should be recorded,Multiple times are recorded,Beat a level and observe 

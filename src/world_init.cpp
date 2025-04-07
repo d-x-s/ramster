@@ -2,29 +2,30 @@
 #include "tinyECS/registry.hpp"
 #include <iostream>
 
-
 // Creates tracker component for current screen
-Entity createCurrentScreen() {
+Entity createCurrentScreen()
+{
 	Entity entity = Entity();
 
-	CurrentScreen& currentScreen = registry.currentScreen.emplace(entity);
+	CurrentScreen &currentScreen = registry.currentScreen.emplace(entity);
 
 	return entity;
 }
 
 // TODO: Port createScreen here.
-Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
+Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center)
+{
 
-	Entity entity = Entity(); 
+	Entity entity = Entity();
 
 	// Make screen element
-	ScreenElement& screenElement = registry.screenElements.emplace(entity);
+	ScreenElement &screenElement = registry.screenElements.emplace(entity);
 	screenElement.screen = screen;
 
 	// Configure size (for some reason we need motion to render?)
-	auto& motion = registry.motions.emplace(entity);
+	auto &motion = registry.motions.emplace(entity);
 	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 4); // This is a placeholder. Actual position computed during runtime.
-	motion.scale = vec2(width_px, height_px); // Scaled to defined width/height
+	motion.scale = vec2(width_px, height_px);						 // Scaled to defined width/height
 
 	// Attach camera to center screen
 	Entity camera = registry.cameras.entities[0];
@@ -45,15 +46,11 @@ Entity createScreenElement(std::string screen, TEXTURE_ASSET_ID texture, int wid
 	// Add to render requests with specified texture
 	registry.renderRequests.insert(
 		entity,
-		{
-			texture,
-			EFFECT_ASSET_ID::TEXTURED,
-			GEOMETRY_BUFFER_ID::SPRITE
-		}
-	);
+		{texture,
+		 EFFECT_ASSET_ID::TEXTURED,
+		 GEOMETRY_BUFFER_ID::SPRITE});
 
 	return entity;
-
 }
 
 
@@ -67,7 +64,6 @@ Entity createButton(std::string function, std::string screen, TEXTURE_ASSET_ID t
 	return buttonElement;
 }
 
-
 // Same as create button, but ties a level component onto it.
 Entity createLevelButton(int level, std::string screen, TEXTURE_ASSET_ID texture, int width_px, int height_px, vec2 pos_relative_center) {
 
@@ -78,7 +74,6 @@ Entity createLevelButton(int level, std::string screen, TEXTURE_ASSET_ID texture
 	return buttonElement;
 }
 
-
 Entity createStoryFrame(int frameNumber, int maxFrame, std::string screen, TEXTURE_ASSET_ID texture) {
 
 	Entity buttonElement = createButton("STORY FRAME BUTTON", screen, texture, 1366, 768, vec2(0, 0));
@@ -88,7 +83,6 @@ Entity createStoryFrame(int frameNumber, int maxFrame, std::string screen, TEXTU
 
 	return buttonElement;
 }
-
 
 Entity createBall(b2WorldId worldId, vec2 startPos)
 {
@@ -119,7 +113,7 @@ Entity createBall(b2WorldId worldId, vec2 startPos)
 	shapeDef.friction = BALL_FRICTION;
 	shapeDef.restitution = BALL_RESTITUTION;
 	b2Circle circle;
-	circle.center = b2Vec2{ 0.0f, 0.0f };
+	circle.center = b2Vec2{0.0f, 0.0f};
 	circle.radius = BALL_RADIUS;
 	b2ShapeId shapeId = b2CreateCircleShape(bodyId, &shapeDef, &circle);
 	ball.bodyId = bodyId;
@@ -359,14 +353,15 @@ Entity createConfetti(vec2 position) {
 	return entity;
 }
 
-Entity createFireball(vec2 startPos) {
+Entity createFireball(vec2 startPos)
+{
 
 	Entity entity = Entity();
 
-	auto& fireball = registry.fireballs.emplace(entity);
+	auto &fireball = registry.fireballs.emplace(entity);
 
 	// Add motion
-	auto& fireball_motion = registry.motions.emplace(entity);
+	auto &fireball_motion = registry.motions.emplace(entity);
 	fireball_motion.scale = vec2(200.f, 75.f);
 	fireball_motion.angle = 0.f;
 	fireball_motion.position = startPos;
@@ -412,73 +407,80 @@ Entity createFireball(vec2 startPos) {
 // - pos (x, y): position to spawn enemy
 // - ENEMY_TYPES: type of enemy to spawn.
 // - MOVEMENT AREA (min_x, max_x): activity radius of the enemy. set to (-1, -1) if you want enemy to move anywhere on the map.
-Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_range_point_a, vec2 movement_range_point_b) {
+Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 movement_range_point_a, vec2 movement_range_point_b)
+{
 
 	// Determine enemy type-based characteristics here.
- 
+
 	// If the enemy is an obstacle then they will not be destructable. Can expand w/ more indestructable enemies.
-	bool destructability = enemy_type == OBSTACLE ? false : true; 
+	bool destructability = enemy_type == OBSTACLE ? false : true;
 	// Size of enemy. ENEMY_RADIUS is the standard size, and we'll change it for non-common enemies.
 	float enemySize = ENEMY_RADIUS;
-	if (enemy_type == OBSTACLE) {
+	if (enemy_type == OBSTACLE)
+	{
 		enemySize *= 1.5;
 	}
-	else if(enemy_type == SWARM) {
+	else if (enemy_type == SWARM)
+	{
 		enemySize *= 0.75;
 	}
 	// Bounciness of enemy. Maps onto box2D restitution. Common has the standard ENEMY_RESTITUTION.
 	float enemyBounciness = ENEMY_RESTITUTION;
-	if (enemy_type == OBSTACLE) {
+	if (enemy_type == OBSTACLE)
+	{
 		enemyBounciness = 0;
 	}
-	else if (enemy_type == SWARM) {
+	else if (enemy_type == SWARM)
+	{
 		enemyBounciness = 0.5;
 	}
 	// Weight of enemy, based on density. Common has default weight ENEMY_DENSITY
 	float enemyWeight = ENEMY_DENSITY;
-	if (enemy_type == OBSTACLE) {
+	if (enemy_type == OBSTACLE)
+	{
 		enemyWeight = 0.5;
 	}
-	else if (enemy_type == SWARM) {
+	else if (enemy_type == SWARM)
+	{
 		enemyWeight = 0.0005;
 	}
 	// Friction of enemy, which slows it down as it travels along a surface. Common has default friction ENEMY_FRICTION
 	float enemyFriction = ENEMY_FRICTION;
-	if (enemy_type == OBSTACLE) {
+	if (enemy_type == OBSTACLE)
+	{
 		enemyFriction = 0;
 	}
 	// Whether the enemy is affected by gravity, applied using gravity scaling. Only common enemies have gravity.
 	float enemyGravityScaling = 0;
-	if (enemy_type == COMMON) {
+	if (enemy_type == COMMON)
+	{
 		enemyGravityScaling = 1;
 	}
-	
 
 	// Add enemy to ECS
-	
+
 	// Enemy entity
 	Entity entity = Entity();
 
 	// Add physics to enemy body
-	PhysicsBody& enemyBody = registry.physicsBodies.emplace(entity);
-	EnemyPhysics& enemy_physics = registry.enemyPhysics.emplace(entity);
+	PhysicsBody &enemyBody = registry.physicsBodies.emplace(entity);
+	EnemyPhysics &enemy_physics = registry.enemyPhysics.emplace(entity);
 	enemy_physics.isGrounded = false;
 
 	// Add enemy component
-	auto& enemy_registry = registry.enemies;
-	Enemy& enemy = registry.enemies.emplace(entity);
+	auto &enemy_registry = registry.enemies;
+	Enemy &enemy = registry.enemies.emplace(entity);
 	enemy.enemyType = enemy_type;
 	enemy.movement_area_point_a = movement_range_point_a;
 	enemy.movement_area_point_b = movement_range_point_b;
 	enemy.destructable = destructability;
 
-
 	// Make Box2D body for enemy
-	
+
 	// Define a box2D body
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_dynamicBody;
-	bodyDef.position = b2Vec2{ pos[0], pos[1]};
+	bodyDef.position = b2Vec2{pos[0], pos[1]};
 	bodyDef.fixedRotation = true; // Fixed Rotation: true = no rolling, false = rolling.
 	// Use `b2CreateBody()` instead of `world.CreateBody()`
 	b2BodyId bodyId = b2CreateBody(worldID, &bodyDef);
@@ -487,13 +489,15 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
 	shapeDef.density = enemyWeight;
 	shapeDef.friction = enemyFriction;
-	shapeDef.restitution = enemyBounciness; 
+	shapeDef.restitution = enemyBounciness;
+
+	std::cout << "shape: " << shapeDef.filter.maskBits << std::endl;
 
 	// Use `b2CreateCircleShape()` instead of `CreateFixture()`
 	// We'll update the enemy hitbox later.
 	b2Circle circle;
-	circle.center = b2Vec2{ 0.0f, 0.0f };
-	circle.radius = enemySize; // Simple way to change size of enemies based on their type. Adjust int multiplier in ENEMY_TYPES to change this.
+	circle.center = b2Vec2{0.0f, 0.0f};
+	circle.radius = enemySize;						 // Simple way to change size of enemies based on their type. Adjust int multiplier in ENEMY_TYPES to change this.
 	b2CreateCircleShape(bodyId, &shapeDef, &circle); // this is the hitbox
 
 	enemyBody.bodyId = bodyId;
@@ -503,9 +507,8 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 	// This changes the effect of gravity on an enemy.
 	b2Body_SetGravityScale(bodyId, enemyGravityScaling);
 
-
 	// Add motion & render request for ECS synchronization
-	auto& motion = registry.motions.emplace(entity);
+	auto &motion = registry.motions.emplace(entity);
 	motion.angle = 0.f;
 	motion.position = pos;
 
@@ -514,143 +517,140 @@ Entity createEnemy(b2WorldId worldID, vec2 pos, ENEMY_TYPES enemy_type, vec2 mov
 
 	std::vector<TEXTURE_ASSET_ID> frames;
 
-	if (enemy_type == ENEMY_TYPES::COMMON) {
-		frames = { TEXTURE_ASSET_ID::COMMON_1, TEXTURE_ASSET_ID::COMMON_2, TEXTURE_ASSET_ID::COMMON_3, TEXTURE_ASSET_ID::COMMON_4, TEXTURE_ASSET_ID::COMMON_5 };
+	if (enemy_type == ENEMY_TYPES::COMMON)
+	{
+		frames = {TEXTURE_ASSET_ID::COMMON_1, TEXTURE_ASSET_ID::COMMON_2, TEXTURE_ASSET_ID::COMMON_3, TEXTURE_ASSET_ID::COMMON_4, TEXTURE_ASSET_ID::COMMON_5};
 	}
 	else if (enemy_type == ENEMY_TYPES::SWARM)
 	{
-		frames = { TEXTURE_ASSET_ID::SWARM_1, TEXTURE_ASSET_ID::SWARM_2, TEXTURE_ASSET_ID::SWARM_3, TEXTURE_ASSET_ID::SWARM_4 };
+		frames = {TEXTURE_ASSET_ID::SWARM_1, TEXTURE_ASSET_ID::SWARM_2, TEXTURE_ASSET_ID::SWARM_3, TEXTURE_ASSET_ID::SWARM_4};
 	}
 	else if (enemy_type == ENEMY_TYPES::OBSTACLE)
 	{
-		frames = { TEXTURE_ASSET_ID::OBSTACLE_1, TEXTURE_ASSET_ID::OBSTACLE_2, TEXTURE_ASSET_ID::OBSTACLE_3, TEXTURE_ASSET_ID::OBSTACLE_4 };
+		frames = {TEXTURE_ASSET_ID::OBSTACLE_1, TEXTURE_ASSET_ID::OBSTACLE_2, TEXTURE_ASSET_ID::OBSTACLE_3, TEXTURE_ASSET_ID::OBSTACLE_4};
 	}
 
 	registry.renderRequests.insert(
 		entity,
-		{
-			frames[0],
-			EFFECT_ASSET_ID::TEXTURED,
-			GEOMETRY_BUFFER_ID::SPRITE,
-			frames,
-			{},
-			true,
-			true,
-			200.0f,                       
-			0.0f,                         
-			0                             
-		}
-	);
+		{frames[0],
+		 EFFECT_ASSET_ID::TEXTURED,
+		 GEOMETRY_BUFFER_ID::SPRITE,
+		 frames,
+		 {},
+		 true,
+		 true,
+		 200.0f,
+		 0.0f,
+		 0});
 
 	return entity;
 }
 
-  // Entity createGrapplePoint(b2WorldId worldId){
-Entity createGrapplePoint(b2WorldId worldId, vec2 position){
+// Entity createGrapplePoint(b2WorldId worldId){
+Entity createGrapplePoint(b2WorldId worldId, vec2 position)
+{
 	Entity entity = Entity();
 
 	b2BodyDef bodyDef = b2DefaultBodyDef();
 	bodyDef.type = b2_staticBody;
-	bodyDef.position = b2Vec2{ position.x, position.y};
+	bodyDef.position = b2Vec2{position.x, position.y};
 
-    b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+	b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
 	b2ShapeDef shapeDef = b2DefaultShapeDef();
 
-	//Disable collisions
+	// Disable collisions
 	shapeDef.filter.maskBits = 0x0000;
-	shapeDef.isSensor = true; 
+	shapeDef.isSensor = true;
 
 	b2Circle circle;
-	circle.center = b2Vec2{ 0.0f, 0.0f };
-    circle.radius = 0.2f;
+	circle.center = b2Vec2{0.0f, 0.0f};
+	circle.radius = 0.2f;
 
 	b2CreateCircleShape(bodyId, &shapeDef, &circle);
 
-	PhysicsBody& grappleBody = registry.physicsBodies.emplace(entity);
-    grappleBody.bodyId = bodyId;
+	PhysicsBody &grappleBody = registry.physicsBodies.emplace(entity);
+	grappleBody.bodyId = bodyId;
 
-	GrapplePoint& grapplePoint = registry.grapplePoints.emplace(entity);
+	GrapplePoint &grapplePoint = registry.grapplePoints.emplace(entity);
 	grapplePoint.position = position;
 	grapplePoint.active = false;
 	grapplePoint.bodyId = bodyId;
-	
-	auto& motion = registry.motions.emplace(entity);
+
+	auto &motion = registry.motions.emplace(entity);
 	motion.position = position;
 	motion.scale = vec2(64.0f, 64.0f);
 
 	registry.renderRequests.insert(
 		entity,
-		{
-			TEXTURE_ASSET_ID::GRAPPLE_POINT,
-			EFFECT_ASSET_ID::TEXTURED,
-			GEOMETRY_BUFFER_ID::SPRITE
-		}
-	);
+		{TEXTURE_ASSET_ID::GRAPPLE_POINT,
+		 EFFECT_ASSET_ID::TEXTURED,
+		 GEOMETRY_BUFFER_ID::SPRITE});
 
 	// Outline
 	Entity entity_grapple_outline = Entity();
-	auto& grapple_outline_motion = registry.motions.emplace(entity_grapple_outline);
+	auto &grapple_outline_motion = registry.motions.emplace(entity_grapple_outline);
 	grapple_outline_motion.position = vec2(position.x, position.y);
 	grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS * 2, GRAPPLE_ATTACH_ZONE_RADIUS * 2);
 
 	// TODO davis fix artificially large attachment zones later LOLOL
-	//grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS, GRAPPLE_ATTACH_ZONE_RADIUS);
+	// grapple_outline_motion.scale = vec2(GRAPPLE_ATTACH_ZONE_RADIUS, GRAPPLE_ATTACH_ZONE_RADIUS);
 
 	registry.renderRequests.insert(
 		entity_grapple_outline,
-		{
-			TEXTURE_ASSET_ID::GRAPPLE_OUTLINE,
-			EFFECT_ASSET_ID::TEXTURED,
-			GEOMETRY_BUFFER_ID::SPRITE
-		}
-	);
+		{TEXTURE_ASSET_ID::GRAPPLE_OUTLINE,
+		 EFFECT_ASSET_ID::TEXTURED,
+		 GEOMETRY_BUFFER_ID::SPRITE});
 
 	return entity;
 }
 
-Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBodyId, float distance) {
-    Entity entity = Entity();
+Entity createGrapple(b2WorldId worldId, b2BodyId ballBodyId, b2BodyId grappleBodyId, float distance)
+{
+	Entity entity = Entity();
 
-    // Create distance joint between ball and grapple Point
-    b2DistanceJointDef djd = b2DefaultDistanceJointDef();
-    djd.bodyIdA = ballBodyId;
-    djd.bodyIdB = grappleBodyId;
-    djd.length = distance;
-    djd.collideConnected = false;
-    // djd.maxLength = GRAPPLE_ATTACHABLE_RADIUS;
-    djd.maxLength = GRAPPLE_MAX_LENGTH;
+	// Create distance joint between ball and grapple Point
+	b2DistanceJointDef djd = b2DefaultDistanceJointDef();
+	djd.bodyIdA = ballBodyId;
+	djd.bodyIdB = grappleBodyId;
+
+	djd.length = distance;
+	djd.collideConnected = false;
+	// djd.maxLength = GRAPPLE_ATTACHABLE_RADIUS;
+	djd.maxLength = GRAPPLE_MAX_LENGTH;
 	djd.minLength = GRAPPLE_MIN_LENGTH;
 
-    b2JointId jointId = b2CreateDistanceJoint(worldId, &djd);
+	b2JointId jointId = b2CreateDistanceJoint(worldId, &djd);
 
-    // Store grapple data
-    Grapple& grapple = registry.grapples.emplace(entity);
-    grapple.jointId = jointId;
-    grapple.ballBodyId = ballBodyId;
-    grapple.grappleBodyId = grappleBodyId;
+	// Store grapple data
+	Grapple &grapple = registry.grapples.emplace(entity);
+	grapple.jointId = jointId;
+	grapple.ballBodyId = ballBodyId;
+	grapple.grappleBodyId = grappleBodyId;
 
-    // Create line entity to visualize grapple
-    b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
-    b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
+	// Create line entity to visualize grapple
+	b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+	b2Vec2 grapplePos = b2Body_GetPosition(grappleBodyId);
 
-    Entity lineEntity = createLine(vec2(ballPos.x, ballPos.y), vec2(grapplePos.x, grapplePos.y));
-    grapple.lineEntity = lineEntity;  // Store the line entity for updates
+	Entity lineEntity = createLine(vec2(ballPos.x, ballPos.y), vec2(grapplePos.x, grapplePos.y));
+	grapple.lineEntity = lineEntity; // Store the line entity for updates
 
-    return entity;
+	return entity;
 }
 
-void removeGrapple(){
-	for (Entity& grapple_entity : registry.grapples.entities) {
-		Grapple& grapple = registry.grapples.get(grapple_entity);
+void removeGrapple()
+{
+	for (Entity &grapple_entity : registry.grapples.entities)
+	{
+		Grapple &grapple = registry.grapples.get(grapple_entity);
 		b2DestroyJoint(grapple.jointId);
 		registry.remove_all_components_of(grapple_entity);
 
-		if (registry.lines.has(grapple.lineEntity)) {
-        	registry.remove_all_components_of(grapple.lineEntity);
-    	}
+		if (registry.lines.has(grapple.lineEntity))
+		{
+			registry.remove_all_components_of(grapple.lineEntity);
+		}
 	}
-	
 }
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -660,7 +660,7 @@ Entity createGridLine(vec2 start_pos, vec2 end_pos)
 {
 	Entity entity = Entity();
 
-	GridLine& gridLine = registry.gridLines.emplace(entity);
+	GridLine &gridLine = registry.gridLines.emplace(entity);
 	gridLine.start_pos = start_pos;
 	gridLine.end_pos = start_pos + end_pos;
 
@@ -684,7 +684,7 @@ Entity createLine(vec2 start_pos, vec2 end_pos)
 {
 	Entity entity = Entity();
 
-	Line& line = registry.lines.emplace(entity);
+	Line &line = registry.lines.emplace(entity);
 	line.start_pos = start_pos;
 	line.end_pos = end_pos;
 
@@ -701,26 +701,47 @@ Entity createLine(vec2 start_pos, vec2 end_pos)
 	return entity;
 }
 
+Entity createHealthBar(float health)
+{
+	Entity entity = Entity();
+
+	HealthBar &hp = registry.healthbars.emplace(entity);
+	hp.health = health;
+
+	registry.uis.emplace(entity);
+
+	auto &motion = registry.motions.emplace(entity);
+	motion.position = vec2(150, WINDOW_HEIGHT_PX - 50);
+	motion.scale = vec2(200, 20);
+
+	registry.colors.emplace(entity) = vec3(0.2f, 0.9f, 0.2f);
+
+	registry.renderRequests.insert(
+		entity,
+		{TEXTURE_ASSET_ID::TEXTURE_COUNT,  // No texture
+		 EFFECT_ASSET_ID::LEGACY_EGG,			   // Uses colored shader
+		 GEOMETRY_BUFFER_ID::DEBUG_LINE}); // Use existing filled shape geometry
+
+	return entity;
+}
+
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! render the entire level png at once
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId)
 {
 	Entity entity = Entity();
-	LevelLayer& levelLayer = registry.levelLayers.emplace(entity);
+	LevelLayer &levelLayer = registry.levelLayers.emplace(entity);
 
-	auto& motion = registry.motions.emplace(entity);
+	auto &motion = registry.motions.emplace(entity);
 	motion.position = vec2(WORLD_WIDTH_PX / 2, WORLD_HEIGHT_PX / 2);
 	motion.scale = vec2(WORLD_WIDTH_PX, WORLD_HEIGHT_PX);
 
 	registry.renderRequests.insert(
 		entity,
-		{
-			textureId,
-			EFFECT_ASSET_ID::TEXTURED,
-			GEOMETRY_BUFFER_ID::SPRITE
-		}
-	);
+		{textureId,
+		 EFFECT_ASSET_ID::TEXTURED,
+		 GEOMETRY_BUFFER_ID::SPRITE});
 
 	return entity;
 }
@@ -731,9 +752,9 @@ Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId)
 Entity createBackgroundLayer()
 {
 	Entity entity = Entity();
-	BackgroundLayer& backgroundLayer = registry.backgroundLayers.emplace(entity);
+	BackgroundLayer &backgroundLayer = registry.backgroundLayers.emplace(entity);
 
-	auto& motion = registry.motions.emplace(entity);
+	auto &motion = registry.motions.emplace(entity);
 	motion.position = vec2(VIEWPORT_WIDTH_PX / 2.f, VIEWPORT_HEIGHT_PX / 2.f);
 	motion.scale = vec2(1920, 1128);
 
@@ -768,16 +789,99 @@ Entity createBackgroundLayer()
 	return entity;
 }
 
-Entity createGoalZone(vec2 bottom_left_pos, vec2 bottom_right_pos) {
+Entity createGoalZone(vec2 bottom_left_pos, vec2 bottom_right_pos)
+{
 	// reserve an entity
 	auto entity = Entity();
 
 	std::cout << "creating goal post with bottom left: " << bottom_left_pos.x << ", " << bottom_left_pos.y << " and top right: " << bottom_right_pos.x << ", " << bottom_right_pos.y << std::endl;
 
-	GoalZone& goalZone = registry.goalZones.emplace(entity);
+	GoalZone &goalZone = registry.goalZones.emplace(entity);
 	goalZone.bl_boundary = bottom_left_pos;
 	goalZone.tr_boundary = bottom_right_pos;
 	goalZone.hasTriggered = false;
 
 	return entity;
+}
+
+Entity createScore()
+{
+	Entity scoreEntity = Entity();
+
+	Score &score = registry.scores.emplace(scoreEntity);
+	score.score = 0;
+
+	registry.uis.emplace(scoreEntity);
+
+	vec2 basePosition = vec2(150, WINDOW_HEIGHT_PX - 50);
+	vec2 digitSize = vec2(30, 40);
+
+	for (int i = 0; i < 4; ++i)
+	{
+		Entity digitEntity = Entity();
+
+		vec2 offset = vec2(i * (digitSize.x + 4), 0); // 4px padding between digits
+		auto &motion = registry.motions.emplace(digitEntity);
+		motion.position = basePosition + offset;
+		motion.scale = digitSize;
+
+		registry.uis.emplace(digitEntity);
+
+		// Start all digits at 0
+		registry.renderRequests.insert(
+			digitEntity,
+			{TEXTURE_ASSET_ID::NUMBER_0,
+			 EFFECT_ASSET_ID::TEXTURED,
+			 GEOMETRY_BUFFER_ID::SPRITE});
+
+		// Track this digit in the Score component
+		score.digits[i] = digitEntity;
+	}
+
+	return scoreEntity;
+}
+
+Entity createTimer()
+{
+	Entity timerEntity = Entity();
+	Timer &timer = registry.timers.emplace(timerEntity);
+
+	registry.uis.emplace(timerEntity);
+
+	vec2 basePosition = vec2(150, WINDOW_HEIGHT_PX - 50);
+	vec2 digitSize = vec2(30, 40);
+
+	for (int i = 0; i < 7; ++i)
+	{
+		Entity digitEntity = Entity();
+
+		// Motion
+		vec2 offset = vec2(i * (digitSize.x + 4), 0); // 4px padding between digits
+		auto &motion = registry.motions.emplace(digitEntity);
+		motion.position = basePosition + offset;
+		motion.scale = digitSize;
+
+		registry.uis.emplace(digitEntity);
+
+		// Render
+		if (i == 2 || i == 5)
+		{
+			registry.renderRequests.insert(
+				digitEntity,
+				{TEXTURE_ASSET_ID::COLON,
+				 EFFECT_ASSET_ID::TEXTURED,
+				 GEOMETRY_BUFFER_ID::SPRITE});
+		}
+		else
+		{
+			registry.renderRequests.insert(
+				digitEntity,
+				{TEXTURE_ASSET_ID::NUMBER_0,
+				 EFFECT_ASSET_ID::TEXTURED,
+				 GEOMETRY_BUFFER_ID::SPRITE});
+		}
+		timer.digits[i] = digitEntity;
+	}
+
+	return timerEntity;
 }

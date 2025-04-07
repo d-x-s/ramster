@@ -10,6 +10,8 @@
 #include <vector>
 #include <json/json.h>
 #include <box2d/box2d.h>
+#include <chrono>
+#include <filesystem>
 
 // internal
 #include "physics_system.hpp"
@@ -27,6 +29,7 @@ static void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 }
 
 // Global Variables
+bool grapplePointActive = false;
 bool grappleActive = false;
 // No longer need this - maps onto current level MUSIC current_music = MUSIC::LEVEL_1;
 
@@ -473,6 +476,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
   title_ss << "Ramster | Level : " << current_level << " | Time : " << time_elapsed << "s | Kills : " << enemies_killed << " | HP : " << hp << " | FPS : " << fps;
   glfwSetWindowTitle(window, title_ss.str().c_str());
 
+  auto now = std::chrono::steady_clock::now();
+  long long elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count() - total_pause_duration;
+  updateTimer(elapsed_ms);
+
   // Game logic only runs when playing
   if (currentScreen.current_screen == "PLAYING")
   {
@@ -499,6 +506,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
     if (is_in_goal())
     {
+      // Commented out for debuggings
       player_reached_finish_line = true;
     }
 
@@ -510,7 +518,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
     {
       handleGameover(currentScreen);
       update_isGrounded();
-      handle_movement();
+      handle_movement(elapsed_ms_since_last_update);
       checkGrappleGrounded();
       handleRollingSfx();
       handleFlammingSfx();
@@ -962,8 +970,9 @@ void WorldSystem::restart_game(int level)
   std::string level_path = std::get<0>(level_specs);
   TEXTURE_ASSET_ID level_texture = std::get<1>(level_specs);
   MUSIC level_music = std::get<2>(level_specs);
-
-  std::cout << "Restarting..." << std::endl;
+  
+  // start clock
+  game_start_time = std::chrono::steady_clock::now();
 
   // Debugging for memory/component leaks
   registry.list_all_components();
@@ -973,7 +982,6 @@ void WorldSystem::restart_game(int level)
 
   // Clear spawn map
   spawnMap.clear();
-
 
   player_reached_finish_line = false;
   timer_game_end_screen = TIMER_GAME_END;
@@ -985,6 +993,8 @@ void WorldSystem::restart_game(int level)
   max_towers = MAX_TOWERS_START;
   next_enemy_spawn = 0;
   enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+  total_pause_duration = 0;
+  is_paused = false;
   if (grappleActive)
   {
     removeGrapple();
@@ -1021,6 +1031,18 @@ void WorldSystem::restart_game(int level)
     // clear goalZone
     Entity &goalEntity = registry.goalZones.entities.back();
     registry.remove_all_components_of(goalEntity);
+  }
+
+  // clear score ui
+  if (registry.scores.entities.size() > 0)
+  {
+    registry.remove_all_components_of(registry.scores.entities.back());
+  }
+
+  // clear timer ui
+  if (registry.timers.entities.size() > 0)
+  {
+    registry.remove_all_components_of(registry.timers.entities.back());
   }
 
   while (registry.backgroundLayers.entities.size() > 0)
@@ -1095,6 +1117,9 @@ void WorldSystem::restart_game(int level)
   // }
 
   createScreenElements();
+  createHealthBar(hp);
+  createScore();
+  createTimer();
 
   // Room dimensions
   const float roomWidth = WORLD_WIDTH_PX;
@@ -1164,6 +1189,12 @@ void WorldSystem::handle_collisions(float elapsed_ms)
           enemies_killed++;
 
           handleRamsterVoicelines();
+          for (Entity &scoreEntity : registry.scores.entities)
+          {
+            Score &score = registry.scores.get(scoreEntity);
+            score.score = score.score + 5;
+            updateScore(scoreEntity);
+          }
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.
@@ -1176,6 +1207,12 @@ void WorldSystem::handle_collisions(float elapsed_ms)
           if (enemyComponent.destructable)
           {
             hp -= 1; // small penalty for now
+            for (Entity &hpEntity : registry.healthbars.entities)
+            {
+              HealthBar &hp = registry.healthbars.get(hpEntity);
+              hp.health -= 1;
+              std::cout << "decrease health: " << hp.health << std::endl;
+            }
           }
         }
       }
@@ -1199,7 +1236,14 @@ void WorldSystem::handle_collisions(float elapsed_ms)
           playSoundEffect(FX::FX_DESTROY_ENEMY);
           enemies_killed++;
 
-		  handleRamsterVoicelines();
+		      handleRamsterVoicelines();
+          
+          for (Entity &scoreEntity : registry.scores.entities)
+          {
+            Score &score = registry.scores.get(scoreEntity);
+            score.score = score.score + 5;
+            updateScore(scoreEntity);
+          }
         }
         // Otherwise player takes dmg (just loses pts for now) and we freeze the enemy momentarily.
         // If the enemy is still frozen, player will not be punished.
@@ -1212,6 +1256,12 @@ void WorldSystem::handle_collisions(float elapsed_ms)
           if (enemyComponent.destructable)
           {
             hp -= 1; // small penalty for now
+            for (Entity &hpEntity : registry.healthbars.entities)
+            {
+              HealthBar &hp = registry.healthbars.get(hpEntity);
+              hp.health -= 1;
+              std::cout << "decrease health: " << hp.health << std::endl;
+            }
           }
         }
       }
@@ -1278,8 +1328,11 @@ void WorldSystem::update_isGrounded()
 }
 
 // call inside step() function for the most precise and responsive movement handling.
-void WorldSystem::handle_movement()
+void WorldSystem::handle_movement(float elapsed_ms)
 {
+
+  static float jumpCooldownTime = JUMP_COOLDOWN;
+  static float jumpCooldownTimer = 0.0f;
 
   // first, update states.
   int state = glfwGetKey(window, GLFW_KEY_E);
@@ -1337,6 +1390,18 @@ void WorldSystem::handle_movement()
   else if (keyStates[GLFW_KEY_S])
   {
     // nonjump_movement_force = { 0, -forceMagnitude };
+    if (grappleActive)
+    {
+      for (Entity grappleEntity : registry.grapples.entities)
+      {
+        Grapple &grapple = registry.grapples.get(grappleEntity);
+        float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
+        if (curLen < GRAPPLE_MAX_LENGTH)
+        {
+          b2DistanceJoint_SetLength(grapple.jointId, curLen + GRAPPLE_DETRACT_W);
+        }
+      }
+    }
   }
   else if (keyStates[GLFW_KEY_D])
   {
@@ -1352,10 +1417,17 @@ void WorldSystem::handle_movement()
   }
 
   // jump is set seperately, since it can be used in conjunction with the movement keys.
-  if (keyStates[GLFW_KEY_SPACE])
+  if (keyStates[GLFW_KEY_SPACE] && jumpCooldownTimer <= 0.0f)
+
   {
     // Jump: apply a strong upward impulse
     jump_impulse = {0, jumpImpulseMagnitude};
+    jumpCooldownTimer = jumpCooldownTime;
+  }
+
+  if (jumpCooldownTimer > 0.0f)
+  {
+    jumpCooldownTimer -= (elapsed_ms / 1000.0f); // Decrease based on the time that has passed
   }
 
   // Apply impulse if non-zero.
@@ -1425,13 +1497,16 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
     {
       currentScreen.current_screen = "PAUSE";
       // freezeMovements();
+      pause_start_time = std::chrono::steady_clock::now();
+      is_paused = true;
       return;
     }
-    /* DISABLED - REPLACED WITH MOUSE INPUT HANDLING.
     // Pause screen - resume game
     if (currentScreen.current_screen == "PAUSE")
     {
       currentScreen.current_screen = "PLAYING";
+      total_pause_duration += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - pause_start_time).count();
+      is_paused = false;
       return;
     }
     // Menu and End of Game screen - exits game
@@ -1439,7 +1514,6 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
     {
       close_window();
     }
-    */
   }
 
   // Reset game when R is released
@@ -1579,17 +1653,6 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
       GrapplePoint *selectedGp = nullptr;
       float bestDist = GRAPPLE_ATTACH_ZONE_RADIUS; // distance threshold
 
-      for (Entity gpEntity : registry.grapplePoints.entities)
-      {
-        GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
-        float dist = length(gp.position - worldMousePos);
-        if (dist < bestDist)
-        {
-          bestDist = dist;
-          selectedGp = &gp;
-        }
-      }
-
       // Deactivate all grapple enemies_killed.
       for (Entity gpEntity : registry.grapplePoints.entities)
       {
@@ -1609,15 +1672,19 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
       // Now, if no grapple is currently attached and we found an active point, attach the grapple.
       if (!grappleActive && selectedGp != nullptr)
       {
-        attachGrapple();
-        playSoundEffect(FX::FX_GRAPPLE);
+        shootGrapplePoint();
+      }
+      else if (!grappleActive && selectedGp == nullptr)
+      {
+        shootGrapple(worldMousePos);
       }
       else if (grappleActive)
       {
         removeGrapple();
-        playSoundEffect(FX::FX_GRAPPLE);
         grappleActive = false;
+        grapplePointActive = false;
       }
+
     }
     // Every other screen, mouse deals with button presses.
     else
@@ -1719,7 +1786,7 @@ vec2 WorldSystem::screenToWorld(vec2 mouse_screen)
   return {0.f, 0.f}; // fallback if no camera
 }
 
-void WorldSystem::attachGrapple()
+void WorldSystem::shootGrapplePoint()
 {
   Entity playerEntity = registry.players.entities[0];
 
@@ -1763,6 +1830,44 @@ void WorldSystem::attachGrapple()
   {
     createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
     grappleActive = true;
+    grapplePointActive = true;
+  }
+}
+
+void WorldSystem::shootGrapple(vec2 worldMousePos)
+{
+  Entity playerEntity = registry.players.entities[0];
+  PhysicsBody &ballBody = registry.physicsBodies.get(playerEntity);
+  b2BodyId ballBodyId = ballBody.bodyId;
+  b2Vec2 ballPos = b2Body_GetPosition(ballBodyId);
+
+  b2Vec2 mousePos{worldMousePos.x, worldMousePos.y};
+  b2Vec2 rayDir = mousePos - ballPos;
+
+  b2RayCastInput input;
+  input.origin = ballPos;
+  input.translation = rayDir;
+  input.maxFraction = 1.0f;
+
+  b2RayResult result = b2World_CastRayClosest(worldId, ballPos, rayDir, b2DefaultQueryFilter());
+
+  float distance = sqrtf((result.point.x - ballPos.x) * (result.point.x - ballPos.x) +
+                         (result.point.y - ballPos.y) * (result.point.y - ballPos.y));
+
+  if (result.hit && distance <= GRAPPLE_MAX_LENGTH)
+  {
+    b2BodyId bodyId = b2Shape_GetBody(result.shapeId);
+    b2BodyType bodyType = b2Body_GetType(bodyId);
+    if (bodyType == b2_staticBody)
+    {
+      b2BodyDef bodyDef = b2DefaultBodyDef();
+      bodyDef.type = b2_staticBody;
+      bodyDef.position = b2Vec2{result.point.x, result.point.y};
+      b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
+
+      createGrapple(worldId, ballBodyId, bodyId, distance);
+      grappleActive = true;
+    }
   }
 }
 
@@ -1789,6 +1894,8 @@ void WorldSystem::checkGrappleGrounded()
         float curLen = b2DistanceJoint_GetCurrentLength(grapple.jointId);
         if (isGrounded)
         {
+          b2DistanceJoint_EnableLimit(grapple.jointId, true);
+          b2DistanceJoint_SetLengthRange(grapple.jointId, 0, GRAPPLE_MAX_LENGTH);
           b2DistanceJoint_EnableSpring(grapple.jointId, true);
           b2DistanceJoint_SetSpringHertz(grapple.jointId, GRAPPLE_HERTZ_GROUNDED);
           b2DistanceJoint_SetSpringDampingRatio(grapple.jointId, GRAPPLE_DAMPING_GROUNDED);
@@ -1989,7 +2096,6 @@ void WorldSystem::freezeMovements()
 // LLNOTE: SHOULD HAVE A CASE FOR EACH BUTTON CREATED IN createScreenElements().
 void WorldSystem::handleButtonPress(Entity buttonEntity)
 {
-
   // Current Screen
   Entity currScreenEntity = registry.currentScreen.entities[0];
   CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
@@ -2294,4 +2400,114 @@ void WorldSystem::createScreenElements()
         256, 128,
         vec2(0, -200));
   }
+}
+
+void WorldSystem::updateScore(Entity scoreEntity)
+{
+  Score &score = registry.scores.get(scoreEntity);
+  int value = score.score;
+
+  const int MAX_SCORE = 9999;
+
+  if (value > MAX_SCORE)
+  {
+    value = MAX_SCORE;
+  }
+
+  Entity *digits = score.digits;
+
+  for (int i = 0; i < 4; i++)
+  {
+    Entity digitEntity = digits[i];
+
+    // Get digit value from right to left
+    int digit = (value / (int)pow(10, 4 - 1 - i)) % 10;
+
+    // Get render request and update texture
+    if (registry.renderRequests.has(digitEntity))
+    {
+      RenderRequest &rr = registry.renderRequests.get(digitEntity);
+      rr.used_texture = static_cast<TEXTURE_ASSET_ID>(static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + digit);
+    }
+  }
+}
+
+void WorldSystem::updateTimer(long long time_elapsed)
+{
+  const long long MAX_DISPLAY_TIME = (59 * 60 * 1000) + (59 * 1000) + 900;
+
+  if (time_elapsed > MAX_DISPLAY_TIME)
+    time_elapsed = MAX_DISPLAY_TIME;
+
+  for (Entity &timerEntity : registry.timers.entities)
+  {
+    Timer &timer = registry.timers.get(timerEntity);
+
+    int minutes = time_elapsed / 60000;
+    int seconds = (time_elapsed / 1000) % 60;
+    int milliseconds = time_elapsed % 1000;
+
+    int digits[7] = {
+        minutes / 10,
+        minutes % 10,
+        seconds / 10,
+        seconds % 10,
+        milliseconds / 100,
+    };
+
+    int digitIndex = 0;
+    for (int i = 0; i < 7; ++i)
+    {
+      // Skip colon entity at index 2
+      if (i == 2 || i == 5)
+        continue;
+
+      Entity digitEntity = timer.digits[i];
+      if (!registry.renderRequests.has(digitEntity))
+        continue;
+
+      RenderRequest &rr = registry.renderRequests.get(digitEntity);
+      rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
+          static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + digits[digitIndex]);
+      digitIndex++;
+    }
+  }
+}
+
+std::string WorldSystem::getBestTimeFilePath(int level)
+{
+  return "../data/best_times/" + std::to_string(level) + ".txt";
+}
+
+void WorldSystem::loadBestTimes(int level)
+{
+  best_times.clear();
+  std::ifstream infile(getBestTimeFilePath(level));
+  long long time;
+  while (infile >> time)
+  {
+    best_times.push_back(time);
+  }
+  std::sort(best_times.begin(), best_times.end());
+  if (best_times.size() > 5)
+    best_times.resize(5);
+}
+
+void WorldSystem::saveBestTimes(int level)
+{
+  std::ofstream outfile(getBestTimeFilePath(level), std::ios::trunc);
+  for (long long t : best_times)
+  {
+    outfile << t << "\n";
+  }
+}
+
+void WorldSystem::tryAddBestTime(long long time_elapsed, int level)
+{
+  loadBestTimes(level); // Load current ones before adding
+  best_times.push_back(time_elapsed);
+  std::sort(best_times.begin(), best_times.end());
+  if (best_times.size() > 5)
+    best_times.resize(5);
+  saveBestTimes(level);
 }

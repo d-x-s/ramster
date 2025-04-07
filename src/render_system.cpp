@@ -8,37 +8,38 @@
 #include "world_system.hpp"
 #include "tinyECS/registry.hpp"
 
-void RenderSystem::drawGridLine(Entity entity, const mat3& projection) {
-	GridLine& gridLine = registry.gridLines.get(entity);
+void RenderSystem::drawGridLine(Entity entity, const mat3 &projection)
+{
+	GridLine &gridLine = registry.gridLines.get(entity);
 	Transform transform;
 
 	/* Note(@Davis):
-	* The provided code was treating end_pos as a scale factor rather than the
-	* actual endpoint. 
-	* If you recall from 314, "scaling" an object stretches it relative to the
-	* center of the object, in both directions. So vertically scaling a circle for example,
-	* makes it into an oval relative to its local origin.
-	*  
-	* After adding a camera that moved with the player, it was quite obvious that
-	* the provided code simply drew a line of 2x the window width/height, because
-	* I could see half of the grid line stretching past the world boundaries.
-	* That is, half of each line contributed to forming the grid.
-	* Then, the other half stretched out into empty space.
-	* Of course we wouldn't notice because the initial code had a static camera.
-	* This means that end_pos was misrepresented (kind of a bug...?)!
-	*  
-	* My changes move the line to its "midpoint", then scale the line to the intended
-	* size. In other words, start_pos and end_pos represent the actual start and ending
-	* positions of the line. Now, grid lines stay within the world boundary.
-	*  
-	* transform.translate(gridLine.start_pos);
-	* transform.scale(gridLine.end_pos);
-	*/
-	transform.translate((gridLine.start_pos + gridLine.end_pos) * 0.5f);  // Move to the midpoint
-	transform.scale(abs(gridLine.end_pos - gridLine.start_pos));		  // Scale based on the actual size
+	 * The provided code was treating end_pos as a scale factor rather than the
+	 * actual endpoint.
+	 * If you recall from 314, "scaling" an object stretches it relative to the
+	 * center of the object, in both directions. So vertically scaling a circle for example,
+	 * makes it into an oval relative to its local origin.
+	 *
+	 * After adding a camera that moved with the player, it was quite obvious that
+	 * the provided code simply drew a line of 2x the window width/height, because
+	 * I could see half of the grid line stretching past the world boundaries.
+	 * That is, half of each line contributed to forming the grid.
+	 * Then, the other half stretched out into empty space.
+	 * Of course we wouldn't notice because the initial code had a static camera.
+	 * This means that end_pos was misrepresented (kind of a bug...?)!
+	 *
+	 * My changes move the line to its "midpoint", then scale the line to the intended
+	 * size. In other words, start_pos and end_pos represent the actual start and ending
+	 * positions of the line. Now, grid lines stay within the world boundary.
+	 *
+	 * transform.translate(gridLine.start_pos);
+	 * transform.scale(gridLine.end_pos);
+	 */
+	transform.translate((gridLine.start_pos + gridLine.end_pos) * 0.5f); // Move to the midpoint
+	transform.scale(abs(gridLine.end_pos - gridLine.start_pos));		 // Scale based on the actual size
 
 	assert(registry.renderRequests.has(entity));
-	const RenderRequest& render_request = registry.renderRequests.get(entity);
+	const RenderRequest &render_request = registry.renderRequests.get(entity);
 
 	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
 	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
@@ -64,15 +65,15 @@ void RenderSystem::drawGridLine(Entity entity, const mat3& projection) {
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		gl_has_errors();
 
-		GLint in_color_loc    = glGetAttribLocation(program, "in_color");
+		GLint in_color_loc = glGetAttribLocation(program, "in_color");
 		gl_has_errors();
 
 		glEnableVertexAttribArray(in_position_loc);
-		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (void*)0);
+		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (void *)0);
 		gl_has_errors();
 
 		glEnableVertexAttribArray(in_color_loc);
-		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (void*)sizeof(vec3));
+		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE, sizeof(ColoredVertex), (void *)sizeof(vec3));
 		gl_has_errors();
 	}
 	else
@@ -84,7 +85,7 @@ void RenderSystem::drawGridLine(Entity entity, const mat3& projection) {
 	GLint color_uloc = glGetUniformLocation(program, "fcolor");
 	const vec3 color = registry.colors.has(entity) ? registry.colors.get(entity) : vec3(1);
 	// CK: std::cout << "line color: " << color.r << ", " << color.g << ", " << color.b << std::endl;
-	glUniform3fv(color_uloc, 1, (float*)&color);
+	glUniform3fv(color_uloc, 1, (float *)&color);
 	gl_has_errors();
 
 	// Get number of indices from index buffer, which has elements uint16_t
@@ -98,11 +99,11 @@ void RenderSystem::drawGridLine(Entity entity, const mat3& projection) {
 	glGetIntegerv(GL_CURRENT_PROGRAM, &currProgram);
 	// Setting uniform values to the currently bound program
 	GLuint transform_loc = glGetUniformLocation(currProgram, "transform");
-	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float*)&transform.mat);
+	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
 	gl_has_errors();
 
 	GLuint projection_loc = glGetUniformLocation(currProgram, "projection");
-	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float*)&projection);
+	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
 	gl_has_errors();
 
 	// Drawing of num_indices/3 triangles specified in the index buffer
@@ -110,8 +111,9 @@ void RenderSystem::drawGridLine(Entity entity, const mat3& projection) {
 	gl_has_errors();
 }
 
-void RenderSystem::drawLine(Entity entity, const mat3& projection) {
-	Line& line = registry.lines.get(entity);
+void RenderSystem::drawLine(Entity entity, const mat3 &projection)
+{
+	Line &line = registry.lines.get(entity);
 	Transform transform;
 
 	// Calculate direction vector and length
@@ -133,7 +135,7 @@ void RenderSystem::drawLine(Entity entity, const mat3& projection) {
 
 	// Continue with rendering as before
 	assert(registry.renderRequests.has(entity));
-	const RenderRequest& render_request = registry.renderRequests.get(entity);
+	const RenderRequest &render_request = registry.renderRequests.get(entity);
 
 	const GLuint used_effect_enum = (GLuint)render_request.used_effect;
 	assert(used_effect_enum != (GLuint)EFFECT_ASSET_ID::EFFECT_COUNT);
@@ -163,22 +165,23 @@ void RenderSystem::drawLine(Entity entity, const mat3& projection) {
 
 		glEnableVertexAttribArray(in_position_loc);
 		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-			sizeof(ColoredVertex), (void*)0);
+							  sizeof(ColoredVertex), (void *)0);
 		gl_has_errors();
 
 		glEnableVertexAttribArray(in_color_loc);
 		glVertexAttribPointer(in_color_loc, 3, GL_FLOAT, GL_FALSE,
-			sizeof(ColoredVertex), (void*)sizeof(vec3));
+							  sizeof(ColoredVertex), (void *)sizeof(vec3));
 		gl_has_errors();
 	}
-	else {
+	else
+	{
 		assert(false && "Type of render request not supported");
 	}
 
 	// Getting uniform locations for glUniform* calls
 	GLint color_uloc = glGetUniformLocation(program, "fcolor");
 	const vec3 color = registry.colors.has(entity) ? registry.colors.get(entity) : vec3(1);
-	glUniform3fv(color_uloc, 1, (float*)&color);
+	glUniform3fv(color_uloc, 1, (float *)&color);
 	gl_has_errors();
 
 	// Get number of indices from index buffer
@@ -193,11 +196,11 @@ void RenderSystem::drawLine(Entity entity, const mat3& projection) {
 
 	// Setting uniform values
 	GLuint transform_loc = glGetUniformLocation(currProgram, "transform");
-	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float*)&transform.mat);
+	glUniformMatrix3fv(transform_loc, 1, GL_FALSE, (float *)&transform.mat);
 	gl_has_errors();
 
 	GLuint projection_loc = glGetUniformLocation(currProgram, "projection");
-	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float*)&projection);
+	glUniformMatrix3fv(projection_loc, 1, GL_FALSE, (float *)&projection);
 	gl_has_errors();
 
 	// Drawing the line as two triangles forming a rectangle
@@ -211,8 +214,8 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	// specification for more info Incrementally updates transformation matrix,
 	// thus ORDER IS IMPORTANT
 	// Transform --> Translate --> Scale --> Rotate
-	
-	Motion& motion = registry.motions.get(entity);
+
+	Motion &motion = registry.motions.get(entity);
 	Transform transform;
 
 	// TRANSLATE: Move to the correct position
@@ -226,13 +229,13 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 
 	// SCALE
 	// apply custom scale to each animation frame if scale data is embedded
-	//if (!render_request.animation_frames_scale.empty()) {
+	// if (!render_request.animation_frames_scale.empty()) {
 	//	if (!render_request.animation_frames_scale.empty()) {
 	//		int index = (render_request.animation_current_frame + 1) % render_request.animation_frames.size();
 	//		transform.scale(motion.scale * render_request.animation_frames_scale[index]);
 	//	}
 	//}
-	//else { // otherwise just set to the static size
+	// else { // otherwise just set to the static size
 	//	transform.scale(motion.scale);
 	//}
 
@@ -247,13 +250,15 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 
 		// if this is not a looping animation and it is already complete, remove it
 		if (!render_request.is_loop &&
-			render_request.animation_current_frame >= render_request.animation_frames.size()) {
+			render_request.animation_current_frame >= render_request.animation_frames.size())
+		{
 			registry.remove_all_components_of(entity);
 			return;
 		}
 
 		// if enough time has passed, switch frames
-		if (render_request.animation_elapsed_time >= render_request.animation_frame_time) {
+		if (render_request.animation_elapsed_time >= render_request.animation_frame_time)
+		{
 			render_request.animation_elapsed_time = 0;
 			render_request.animation_current_frame += 1;
 			int access_index = render_request.animation_current_frame % render_request.animation_frames.size();
@@ -329,12 +334,12 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 
 		glEnableVertexAttribArray(in_position_loc);
 		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-			sizeof(TexturedVertex), (void*)0);
+							  sizeof(TexturedVertex), (void *)0);
 		gl_has_errors();
 
 		glEnableVertexAttribArray(in_texcoord_loc);
 		glVertexAttribPointer(in_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
-			sizeof(TexturedVertex), (void*)sizeof(vec3));
+							  sizeof(TexturedVertex), (void *)sizeof(vec3));
 		gl_has_errors();
 
 		// Enable and bind texture
@@ -349,7 +354,7 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 		// Parallax-specific uniforms
 		Camera camera = registry.cameras.components[0];
 		GLint camera_pos_loc = glGetUniformLocation(program, "camera_pos");
-		glUniform2fv(camera_pos_loc, 1, (float*)&camera.position);
+		glUniform2fv(camera_pos_loc, 1, (float *)&camera.position);
 		gl_has_errors();
 
 		float parallax_factor = 0.1f;
@@ -359,7 +364,7 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 
 		vec2 texture_size = vec2(640.0f, 564.0f);
 		GLint tex_size_loc = glGetUniformLocation(program, "texture_size");
-		glUniform2fv(tex_size_loc, 1, (float*)&texture_size);
+		glUniform2fv(tex_size_loc, 1, (float *)&texture_size);
 		gl_has_errors();
 	}
 	else if (render_request.used_effect == EFFECT_ASSET_ID::RAMSTER)
@@ -473,12 +478,14 @@ void RenderSystem::drawToScreen()
 	int viewport_x = 0, viewport_y = 0;
 	int viewport_w = win_w, viewport_h = win_h;
 
-	if (window_aspect > target_aspect) {
+	if (window_aspect > target_aspect)
+	{
 		// Window is too wide --> pillarbox
 		viewport_w = int(win_h * target_aspect);
 		viewport_x = (win_w - viewport_w) / 2;
 	}
-	else {
+	else
+	{
 		// Window is too tall --> letterbox
 		viewport_h = int(win_w / target_aspect);
 		viewport_y = (win_h - viewport_h) / 2;
@@ -511,7 +518,7 @@ void RenderSystem::drawToScreen()
 	GLuint time_uloc = glGetUniformLocation(vignette_program, "time");
 	glUniform1f(time_uloc, (float)(glfwGetTime() * 10.0f));
 
-	ScreenState& screen = registry.screenStates.get(screen_state_entity);
+	ScreenState &screen = registry.screenStates.get(screen_state_entity);
 	glUniform1f(glGetUniformLocation(vignette_program, "darken_screen_factor"), screen.darken_screen_factor);
 	glUniform1f(glGetUniformLocation(vignette_program, "apply_vignette"), screen.vignette);
 	glUniform1f(glGetUniformLocation(vignette_program, "apply_fadeout"), screen.fadeout);
@@ -520,7 +527,7 @@ void RenderSystem::drawToScreen()
 	// --- VERTEX ATTRIB ---
 	GLint in_position_loc = glGetAttribLocation(vignette_program, "in_position");
 	glEnableVertexAttribArray(in_position_loc);
-	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
+	glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void *)0);
 	gl_has_errors();
 
 	// --- TEXTURE ---
@@ -565,13 +572,15 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 
 	// Current Screen
 	Entity currScreenEntity = registry.currentScreen.entities[0];
-	CurrentScreen& currentScreen = registry.currentScreen.get(currScreenEntity);
+	CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
 	// RENDER WHEN PLAYING
-	if (currentScreen.current_screen == "PLAYING") {
+	if (currentScreen.current_screen == "PLAYING")
+	{
 		// draw grid lines first
 		for (Entity entity : registry.renderRequests.entities)
 		{
-			if (registry.gridLines.has(entity)) {
+			if (registry.gridLines.has(entity))
+			{
 				drawGridLine(entity, projection_2D);
 			}
 		}
@@ -579,7 +588,8 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 		// draw the background layer
 		for (Entity entity : registry.renderRequests.entities)
 		{
-			if (registry.motions.has(entity) && registry.backgroundLayers.has(entity)) {
+			if (registry.motions.has(entity) && registry.backgroundLayers.has(entity))
+			{
 				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 			}
 		}
@@ -621,7 +631,8 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 			}
 			// draw terrain lines separately
-			else if (registry.lines.has(entity)) {
+			else if (registry.lines.has(entity))
+			{
 				drawLine(entity, projection_2D);
 			}
 		}
@@ -733,20 +744,21 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 }
 
 /* Note(@Davis):
-* Although we store the position of the camera, a moving camera doesn't actually "move".
-* The display technically remains static, but view of the world is being shifted.
-* In other words, world coordinates are being offset such that the player is always center.
-*/
-mat3 RenderSystem::createProjectionMatrix() {
+ * Although we store the position of the camera, a moving camera doesn't actually "move".
+ * The display technically remains static, but view of the world is being shifted.
+ * In other words, world coordinates are being offset such that the player is always center.
+ */
+mat3 RenderSystem::createProjectionMatrix()
+{
 	Camera camera = registry.cameras.components[0];
 
-    // Fixed camera view centered around player
+  // Fixed camera view centered around player
 	float left = camera.position.x - VIEWPORT_WIDTH_PX / 2.f;
 	float right = camera.position.x + VIEWPORT_WIDTH_PX / 2.f;
 	float bottom = camera.position.y - VIEWPORT_HEIGHT_PX / 2.f;
 	float top = camera.position.y + VIEWPORT_HEIGHT_PX / 2.f;
 
-    // Scale factors, to scale to [-1, 1] OpenGl coordinate space
+  // Scale factors, to scale to [-1, 1] OpenGl coordinate space
 	float sx = 2.f / (right - left);
 	float sy = 2.f / (top - bottom);
 
@@ -755,10 +767,9 @@ mat3 RenderSystem::createProjectionMatrix() {
 	float ty = -(top + bottom) / (top - bottom);
 
 	return {
-		{ sx, 0.f, 0.f },
-		{ 0.f, sy, 0.f },
-		{ tx, ty, 1.f }
-	};
+		{sx, 0.f, 0.f},
+		{0.f, sy, 0.f},
+		{tx, ty, 1.f}};
 }
 
 void RenderSystem::resizeScreenTexture(int width, int height)

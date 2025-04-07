@@ -30,6 +30,19 @@ class RenderSystem
 
   // Make sure these paths remain in sync with the associated enumerators (see TEXTURE_ASSET_ID).
   const std::array<std::string, texture_count> texture_paths = {
+      // Numbers
+      textures_path("numbers/0.png"),
+      textures_path("numbers/1.png"),
+      textures_path("numbers/2.png"),
+      textures_path("numbers/3.png"),
+      textures_path("numbers/4.png"),
+      textures_path("numbers/5.png"),
+      textures_path("numbers/6.png"),
+      textures_path("numbers/7.png"),
+      textures_path("numbers/8.png"),
+      textures_path("numbers/9.png"),
+      textures_path("numbers/colon.png"),
+
       // Ramster
       textures_path("player/run_0.png"),
       textures_path("player/run_1.png"),
@@ -52,6 +65,7 @@ class RenderSystem
       // Grapple
       textures_path("projectiles/grapple_point.png"),
       textures_path("projectiles/grapple_outline.png"),
+
 
       // Screen Elements
       textures_path("screenElements/menu_title.png"),

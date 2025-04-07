@@ -9,6 +9,7 @@
 #include <random>
 #include <map>
 #include <string>
+#include <filesystem>
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
@@ -19,7 +20,8 @@
 #include <random>
 
 // Global Variables
-extern bool grappleActive; // Bool to check if grapple is active
+extern bool grapplePointActive; // Bool to check if grapple is on a grapple point
+extern bool grappleActive;		// Bool to check if grapple is active
 
 // Container for all our entities and game logic.
 // Individual rendering / updates are deferred to the update() methods.
@@ -29,7 +31,7 @@ public:
 	explicit WorldSystem(b2WorldId world);
 
 	// creates main window
-	GLFWwindow* create_window();
+	GLFWwindow *create_window();
 
 	// starts and loads music and sound effects
 	bool start_and_load_sounds();
@@ -40,7 +42,7 @@ public:
 	bool is_in_goal();
 
 	// starts the game
-	void init(RenderSystem* renderer);
+	void init(RenderSystem *renderer);
 
 	// releases all associated resources
 	~WorldSystem();
@@ -58,16 +60,16 @@ public:
 	float vignette_timer_ms = 0.0f;
 
 	// level loading
-	bool load_level(const std::string& filename);
+	bool load_level(const std::string &filename);
 
-	GLFWwindow* getWindow() {
+	GLFWwindow *getWindow()
+	{
 		return window;
 	}
 
-	RenderSystem* renderer;
+	RenderSystem *renderer;
 
 private:
-
 	// Selected level
 	int current_level = 1;
 
@@ -83,7 +85,7 @@ private:
 	float mouse_pos_x = 0.0f;
 	float mouse_pos_y = 0.0f;
 	// Game state
-  float current_speed;
+	float current_speed;
 
 	// grid
 	std::vector<Entity> grid_lines;
@@ -126,7 +128,7 @@ private:
   void handleFlammingSfx();
 
 	// player movement
-	void handle_movement();
+	void handle_movement(float elapsed_ms);
 	void update_isGrounded();
 
 	// C++ random number generator
@@ -148,7 +150,7 @@ private:
 	void restart_game(int level);
 
 	// OpenGL window handle
-	GLFWwindow* window;
+	GLFWwindow *window;
 
 	// LEVEL MAP
 	// KEY: (int) Level
@@ -195,13 +197,13 @@ private:
 	// - Patrol area if it's an obstacle
 	// Returns:
 	// - Handles enemy spawning according to specs.
-	void insertToSpawnMap(ivec2 bottom_left, ivec2 top_right, 
-							ENEMY_TYPES enemy_type, int num_enemies, 
-							ivec2 spawn_location, 
-							ivec2 obstacle_patrol_bottom_left, ivec2 obstacle_patrol_top_right);
+	void insertToSpawnMap(ivec2 bottom_left, ivec2 top_right,
+						  ENEMY_TYPES enemy_type, int num_enemies,
+						  ivec2 spawn_location,
+						  ivec2 obstacle_patrol_bottom_left, ivec2 obstacle_patrol_top_right);
 
-	// Spawn map: 
-	//	key is a vector<int> (tile that triggers spawn), 
+	// Spawn map:
+	//	key is a vector<int> (tile that triggers spawn),
 	//	value is a tuple with:
 	// 1. ENEMY_TYPE denoting type of enemy to spawn
 	// 2. Int denoting quantity of enemies to spawn
@@ -210,30 +212,30 @@ private:
 	// 5. vector<int> denoting spawn position
 	// 6. vector<int> denoting patrol range on the X-axis
 	std::map<
-		std::vector<int>,		// KEY
-		std::tuple<				// VALUE
-			ENEMY_TYPES,			// 1
-			int,					// 2
-			bool,					// 3
-			bool,					// 4
-			std::vector<int>,		// 5
-			std::vector<int>		// 6
-		>
-	> spawnMap;
+		std::vector<int>,	  // KEY
+		std::tuple<			  // VALUE
+			ENEMY_TYPES,	  // 1
+			int,			  // 2
+			bool,			  // 3
+			bool,			  // 4
+			std::vector<int>, // 5
+			std::vector<int>  // 6
+			>>
+		spawnMap;
 	// call map helper to insert into this map.
 
 	int next_enemy_spawn;
-	int enemy_spawn_rate_ms;	// see default value in common.hpp
+	int enemy_spawn_rate_ms; // see default value in common.hpp
 
-	int max_towers;	// see default value in common.hpp
+	int max_towers; // see default value in common.hpp
 
 	// Player reached finish line (DEFAULT TO FALSE AND SET TO TRUE IF THEY GOT THERE!!!)
-	bool player_reached_finish_line = false; //LLNOTE: make sure to set this to true once player reaches finish line.
+	bool player_reached_finish_line = false; // LLNOTE: make sure to set this to true once player reaches finish line.
 	// Timer before end of game screen is displayed
 	int timer_game_end_screen = TIMER_GAME_END;
 	// Enemies killed.
 	int enemies_killed = 0;
-	// Player hp. 
+	// Player hp.
 	int hp = PLAYER_STARTING_HP;
 
 	// Frames per second
@@ -242,12 +244,18 @@ private:
 	float fps_update_cooldown_ms = FPS_UPDATE_COOLDOWN_MS;
 
 	// Time elapsed
-	int time_elapsed = 0; 
+	int time_elapsed = 0;
 	// Time cooldown to prevent flickering (also determines granularity of time)
 	int time_granularity = TIME_GRANULARITY;
 
 	// vignette fade out control
 	void trigger_vignette(float duration) { vignette_timer_ms = duration; }
+
+	// clock for timer
+	std::chrono::steady_clock::time_point game_start_time;
+	std::chrono::steady_clock::time_point pause_start_time;
+	long long total_pause_duration = 0;
+	bool is_paused = false;
 
 	// use this to handle enemy spawning.
 	/*
@@ -260,13 +268,11 @@ private:
 	*/
 	void handleEnemySpawning(ENEMY_TYPES enemy_type, int quantity, ivec2 gridPosition, ivec2 grid_patrol_point_a, ivec2 grid_patrol_point_b);
 
-	
 	// use this to check if the player has reached a specified grid coordinate. (recall GRID_CELL_WIDTH, GRID_CELL_HEIGHT)
 	// Note that the ivec4
 	bool checkPlayerReachedArea(ivec2 area_bottom_left, ivec2 area_top_right);
 
 	vec2 screenToWorld(vec2 mouse_position);
-	void attachGrapple();
 	void checkGrappleGrounded();
 
 	// Starts the game at specified level
@@ -280,12 +286,24 @@ private:
 	void freezeMovements();
 
 	// Checks if the game is over and sets the screen as needed based on whether the player won or lost.
-	void handleGameover(CurrentScreen& currentScreen);
+	void handleGameover(CurrentScreen &currentScreen);
 
 	// LLNOTE: FOR CODE READABILITY, ALL OF THE SCREEN ELEMENT AND BUTTON CREATIONS SHOULD BE IN HERE.
 	// Handles the creation of screen elements.
 	void createScreenElements();
 
 	// Handles button presses based on the function of said button.
-	void handleButtonPress(Entity buttonEntity);
+	void handleButtonPress(std::string function);
+	void shootGrapplePoint();
+	void shootGrapple(vec2 worldMousePos);
+	void updateScore(Entity scoreEntity);
+	void updateTimer(long long time_elapsed);
+
+	std::vector<long long> best_times;
+	const std::string BEST_TIMES_FILE = "../data/best_times/best_times.txt";
+
+	std::string getBestTimeFilePath(int level);
+	void loadBestTimes(int level);
+	void saveBestTimes(int level);
+	void tryAddBestTime(long long time_elapsed, int level);
 };

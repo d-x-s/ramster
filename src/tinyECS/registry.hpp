@@ -7,7 +7,7 @@
 class ECSRegistry
 {
 	// callbacks to remove a particular or all entities in the system
-	std::vector<ContainerInterface*> registry_list;
+	std::vector<ContainerInterface *> registry_list;
 
 public:
 	// Manually created list of all components this game has
@@ -23,7 +23,7 @@ public:
 	ComponentContainer<Collision> collisions;
 	ComponentContainer<Player> players;
 	ComponentContainer<Enemy> enemies;
-	ComponentContainer<Mesh*> meshPtrs;
+	ComponentContainer<Mesh *> meshPtrs;
 	ComponentContainer<RenderRequest> renderRequests;
 	ComponentContainer<ScreenState> screenStates;
 	ComponentContainer<DebugComponent> debugComponents;
@@ -47,6 +47,10 @@ public:
 	ComponentContainer<FireBall> fireballs;
 	ComponentContainer<RunAnimation> runAnimations;
 	ComponentContainer<IdleAnimation> idleAnimations;
+	ComponentContainer<HealthBar> healthbars;
+	ComponentContainer<Score> scores;
+	ComponentContainer<Timer> timers;
+	ComponentContainer<UI> uis;
 
 	// constructor that adds all containers for looping over them
 	ECSRegistry()
@@ -78,29 +82,37 @@ public:
 		registry_list.push_back(&goalZones);
 		registry_list.push_back(&backgroundLayers);
 		registry_list.push_back(&fireballs);
+		registry_list.push_back(&healthbars);
+		registry_list.push_back(&scores);
+		registry_list.push_back(&timers);
+		registry_list.push_back(&uis);
 	}
 
-	void clear_all_components() {
-		for (ContainerInterface* reg : registry_list)
+	void clear_all_components()
+	{
+		for (ContainerInterface *reg : registry_list)
 			reg->clear();
 	}
 
-	void list_all_components() {
+	void list_all_components()
+	{
 		printf("Debug info on all registry entries:\n");
-		for (ContainerInterface* reg : registry_list)
+		for (ContainerInterface *reg : registry_list)
 			if (reg->size() > 0)
 				printf("%4d components of type %s\n", (int)reg->size(), typeid(*reg).name());
 	}
 
-	void list_all_components_of(Entity e) {
+	void list_all_components_of(Entity e)
+	{
 		printf("Debug info on components of entity %u:\n", (unsigned int)e);
-		for (ContainerInterface* reg : registry_list)
+		for (ContainerInterface *reg : registry_list)
 			if (reg->has(e))
 				printf("type %s\n", typeid(*reg).name());
 	}
 
-	void remove_all_components_of(Entity e) {
-		for (ContainerInterface* reg : registry_list)
+	void remove_all_components_of(Entity e)
+	{
+		for (ContainerInterface *reg : registry_list)
 			reg->remove(e);
 	}
 };

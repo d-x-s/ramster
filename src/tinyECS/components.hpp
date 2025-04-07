@@ -188,8 +188,21 @@ struct Mesh
  */
 enum class TEXTURE_ASSET_ID
 {
+    // Numbers
+    NUMBER_0 = 0,
+    NUMBER_1 = NUMBER_0 + 1,
+    NUMBER_2 = NUMBER_1 + 1,
+    NUMBER_3 = NUMBER_2 + 1,
+    NUMBER_4 = NUMBER_3 + 1,
+    NUMBER_5 = NUMBER_4 + 1,
+    NUMBER_6 = NUMBER_5 + 1,
+    NUMBER_7 = NUMBER_6 + 1,
+    NUMBER_8 = NUMBER_7 + 1,
+    NUMBER_9 = NUMBER_8 + 1,
+    COLON = NUMBER_9 + 1,
+
   // Ramster
-  RAMSTER_RUN_0 = 0,
+  RAMSTER_RUN_0 = COLON + 1,
   RAMSTER_RUN_1 = RAMSTER_RUN_0 + 1,
   RAMSTER_RUN_2 = RAMSTER_RUN_1 + 1,
   RAMSTER_RUN_3 = RAMSTER_RUN_2 + 1,
@@ -219,7 +232,7 @@ enum class TEXTURE_ASSET_ID
   TEXT_MENU = TITLE_DEFEAT + 1,
   TEXT_PAUSE = TEXT_MENU + 1,
   TEXT_GAMEOVER = TEXT_PAUSE + 1,
-
+  
   BUTTON_LVLUP = TEXT_GAMEOVER + 1,
   BUTTON_LVLDOWN = BUTTON_LVLUP + 1,
   BUTTON_START = BUTTON_LVLDOWN + 1,
@@ -545,5 +558,9 @@ struct IdleAnimation
 };
 
 struct RunAnimation
+{
+};
+
+struct UI
 {
 };

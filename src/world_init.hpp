@@ -71,7 +71,7 @@ Entity createGoalZone(vec2 bottom_left_pos, vec2 bottom_right_pos);
 
 // level layers
 Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId);
-Entity createBackgroundLayer(TEXTURE_ASSET_ID textureId);
+Entity createBackgroundLayer();
 
 // legacy
 // the player

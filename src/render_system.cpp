@@ -683,9 +683,23 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 	}
 	// SCREENS TO RENDER WHEN NOT PLAYING
 	else {
+		Entity playerEntity = registry.players.entities[0];
+		vec2 cameraPosition = registry.cameras.get(playerEntity).position;
 
-		Entity cameraEntity = registry.players.entities[0];
-		vec2 cameraPosition = registry.cameras.get(cameraEntity).position;
+		// draw the background layer
+		for (Entity entity : registry.renderRequests.entities)
+		{
+			if (registry.motions.has(entity) && registry.backgroundLayers.has(entity)) {
+				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
+			}
+		}
+
+		// snap parallax to camera position
+		auto& background_registry = registry.backgroundLayers;
+		BackgroundLayer& backgroundLayer = background_registry.components.back();
+		Entity background_entity = background_registry.entities.back();
+		Motion& background_motion = registry.motions.get(background_entity);
+		background_motion.position = vec2(cameraPosition);
 
 		for (Entity entity : registry.renderRequests.entities) {
 

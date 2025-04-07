@@ -728,21 +728,41 @@ Entity createLevelTextureLayer(TEXTURE_ASSET_ID textureId)
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // !!! create the entity representing the background layer
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Entity createBackgroundLayer(TEXTURE_ASSET_ID textureId)
+Entity createBackgroundLayer()
 {
 	Entity entity = Entity();
 	BackgroundLayer& backgroundLayer = registry.backgroundLayers.emplace(entity);
 
 	auto& motion = registry.motions.emplace(entity);
 	motion.position = vec2(VIEWPORT_WIDTH_PX / 2.f, VIEWPORT_HEIGHT_PX / 2.f);
-	motion.scale = vec2(2560, 2256);
+	motion.scale = vec2(1920, 1128);
+
+	std::vector<TEXTURE_ASSET_ID> frames;
+	frames = {
+		TEXTURE_ASSET_ID::BACKGROUND_0,
+		TEXTURE_ASSET_ID::BACKGROUND_1,
+		TEXTURE_ASSET_ID::BACKGROUND_2,
+		TEXTURE_ASSET_ID::BACKGROUND_3,
+		TEXTURE_ASSET_ID::BACKGROUND_4,
+		TEXTURE_ASSET_ID::BACKGROUND_5,
+		TEXTURE_ASSET_ID::BACKGROUND_6,
+		TEXTURE_ASSET_ID::BACKGROUND_7,
+
+	};
 
 	registry.renderRequests.insert(
 		entity,
 		{
-			textureId,
+			frames[0],
 			EFFECT_ASSET_ID::PARALLAX,
-			GEOMETRY_BUFFER_ID::SPRITE
+			GEOMETRY_BUFFER_ID::SPRITE,
+			frames,
+			{},
+			true,
+			true,
+			300.0f,
+			0.0f,
+			0
 		}
 	);
 

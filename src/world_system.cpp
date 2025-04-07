@@ -370,7 +370,7 @@ void WorldSystem::handleRamsterVoicelines() {
             channel = Mix_PlayChannel(-1, im_going_ham, 0);
         }
 
-        Mix_Volume(channel, 5);
+        Mix_Volume(channel, 2);
 
         // Reset the probability
         player.voicelineProbability = 0;
@@ -1073,26 +1073,26 @@ void WorldSystem::restart_game(int level)
   load_level(level_path);
 
   // create grid lines if they do not already exist
-  if (grid_lines.size() == 0)
-  {
-    // vertical lines
-    int cell_width = GRID_CELL_WIDTH_PX;
-    int numVerticalLines = WORLD_WIDTH_PX / GRID_CELL_WIDTH_PX;
-    for (int col = 0; col < numVerticalLines + 1; col++)
-    {
-      // width of 2 to make the grid easier to see
-      grid_lines.push_back(createGridLine(vec2(col * cell_width, 0), vec2(grid_line_width, WORLD_HEIGHT_PX)));
-    }
+  // if (grid_lines.size() == 0)
+  // {
+  //   // vertical lines
+  //   int cell_width = GRID_CELL_WIDTH_PX;
+  //   int numVerticalLines = WORLD_WIDTH_PX / GRID_CELL_WIDTH_PX;
+  //   for (int col = 0; col < numVerticalLines + 1; col++)
+  //   {
+  //     // width of 2 to make the grid easier to see
+  //     grid_lines.push_back(createGridLine(vec2(col * cell_width, 0), vec2(grid_line_width, WORLD_HEIGHT_PX)));
+  //   }
 
-    // horizontal lines
-    int cell_height = GRID_CELL_HEIGHT_PX;
-    int numHorizontalLines = WORLD_HEIGHT_PX / GRID_CELL_HEIGHT_PX;
-    for (int row = 0; row < numHorizontalLines + 1; row++)
-    {
-      // width of 2 to make the grid easier to see
-      grid_lines.push_back(createGridLine(vec2(0, row * cell_height), vec2(WORLD_WIDTH_PX, grid_line_width)));
-    }
-  }
+  //   // horizontal lines
+  //   int cell_height = GRID_CELL_HEIGHT_PX;
+  //   int numHorizontalLines = WORLD_HEIGHT_PX / GRID_CELL_HEIGHT_PX;
+  //   for (int row = 0; row < numHorizontalLines + 1; row++)
+  //   {
+  //     // width of 2 to make the grid easier to see
+  //     grid_lines.push_back(createGridLine(vec2(0, row * cell_height), vec2(WORLD_WIDTH_PX, grid_line_width)));
+  //   }
+  // }
 
   createScreenElements();
 
@@ -1107,7 +1107,7 @@ void WorldSystem::restart_game(int level)
   b2BodyId leftWallId = create_vertical_wall(worldId, 0.0f, roomHeight / 2, roomHeight);       // Left Wall
   b2BodyId rightWallId = create_vertical_wall(worldId, roomWidth, roomHeight / 2, roomHeight); // Right Wall
 
-  createBackgroundLayer(TEXTURE_ASSET_ID::BACKGROUND);
+  createBackgroundLayer();
   createLevelTextureLayer(level_texture);
 
   // turn the tunes back on

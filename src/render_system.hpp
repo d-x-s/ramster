@@ -121,7 +121,14 @@ class RenderSystem
       textures_path("levels/tunnelsmall.png"),
 
       // Parallax
-      textures_path("levels/background.png"),
+      textures_path("levels/background_0.png"),
+      textures_path("levels/background_1.png"),
+      textures_path("levels/background_2.png"),
+      textures_path("levels/background_3.png"),
+      textures_path("levels/background_4.png"),
+      textures_path("levels/background_5.png"),
+      textures_path("levels/background_6.png"),
+      textures_path("levels/background_7.png"),
 
       // Fireball
       textures_path("fireball_effect/frame_00_delay-0.06s.png"),

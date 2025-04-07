@@ -62,6 +62,8 @@ class RenderSystem
       textures_path("numbers/colon.png"),
       textures_path("numbers/Rcolon.png"),
 
+      textures_path("numbers/laugh.png"),
+
       // Ramster
       textures_path("player/run_0.png"),
       textures_path("player/run_1.png"),

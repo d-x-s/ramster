@@ -260,6 +260,7 @@ private:
 	std::chrono::steady_clock::time_point pause_start_time;
 	long long total_pause_duration = 0;
 	bool is_paused = false;
+	long long final_time = 0;
 
 	// use this to handle enemy spawning.
 	/*
@@ -309,6 +310,6 @@ private:
 	std::string getBestTimeFilePath(int level);
 	void loadBestTimes(int level);
 	void saveBestTimes(int level);
-	long long tryAddBestTime(long long time_elapsed);
-	void createBestTimes(long long new_time);
+	bool tryAddBestTime(long long time_elapsed);
+	void createBestTimes(bool new_time);
 };

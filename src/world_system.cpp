@@ -514,10 +514,8 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
       if (!first_goal)
       {
         auto now = std::chrono::steady_clock::now();
-        long long elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count() - total_pause_duration;
-        long long new_time = tryAddBestTime(elapsed_ms);
-        std::cout << elapsed_ms << std::endl;
-        createBestTimes(new_time);
+        final_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count() - total_pause_duration;
+        createBestTimes(tryAddBestTime(final_time));
         first_goal = true;
       }
       player_reached_finish_line = true;
@@ -1009,6 +1007,7 @@ void WorldSystem::restart_game(int level)
   total_pause_duration = 0;
   is_paused = false;
   first_goal = false;
+  final_time = 0;
   if (grapplePointActive || grappleActive)
   {
     removeGrapple();
@@ -1505,6 +1504,95 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
     return; // ignore all other inputs when game is inactive
   }
 
+  if (action == GLFW_RELEASE && key == GLFW_KEY_L)
+  {
+    currentScreen.current_screen = scoreboard_next_screen;
+  }
+
+  // Reset game when R is released
+
+  if (action == GLFW_RELEASE && key == GLFW_KEY_R)
+  {
+    // Pause and End of Game screen - restarts game
+    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "VICTORY" || currentScreen.current_screen == "DEFEAT")
+    {
+      currentScreen.current_screen = "PLAYING";
+      int w, h;
+      glfwGetWindowSize(window, &w, &h);
+      restart_game(current_level);
+    }
+  }
+  // Select level - only active on MAIN MENU screen
+  if (currentScreen.current_screen == "MAIN MENU")
+  {
+    // Level keys 1-9
+    if (action == GLFW_RELEASE && key == GLFW_KEY_1)
+    {
+      levelHelper(1, currentScreen);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_2)
+    {
+      levelHelper(2, currentScreen);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_3)
+    {
+      levelHelper(3, currentScreen);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_4)
+    {
+      levelHelper(4, currentScreen);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_5)
+    {
+      levelHelper(5, currentScreen);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_6)
+    {
+      levelHelper(6, currentScreen);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_7)
+    {
+      levelHelper(7, currentScreen);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_8)
+    {
+      levelHelper(8, currentScreen);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_9)
+    {
+      levelHelper(9, currentScreen);
+    }
+    // Increment or decrement selected level by 1
+    if (action == GLFW_RELEASE && key == GLFW_KEY_UP)
+    {
+      levelHelper(current_level + 1, currentScreen);
+    }
+    if (action == GLFW_RELEASE && key == GLFW_KEY_DOWN)
+    {
+      levelHelper(current_level - 1, currentScreen);
+    }
+  }
+
+  // ENTER key press handling
+  if (action == GLFW_RELEASE && key == GLFW_KEY_ENTER)
+  {
+
+    // Main menu screen - Loads the selected level and starts the game
+    if (currentScreen.current_screen == "MAIN MENU")
+    {
+      currentScreen.current_screen = "PLAYING";
+      restart_game(current_level);
+      return;
+    }
+    // Pause and End of Game screen - back to main menu
+    if (currentScreen.current_screen == "PAUSE" || currentScreen.current_screen == "VICTORY" || currentScreen.current_screen == "DEFEAT")
+    {
+      currentScreen.current_screen = "MAIN MENU";
+      restart_game(current_level);
+      return;
+    }
+  }
+
   // Exit game with ESC
   if (action == GLFW_RELEASE && key == GLFW_KEY_ESCAPE)
   {
@@ -1977,7 +2065,7 @@ void WorldSystem::handleGameover(CurrentScreen &currentScreen)
     //  LLNOTE FOR ANDREW
     //  Set current screen to scoreboard
     scoreboard_next_screen = "DEFEAT";
-    createBestTimes(-1);
+    createBestTimes(false);
     currentScreen.current_screen = "LEADERBOARD";
   }
   // If player reached finish line AND killed all enemies, game ends.
@@ -2473,7 +2561,7 @@ void WorldSystem::saveBestTimes(int level)
   }
 }
 
-long long WorldSystem::tryAddBestTime(long long time_elapsed)
+bool WorldSystem::tryAddBestTime(long long time_elapsed)
 {
   loadBestTimes(current_level); // Load current best times
 
@@ -2496,10 +2584,10 @@ long long WorldSystem::tryAddBestTime(long long time_elapsed)
 
   saveBestTimes(current_level);
 
-  return madeTop5 ? time_elapsed : -1;
+  return madeTop5;
 }
 
-void WorldSystem::createBestTimes(long long new_time)
+void WorldSystem::createBestTimes(bool new_time)
 {
   loadBestTimes(current_level);
 
@@ -2517,6 +2605,7 @@ void WorldSystem::createBestTimes(long long new_time)
 
   bool usedRedHighlight = false;
 
+  // Render top 5 best times
   for (size_t i = 0; i < best_times.size(); ++i)
   {
     long long time = best_times[i];
@@ -2527,7 +2616,6 @@ void WorldSystem::createBestTimes(long long new_time)
     int seconds = (time / 1000) % 60;
     int milliseconds = time % 1000;
 
-    // MM:SS:MMM format = 8 "slots" total, 7 for digits + 2 colons
     int digits[7] = {
         minutes / 10,
         minutes % 10,
@@ -2542,72 +2630,99 @@ void WorldSystem::createBestTimes(long long new_time)
     for (int j = 0; j < 10; j++)
     {
       if (registry.screenElements.has(timer.digits[j]))
-      {
         registry.screenElements.remove(timer.digits[j]);
-      }
 
       ScreenElement &screenElement = registry.screenElements.emplace(timer.digits[j]);
       screenElement.screen = "LEADERBOARD";
+      screenElement.camera = registry.cameras.entities[0];
 
-      Entity camera = registry.cameras.entities[0];
-      screenElement.camera = camera;
-
-      vec2 offset;
-      if (j == 0)
-      {
-        offset = vec2(0, 0);
-      }
-      else
-      {
-        offset = vec2(j * (digitWidth + padding) + extraSpacing, 0);
-      }
-
+      vec2 offset = (j == 0) ? vec2(0, 0) : vec2(j * (digitWidth + padding) + extraSpacing, 0);
       vec2 verticalOffset = vec2(0, i * vertical_spacing);
       screenElement.position = centerPosition + offset - vec2(half_width, 0) - verticalOffset;
 
       Entity digitEntity = timer.digits[j];
       if (!registry.renderRequests.has(digitEntity))
         continue;
+
+      RenderRequest &rr = registry.renderRequests.get(digitEntity);
+
       if (j == 0)
       {
-        RenderRequest &rr = registry.renderRequests.get(digitEntity);
         rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
             static_cast<int>(TEXTURE_ASSET_ID::W_NUMBER_1) + i);
       }
       else if (j == 3 || j == 6)
       {
-        if (new_time == time && !usedRedHighlight)
-        {
-          RenderRequest &rr = registry.renderRequests.get(digitEntity);
-          rr.used_texture = TEXTURE_ASSET_ID::R_COLON;
-        }
-        else
-        {
-          RenderRequest &rr = registry.renderRequests.get(digitEntity);
-          rr.used_texture = TEXTURE_ASSET_ID::COLON;
-        }
+        rr.used_texture = (new_time && !usedRedHighlight) ? TEXTURE_ASSET_ID::R_COLON : TEXTURE_ASSET_ID::COLON;
       }
       else
       {
-        if (new_time == time && !usedRedHighlight)
-        {
-          RenderRequest &rr = registry.renderRequests.get(digitEntity);
-          rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
-              static_cast<int>(TEXTURE_ASSET_ID::R_NUMBER_0) + digits[digitIndex]);
-          digitIndex++;
-        }
-        else
-        {
-          RenderRequest &rr = registry.renderRequests.get(digitEntity);
-          rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
-              static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + digits[digitIndex]);
-          digitIndex++;
-        }
+        rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
+            (new_time && !usedRedHighlight ? static_cast<int>(TEXTURE_ASSET_ID::R_NUMBER_0) : static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0)) + digits[digitIndex++]);
       }
     }
-    if (new_time == time && !usedRedHighlight)
-    {
+
+    if (new_time && !usedRedHighlight)
       usedRedHighlight = true;
+  }
+
+  // Add final time if not a new time
+  if (!new_time)
+  {
+    size_t i = best_times.size(); // place it below top 5
+    long long time = final_time;
+    Entity lbTimerEntity = createLeaderboardTimer(time, -1); // -1 means no rank icon
+    LBTimer &timer = registry.lbtimers.get(lbTimerEntity);
+
+    int minutes = time / 60000;
+    int seconds = (time / 1000) % 60;
+    int milliseconds = time % 1000;
+
+    int digits[7] = {
+        minutes / 10,
+        minutes % 10,
+        seconds / 10,
+        seconds % 10,
+        milliseconds / 100,
+        (milliseconds / 10) % 10,
+        milliseconds % 10};
+
+    int digitIndex = 0;
+
+    for (int j = 0; j < 10; j++)
+    {
+      if (registry.screenElements.has(timer.digits[j]))
+        registry.screenElements.remove(timer.digits[j]);
+
+      ScreenElement &screenElement = registry.screenElements.emplace(timer.digits[j]);
+      screenElement.screen = "LEADERBOARD";
+      screenElement.camera = registry.cameras.entities[0];
+
+      vec2 offset = (j == 0) ? vec2(0, 0) : vec2(j * (digitWidth + padding) + extraSpacing, 0);
+      vec2 verticalOffset = vec2(0, i * vertical_spacing); // one row below the others
+      screenElement.position = centerPosition + offset - vec2(half_width, 0) - verticalOffset;
+
+      Entity digitEntity = timer.digits[j];
+      if (!registry.renderRequests.has(digitEntity))
+        continue;
+
+      RenderRequest &rr = registry.renderRequests.get(digitEntity);
+
+      if (j == 0)
+      {
+        auto &motion = registry.motions.get(timer.digits[j]);
+        motion.scale = vec2(70, 70);
+        rr.used_texture = TEXTURE_ASSET_ID::LAUGH;
+      }
+      else if (j == 3 || j == 6)
+      {
+        rr.used_texture = TEXTURE_ASSET_ID::R_COLON;
+      }
+      else
+      {
+        rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
+            static_cast<int>(TEXTURE_ASSET_ID::R_NUMBER_0) + digits[digitIndex++]);
+      }
     }
   }
 }

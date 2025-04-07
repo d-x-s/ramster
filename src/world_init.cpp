@@ -878,22 +878,6 @@ Entity createLeaderboardTimer(long long time_elapsed, size_t rank)
 	vec2 basePosition = vec2(150, WINDOW_HEIGHT_PX - 50);
 	vec2 digitSize = vec2(40, 60);
 
-	int minutes = time_elapsed / 60000;
-	int seconds = (time_elapsed / 1000) % 60;
-	int milliseconds = time_elapsed % 1000;
-
-	// MM:SS:MMM format = 8 "slots" total, 7 for digits + 2 colons
-	int digits[7] = {
-		minutes / 10,
-		minutes % 10,
-		seconds / 10,
-		seconds % 10,
-		milliseconds / 100,
-		(milliseconds / 10) % 10,
-		milliseconds % 10};
-
-	int digitIndex = 0;
-
 	for (int i = 0; i < 10; ++i)
 	{
 		Entity digitEntity = Entity();
@@ -905,8 +889,7 @@ Entity createLeaderboardTimer(long long time_elapsed, size_t rank)
 			motion.position = basePosition + offset;
 			registry.renderRequests.insert(
 				digitEntity,
-				{static_cast<TEXTURE_ASSET_ID>(
-					 static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + rank),
+				{TEXTURE_ASSET_ID::NUMBER_0,
 				 EFFECT_ASSET_ID::TEXTURED,
 				 GEOMETRY_BUFFER_ID::SPRITE});
 		}
@@ -927,11 +910,9 @@ Entity createLeaderboardTimer(long long time_elapsed, size_t rank)
 			{
 				registry.renderRequests.insert(
 					digitEntity,
-					{static_cast<TEXTURE_ASSET_ID>(
-						 static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + digits[digitIndex]),
+					{TEXTURE_ASSET_ID::NUMBER_0,
 					 EFFECT_ASSET_ID::TEXTURED,
 					 GEOMETRY_BUFFER_ID::SPRITE});
-				digitIndex++;
 			}
 		}
 		lbtimer.digits[i] = digitEntity;

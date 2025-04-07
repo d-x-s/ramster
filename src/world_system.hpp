@@ -308,5 +308,5 @@ private:
 	void loadBestTimes(int level);
 	void saveBestTimes(int level);
 	long long tryAddBestTime(long long time_elapsed);
-	void createBestTimes();
+	void createBestTimes(long long new_time);
 };

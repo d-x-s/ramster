@@ -1521,6 +1521,10 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
       close_window();
     }
   }
+  if (action == GLFW_RELEASE && key == GLFW_KEY_L)
+  {
+    currentScreen.current_screen = scoreboard_next_screen;
+  }
 
   // Reset game when R is released
 
@@ -2051,7 +2055,7 @@ void WorldSystem::handleGameover(CurrentScreen &currentScreen)
     //  LLNOTE FOR ANDREW
     //  Set current screen to scoreboard
     scoreboard_next_screen = "DEFEAT";
-    createBestTimes();
+    createBestTimes(-1);
     currentScreen.current_screen = "LEADERBOARD";
   }
   // If player reached finish line AND killed all enemies, game ends.
@@ -2073,8 +2077,8 @@ void WorldSystem::handleGameover(CurrentScreen &currentScreen)
         // scoreboard_next_screen = "VICTORY";
         auto now = std::chrono::steady_clock::now();
         long long elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count() - total_pause_duration;
-        tryAddBestTime(elapsed_ms);
-        createBestTimes();
+        long long new_time = tryAddBestTime(elapsed_ms);
+        createBestTimes(new_time);
         scoreboard_next_screen = "VICTORY";
         currentScreen.current_screen = "LEADERBOARD";
       }
@@ -2496,7 +2500,7 @@ void WorldSystem::updateTimer(long long time_elapsed)
     int seconds = (time_elapsed / 1000) % 60;
     int milliseconds = time_elapsed % 1000;
 
-    int digits[7] = {
+    int digits[5] = {
         minutes / 10,
         minutes % 10,
         seconds / 10,
@@ -2577,7 +2581,7 @@ long long WorldSystem::tryAddBestTime(long long time_elapsed)
   return madeTop5 ? time_elapsed : -1;
 }
 
-void WorldSystem::createBestTimes()
+void WorldSystem::createBestTimes(long long new_time)
 {
   loadBestTimes(current_level);
 
@@ -2593,11 +2597,29 @@ void WorldSystem::createBestTimes()
   float total_width = digitWidth * num_digits + padding * (num_digits - 1) + extraSpacing;
   float half_width = total_width / 2.f;
 
+  bool usedRedHighlight = false;
+
   for (size_t i = 0; i < best_times.size(); ++i)
   {
     long long time = best_times[i];
     Entity lbTimerEntity = createLeaderboardTimer(time, i + 1);
     LBTimer &timer = registry.lbtimers.get(lbTimerEntity);
+
+    int minutes = time / 60000;
+    int seconds = (time / 1000) % 60;
+    int milliseconds = time % 1000;
+
+    // MM:SS:MMM format = 8 "slots" total, 7 for digits + 2 colons
+    int digits[7] = {
+        minutes / 10,
+        minutes % 10,
+        seconds / 10,
+        seconds % 10,
+        milliseconds / 100,
+        (milliseconds / 10) % 10,
+        milliseconds % 10};
+
+    int digitIndex = 0;
 
     for (int j = 0; j < 10; j++)
     {
@@ -2624,6 +2646,50 @@ void WorldSystem::createBestTimes()
 
       vec2 verticalOffset = vec2(0, i * vertical_spacing);
       screenElement.position = centerPosition + offset - vec2(half_width, 0) - verticalOffset;
+
+      Entity digitEntity = timer.digits[j];
+      if (!registry.renderRequests.has(digitEntity))
+        continue;
+      if (j == 0)
+      {
+        RenderRequest &rr = registry.renderRequests.get(digitEntity);
+        rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
+            static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + i + 1);
+      }
+      else if (j == 3 || j == 6)
+      {
+        if (new_time == time && !usedRedHighlight)
+        {
+          RenderRequest &rr = registry.renderRequests.get(digitEntity);
+          rr.used_texture = TEXTURE_ASSET_ID::R_COLON;
+        }
+        else
+        {
+          RenderRequest &rr = registry.renderRequests.get(digitEntity);
+          rr.used_texture = TEXTURE_ASSET_ID::COLON;
+        }
+      }
+      else
+      {
+        if (new_time == time && !usedRedHighlight)
+        {
+          RenderRequest &rr = registry.renderRequests.get(digitEntity);
+          rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
+              static_cast<int>(TEXTURE_ASSET_ID::R_NUMBER_0) + digits[digitIndex]);
+          digitIndex++;
+        }
+        else
+        {
+          RenderRequest &rr = registry.renderRequests.get(digitEntity);
+          rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
+              static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0) + digits[digitIndex]);
+          digitIndex++;
+        }
+      }
+    }
+    if (new_time == time && !usedRedHighlight)
+    {
+      usedRedHighlight = true;
     }
   }
 }

@@ -81,3 +81,4 @@ Entity createConfetti(vec2 position);
 Entity createHealthBar(float health);
 Entity createScore();
 Entity createTimer();
+Entity createLeaderboardTimer(long long time_elapsed, size_t rank);

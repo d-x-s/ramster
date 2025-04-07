@@ -156,7 +156,8 @@ void RenderSystem::drawLine(Entity entity, const mat3 &projection)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	gl_has_errors();
 
-	if (render_request.used_effect == EFFECT_ASSET_ID::LEGACY_EGG) {
+	if (render_request.used_effect == EFFECT_ASSET_ID::LEGACY_EGG)
+	{
 		GLint in_position_loc = glGetAttribLocation(program, "in_position");
 		gl_has_errors();
 
@@ -241,11 +242,15 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 
 	// handle animation if this render request has animation data embedded
 	assert(registry.renderRequests.has(entity));
-	RenderRequest& render_request = registry.renderRequests.get(entity);
+	RenderRequest &render_request = registry.renderRequests.get(entity);
 
-	if (!render_request.is_visible) { return; }
+	if (!render_request.is_visible)
+	{
+		return;
+	}
 
-	if (!render_request.animation_frames.empty() && game_active && render_request.is_visible) {
+	if (!render_request.animation_frames.empty() && game_active && render_request.is_visible)
+	{
 		render_request.animation_elapsed_time += elapsed_ms;
 
 		// if this is not a looping animation and it is already complete, remove it
@@ -284,7 +289,7 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 	gl_has_errors();
 
 	// texture-mapped entities - use data location as in the vertex buffer
-	if (render_request.used_effect == EFFECT_ASSET_ID::TEXTURED || 
+	if (render_request.used_effect == EFFECT_ASSET_ID::TEXTURED ||
 		render_request.used_effect == EFFECT_ASSET_ID::TRANSLUCENT ||
 		render_request.used_effect == EFFECT_ASSET_ID::FIREBALL)
 	{
@@ -376,13 +381,13 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 
 		glEnableVertexAttribArray(in_position_loc);
 		glVertexAttribPointer(in_position_loc, 3, GL_FLOAT, GL_FALSE,
-			sizeof(TexturedVertex), (void*)0);
+							  sizeof(TexturedVertex), (void *)0);
 		gl_has_errors();
 
 		glEnableVertexAttribArray(in_texcoord_loc);
 		glVertexAttribPointer(
 			in_texcoord_loc, 2, GL_FLOAT, GL_FALSE, sizeof(TexturedVertex),
-			(void*)sizeof(
+			(void *)sizeof(
 				vec3)); // note the stride to skip the preceeding vertex position
 
 		// Enabling and binding texture to slot 0
@@ -398,7 +403,7 @@ void RenderSystem::drawTexturedMesh(Entity entity, const mat3 &projection, float
 
 		Entity playerEntity_physicsBody = registry.players.entities[0];
 		PhysicsBody &playerComponent_physicsBody = registry.physicsBodies.get(playerEntity_physicsBody);
-		b2BodyId playerBodyID = playerComponent_physicsBody.bodyId;		
+		b2BodyId playerBodyID = playerComponent_physicsBody.bodyId;
 		b2Vec2 velocity = b2Body_GetLinearVelocity(playerBodyID);
 
 		bool flipTextureX = velocity.x < -0.1f;
@@ -599,10 +604,10 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 		std::vector<Entity> playerMidLayer;
 		std::vector<Entity> playerTopLayer;
 		std::vector<Entity> fireballs;
-    std::vector<Entity> overlay;
+		std::vector<Entity> overlay;
 		for (Entity entity : registry.renderRequests.entities)
-		{			 
-			RenderRequest& rr = registry.renderRequests.get(entity);
+		{
+			RenderRequest &rr = registry.renderRequests.get(entity);
 
 			// collect player related entities for processing later
 			if (registry.playerBottomLayer.has(entity))
@@ -625,13 +630,14 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 				fireballs.push_back(entity);
 				continue;
 			}
-      if (registry.uis.has(entity))
+			if (registry.uis.has(entity))
 			{
 				overlay.push_back(entity);
 				continue;
 			}
 			// filter to entities that have a motion component (but not a screen)
-			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity) && !registry.screenElements.has(entity)) {
+			if (registry.motions.has(entity) && !registry.screens.has(entity) && !registry.backgroundLayers.has(entity) && !registry.screenElements.has(entity))
+			{
 				// Note, its not very efficient to access elements indirectly via the entity
 				// albeit iterating through all Sprites in sequence. A good point to optimize
 				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
@@ -663,13 +669,14 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 		}
 
-    for (Entity entity : overlay)
+		for (Entity entity : overlay)
 		{
 			drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 		}
 	}
 	// STORY SCREENS
-	else if (currentScreen.current_screen == "STORY INTRO" || currentScreen.current_screen == "STORY CONCLUSION") {
+	else if (currentScreen.current_screen == "STORY INTRO" || currentScreen.current_screen == "STORY CONCLUSION")
+	{
 
 		Entity cameraEntity = registry.players.entities[0];
 		vec2 cameraPosition = registry.cameras.get(cameraEntity).position;
@@ -679,15 +686,18 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 		int lowest_frame = 9999;
 
 		// Go over all story frame entities and find the smallest one to render
-		for (Entity entity : registry.storyFrames.entities) {
+		for (Entity entity : registry.storyFrames.entities)
+		{
 
 			// We only want story frames for the current screen
 			ScreenElement screenElement = registry.screenElements.get(entity);
-			if (screenElement.screen == currentScreen.current_screen) {
+			if (screenElement.screen == currentScreen.current_screen)
+			{
 
 				// If this story frame's the lowest in the sequence then we want to render it.
 				StoryFrame storyFrame = registry.storyFrames.get(entity);
-				if (storyFrame.frame < lowest_frame) {
+				if (storyFrame.frame < lowest_frame)
+				{
 					entityToRender = entity;
 					lowest_frame = storyFrame.frame;
 				}
@@ -696,43 +706,47 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 
 		// Re-center screen onto camera
 		ScreenElement screenElement = registry.screenElements.get(entityToRender);
-		Motion& screenMotion = registry.motions.get(entityToRender);
+		Motion &screenMotion = registry.motions.get(entityToRender);
 		screenMotion.position = vec2(cameraPosition.x + screenElement.position.x, cameraPosition.y + screenElement.position.y);
 
 		// Render the story frame
 		drawTexturedMesh(entityToRender, projection_2D, elapsed_ms, game_active);
-
 	}
 	// SCREENS TO RENDER WHEN NOT PLAYING
-	else {
+	else
+	{
 		Entity playerEntity = registry.players.entities[0];
 		vec2 cameraPosition = registry.cameras.get(playerEntity).position;
 
 		// draw the background layer
 		for (Entity entity : registry.renderRequests.entities)
 		{
-			if (registry.motions.has(entity) && registry.backgroundLayers.has(entity)) {
+			if (registry.motions.has(entity) && registry.backgroundLayers.has(entity))
+			{
 				drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 			}
 		}
 
 		// snap parallax to camera position
-		auto& background_registry = registry.backgroundLayers;
-		BackgroundLayer& backgroundLayer = background_registry.components.back();
+		auto &background_registry = registry.backgroundLayers;
+		BackgroundLayer &backgroundLayer = background_registry.components.back();
 		Entity background_entity = background_registry.entities.back();
-		Motion& background_motion = registry.motions.get(background_entity);
+		Motion &background_motion = registry.motions.get(background_entity);
 		background_motion.position = vec2(cameraPosition);
 
-		for (Entity entity : registry.renderRequests.entities) {
+		for (Entity entity : registry.renderRequests.entities)
+		{
 
 			// We're only interested in screen elements
-			if (registry.screenElements.has(entity) && !registry.storyFrames.has(entity)) {
+			if (registry.screenElements.has(entity) && !registry.storyFrames.has(entity))
+			{
 
 				ScreenElement screenElement = registry.screenElements.get(entity);
-				Motion& screenMotion = registry.motions.get(entity);
+				Motion &screenMotion = registry.motions.get(entity);
 
 				// Ensure that we're only rendering elements belonging to the screen we're currently on
-				if (currentScreen.current_screen == screenElement.screen) {
+				if (currentScreen.current_screen == screenElement.screen)
+				{
 
 					// Re-center screen onto camera
 					screenMotion.position = vec2(cameraPosition.x + screenElement.position.x, cameraPosition.y + screenElement.position.y);
@@ -740,7 +754,6 @@ void RenderSystem::draw(float elapsed_ms, bool game_active)
 					// Then render
 					drawTexturedMesh(entity, projection_2D, elapsed_ms, game_active);
 				}
-
 			}
 		}
 	}
@@ -763,13 +776,13 @@ mat3 RenderSystem::createProjectionMatrix()
 {
 	Camera camera = registry.cameras.components[0];
 
-  // Fixed camera view centered around player
+	// Fixed camera view centered around player
 	float left = camera.position.x - VIEWPORT_WIDTH_PX / 2.f;
 	float right = camera.position.x + VIEWPORT_WIDTH_PX / 2.f;
 	float bottom = camera.position.y - VIEWPORT_HEIGHT_PX / 2.f;
 	float top = camera.position.y + VIEWPORT_HEIGHT_PX / 2.f;
 
-  // Scale factors, to scale to [-1, 1] OpenGl coordinate space
+	// Scale factors, to scale to [-1, 1] OpenGl coordinate space
 	float sx = 2.f / (right - left);
 	float sy = 2.f / (top - bottom);
 

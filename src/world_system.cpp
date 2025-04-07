@@ -219,23 +219,23 @@ bool WorldSystem::start_and_load_sounds()
   ball_flamming = Mix_LoadWAV(audio_path("fire_woosh_sfx.wav").c_str());
   ramster_scream = Mix_LoadWAV(audio_path("ramster_scream.wav").c_str());
   im_going_ham = Mix_LoadWAV(audio_path("im_going_ham.wav").c_str());
-  
+
   if (
       background_music == nullptr ||
       background_music_memorybranch == nullptr ||
       background_music_oblanka == nullptr ||
       background_music_paradrizzle == nullptr ||
       background_music_windcatcher == nullptr ||
-	  background_music_promenade == nullptr ||
-	  background_music_spaba == nullptr ||
-	  background_music_cottonplanes == nullptr ||
-	  background_music_pencilcrayons == nullptr ||
-	  background_music_moontownshores == nullptr ||
+      background_music_promenade == nullptr ||
+      background_music_spaba == nullptr ||
+      background_music_cottonplanes == nullptr ||
+      background_music_pencilcrayons == nullptr ||
+      background_music_moontownshores == nullptr ||
 
-	  ball_rolling == nullptr ||
-	  ball_flamming == nullptr ||
-	  ramster_scream == nullptr ||
-	  im_going_ham == nullptr ||
+      ball_rolling == nullptr ||
+      ball_flamming == nullptr ||
+      ramster_scream == nullptr ||
+      im_going_ham == nullptr ||
 
       fx_destroy_enemy == nullptr ||
       fx_destroy_enemy_fail == nullptr ||
@@ -314,73 +314,77 @@ void WorldSystem::playSoundEffect(FX effect)
   int channel;
   switch (effect)
   {
-    case FX::FX_DESTROY_ENEMY:
-      channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
-      break;
-    case FX::FX_DESTROY_ENEMY_FAIL:
-        channel = Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
-      break;
-    case FX::FX_JUMP:
-        channel = Mix_PlayChannel(-1, fx_jump, 0);
-      break;
-    case FX::FX_GRAPPLE:
-        channel = Mix_PlayChannel(-1, fx_grapple, 0);
-      break;
-    default:
-        channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
-      break;
-  } 
+  case FX::FX_DESTROY_ENEMY:
+    channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+    break;
+  case FX::FX_DESTROY_ENEMY_FAIL:
+    channel = Mix_PlayChannel(-1, fx_destroy_enemy_fail, 0);
+    break;
+  case FX::FX_JUMP:
+    channel = Mix_PlayChannel(-1, fx_jump, 0);
+    break;
+  case FX::FX_GRAPPLE:
+    channel = Mix_PlayChannel(-1, fx_grapple, 0);
+    break;
+  default:
+    channel = Mix_PlayChannel(-1, fx_destroy_enemy, 0);
+    break;
+  }
 
   Mix_Volume(channel, 5);
 }
 
-
 // should only be called after ramster has defeated an enemy.
-void WorldSystem::handleRamsterVoicelines() {
-    Entity playerEntity = registry.players.entities[0];
-    Player& player = registry.players.get(playerEntity);
+void WorldSystem::handleRamsterVoicelines()
+{
+  Entity playerEntity = registry.players.entities[0];
+  Player &player = registry.players.get(playerEntity);
 
-    // Get the current time
-    auto now = std::chrono::steady_clock::now();
+  // Get the current time
+  auto now = std::chrono::steady_clock::now();
 
-    // Check if the cooldown period has passed
-    if (std::chrono::duration_cast<std::chrono::seconds>(now - player.lastVoicelineTime).count() < 2) {
-        return; // Cooldown period has not passed, do nothing
+  // Check if the cooldown period has passed
+  if (std::chrono::duration_cast<std::chrono::seconds>(now - player.lastVoicelineTime).count() < 2)
+  {
+    return; // Cooldown period has not passed, do nothing
+  }
+
+  // Random number generator for probability increase
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> dis(5, 15);
+
+  // Increment the probability by a random percentage between 5 and 15
+  player.voicelineProbability += dis(gen);
+
+  // Generate a random number between 0 and 100
+  std::uniform_int_distribution<> chance(0, 100);
+  int randomChance = chance(gen);
+
+  // Check if the random chance is less than or equal to the current probability
+  if (randomChance <= player.voicelineProbability)
+  {
+    // Play voiceline and reset the probability
+    int channel;
+    int random = rand() % 2;
+
+    if (random == 0)
+    {
+      channel = Mix_PlayChannel(-1, ramster_scream, 0);
+    }
+    else
+    {
+      channel = Mix_PlayChannel(-1, im_going_ham, 0);
     }
 
-    // Random number generator for probability increase
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(5, 15);
+    Mix_Volume(channel, 2);
 
-    // Increment the probability by a random percentage between 5 and 15
-    player.voicelineProbability += dis(gen);
+    // Reset the probability
+    player.voicelineProbability = 0;
 
-    // Generate a random number between 0 and 100
-    std::uniform_int_distribution<> chance(0, 100);
-    int randomChance = chance(gen);
-
-    // Check if the random chance is less than or equal to the current probability
-    if (randomChance <= player.voicelineProbability) {
-        // Play voiceline and reset the probability
-        int channel;
-        int random = rand() % 2;
-
-        if (random == 0) {
-            channel = Mix_PlayChannel(-1, ramster_scream, 0);
-        }
-        else {
-            channel = Mix_PlayChannel(-1, im_going_ham, 0);
-        }
-
-        Mix_Volume(channel, 2);
-
-        // Reset the probability
-        player.voicelineProbability = 0;
-
-        // Update the last voiceline time
-        player.lastVoicelineTime = now;
-    }
+    // Update the last voiceline time
+    player.lastVoicelineTime = now;
+  }
 }
 
 // NOTE: function should be called after update_isGrounded() call for accuracy.
@@ -970,7 +974,7 @@ void WorldSystem::restart_game(int level)
   std::string level_path = std::get<0>(level_specs);
   TEXTURE_ASSET_ID level_texture = std::get<1>(level_specs);
   MUSIC level_music = std::get<2>(level_specs);
-  
+
   // start clock
   game_start_time = std::chrono::steady_clock::now();
 
@@ -1087,8 +1091,9 @@ void WorldSystem::restart_game(int level)
   }
 
   // stop all sounds playing currently
-  for (int i = 0; i < 8; i++) {
-      Mix_HaltChannel(i);
+  for (int i = 0; i < 8; i++)
+  {
+    Mix_HaltChannel(i);
   }
 
   int grid_line_width = GRID_LINE_WIDTH_PX;
@@ -1237,8 +1242,8 @@ void WorldSystem::handle_collisions(float elapsed_ms)
           playSoundEffect(FX::FX_DESTROY_ENEMY);
           enemies_killed++;
 
-		      handleRamsterVoicelines();
-          
+          handleRamsterVoicelines();
+
           for (Entity &scoreEntity : registry.scores.entities)
           {
             Score &score = registry.scores.get(scoreEntity);
@@ -1518,7 +1523,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
   }
 
   // Reset game when R is released
-  /* DISABLED. REPLACED WITH MOUSE INPUT HANDLING.
+
   if (action == GLFW_RELEASE && key == GLFW_KEY_R)
   {
     // Pause and End of Game screen - restarts game
@@ -1530,9 +1535,7 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
       restart_game(current_level);
     }
   }
-  */
   // Select level - only active on MAIN MENU screen
-  /* DISABLED. REPLACED WITH MOUSE INPUT HANDLING.
   if (currentScreen.current_screen == "MAIN MENU")
   {
     // Level keys 1-9
@@ -1582,10 +1585,8 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
       levelHelper(current_level - 1, currentScreen);
     }
   }
-  */
 
   // ENTER key press handling
-  /* DISABLED. REPLACED WITH MOUSE INPUT HANDLING.
   if (action == GLFW_RELEASE && key == GLFW_KEY_ENTER)
   {
 
@@ -1604,7 +1605,6 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
       return;
     }
   }
-  */
 
   // Debug toggle with D
   if (key == GLFW_KEY_P && action == GLFW_RELEASE)
@@ -1650,53 +1650,53 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
     // For the playing screen specifically, mouse controls grapple
     if (currentScreen.current_screen == "PLAYING")
     {
-        // Find the grapple point closest to the click that is within the threshold.
-        GrapplePoint* selectedGp = nullptr;
-        float bestDist = GRAPPLE_ATTACH_ZONE_RADIUS; // distance threshold
+      // Find the grapple point closest to the click that is within the threshold.
+      GrapplePoint *selectedGp = nullptr;
+      float bestDist = GRAPPLE_ATTACH_ZONE_RADIUS; // distance threshold
 
-        for (Entity gpEntity : registry.grapplePoints.entities)
+      for (Entity gpEntity : registry.grapplePoints.entities)
+      {
+        GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
+        float dist = length(gp.position - worldMousePos);
+        if (dist < bestDist)
         {
-            GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
-            float dist = length(gp.position - worldMousePos);
-            if (dist < bestDist)
-            {
-                bestDist = dist;
-                selectedGp = &gp;
-            }
+          bestDist = dist;
+          selectedGp = &gp;
         }
+      }
 
-        // Deactivate all grapple enemies_killed.
-        for (Entity gpEntity : registry.grapplePoints.entities)
-        {
-            GrapplePoint& gp = registry.grapplePoints.get(gpEntity);
-            gp.active = false;
-        }
+      // Deactivate all grapple enemies_killed.
+      for (Entity gpEntity : registry.grapplePoints.entities)
+      {
+        GrapplePoint &gp = registry.grapplePoints.get(gpEntity);
+        gp.active = false;
+      }
 
-        // If a valid grapple point is found, mark it as active.
-        if (selectedGp != nullptr)
-        {
-            selectedGp->active = true;
-            std::cout << "Selected grapple point at ("
-                << selectedGp->position.x << ", " << selectedGp->position.y
-                << ") with active = " << selectedGp->active << std::endl;
-        }
+      // If a valid grapple point is found, mark it as active.
+      if (selectedGp != nullptr)
+      {
+        selectedGp->active = true;
+        std::cout << "Selected grapple point at ("
+                  << selectedGp->position.x << ", " << selectedGp->position.y
+                  << ") with active = " << selectedGp->active << std::endl;
+      }
 
-        // Now, if no grapple is currently attached and we found an active point, attach the grapple.
-        if (!grappleActive && selectedGp != nullptr)
-        {
-            shootGrapplePoint();
-        }
-        else if (!grappleActive && selectedGp == nullptr)
-        {
-            shootGrapple(worldMousePos);
-        }
-        else if (grappleActive)
-        {
-            playSoundEffect(FX::FX_GRAPPLE);
-            removeGrapple();
-            grappleActive = false;
-            grapplePointActive = false;
-        }
+      // Now, if no grapple is currently attached and we found an active point, attach the grapple.
+      if (!grappleActive && selectedGp != nullptr)
+      {
+        shootGrapplePoint();
+      }
+      else if (!grappleActive && selectedGp == nullptr)
+      {
+        shootGrapple(worldMousePos);
+      }
+      else if (grappleActive)
+      {
+        playSoundEffect(FX::FX_GRAPPLE);
+        removeGrapple();
+        grappleActive = false;
+        grapplePointActive = false;
+      }
     }
     // Every other screen, mouse deals with button presses.
     else
@@ -1721,7 +1721,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
         if (screenElement.screen == currentScreen.current_screen)
         {
 
-          Button button = registry.buttons.get(buttonEntity);
+          UIButton button = registry.buttons.get(buttonEntity);
 
           // Figure out LEFT, RIGHT, TOP, BOTTOM of button
           float left = center.x + screenElement.boundaries[0];
@@ -2046,10 +2046,13 @@ void WorldSystem::handleGameover(CurrentScreen &currentScreen)
   // If player HP reaches 0, game ends.
   if (hp <= 0)
   {
-    currentScreen.current_screen = "DEFEAT"; 
-    // LLNOTE FOR ANDREW
-    // Set current screen to scoreboard
-    //scoreboard_next_screen = "DEFEAT";
+
+    // currentScreen.current_screen = "DEFEAT";
+    //  LLNOTE FOR ANDREW
+    //  Set current screen to scoreboard
+    scoreboard_next_screen = "DEFEAT";
+    createBestTimes();
+    currentScreen.current_screen = "LEADERBOARD";
   }
   // If player reached finish line AND killed all enemies, game ends.
   else if (player_reached_finish_line)
@@ -2064,10 +2067,16 @@ void WorldSystem::handleGameover(CurrentScreen &currentScreen)
       }
       else
       {
-        currentScreen.current_screen = "VICTORY";
+        // currentScreen.current_screen = "VICTORY";
         // LLNOTE FOR ANDREW
         // Set current screen to scoreboard
-        //scoreboard_next_screen = "VICTORY";
+        // scoreboard_next_screen = "VICTORY";
+        auto now = std::chrono::steady_clock::now();
+        long long elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count() - total_pause_duration;
+        tryAddBestTime(elapsed_ms);
+        createBestTimes();
+        scoreboard_next_screen = "VICTORY";
+        currentScreen.current_screen = "LEADERBOARD";
       }
     }
     else
@@ -2121,7 +2130,7 @@ void WorldSystem::handleButtonPress(Entity buttonEntity)
   CurrentScreen &currentScreen = registry.currentScreen.get(currScreenEntity);
 
   // Get function of button
-  Button buttonComponent = registry.buttons.get(buttonEntity);
+  UIButton buttonComponent = registry.buttons.get(buttonEntity);
   std::string function = buttonComponent.function;
 
   if (function == "LEVEL BUTTON")
@@ -2221,10 +2230,12 @@ void WorldSystem::handleButtonPress(Entity buttonEntity)
     currentScreen.current_screen = "MAIN MENU";
     restart_game(current_level);
   }
-  else if (function == "SCOREBOARD NEXT") {
-      // LLNOTE FOR ANDREW
-      // 
-      //currentScreen.current_screen = scoreboard_next_screen; should be enough...?
+  else if (function == "SCOREBOARD NEXT")
+  {
+    // LLNOTE FOR ANDREW
+    //
+    // currentScreen.current_screen = scoreboard_next_screen; should be enough...?
+    currentScreen.current_screen = scoreboard_next_screen;
   }
 }
 
@@ -2398,6 +2409,17 @@ void WorldSystem::createScreenElements()
         256, 128,
         vec2(400, -200));
 
+    // SCORE BOARD /////////////////////////////////////////////////////////
+    createScreenElement(
+        "LEADERBOARD", TEXTURE_ASSET_ID::LEADERBOARD,
+        800, 150,
+        vec2(0, 300));
+
+    createButton(
+        "SCOREBOARD NEXT", "LEADERBOARD", TEXTURE_ASSET_ID::BUTTON_LVLUP,
+        256, 128,
+        vec2(500, -300));
+
     // STORY INTRO /////////////////////////////////////////////////////////
 
     createStoryFrame(1, 4, "STORY INTRO", TEXTURE_ASSET_ID::STORYFRAME_INTRO_1);
@@ -2529,12 +2551,79 @@ void WorldSystem::saveBestTimes(int level)
   }
 }
 
-void WorldSystem::tryAddBestTime(long long time_elapsed, int level)
+long long WorldSystem::tryAddBestTime(long long time_elapsed)
 {
-  loadBestTimes(level); // Load current ones before adding
+  loadBestTimes(current_level); // Load current best times
+
   best_times.push_back(time_elapsed);
   std::sort(best_times.begin(), best_times.end());
+
+  // Check if time_elapsed is in the top 5 before trimming
+  bool madeTop5 = false;
+  for (int i = 0; i < std::min(5, (int)best_times.size()); i++)
+  {
+    if (best_times[i] == time_elapsed)
+    {
+      madeTop5 = true;
+      break;
+    }
+  }
+
   if (best_times.size() > 5)
     best_times.resize(5);
-  saveBestTimes(level);
+
+  saveBestTimes(current_level);
+
+  return madeTop5 ? time_elapsed : -1;
+}
+
+void WorldSystem::createBestTimes()
+{
+  loadBestTimes(current_level);
+
+  const float vertical_spacing = 80.f;
+  const vec2 centerPosition = vec2(0, 150); // center of screen
+
+  float digitWidth = 40.f;
+  float digitHeight = 60.f;
+  float padding = 4.f;
+  float extraSpacing = 40.f; // Extra space after rank
+  int num_digits = 10;
+
+  float total_width = digitWidth * num_digits + padding * (num_digits - 1) + extraSpacing;
+  float half_width = total_width / 2.f;
+
+  for (size_t i = 0; i < best_times.size(); ++i)
+  {
+    long long time = best_times[i];
+    Entity lbTimerEntity = createLeaderboardTimer(time, i + 1);
+    LBTimer &timer = registry.lbtimers.get(lbTimerEntity);
+
+    for (int j = 0; j < 10; j++)
+    {
+      if (registry.screenElements.has(timer.digits[j]))
+      {
+        registry.screenElements.remove(timer.digits[j]);
+      }
+
+      ScreenElement &screenElement = registry.screenElements.emplace(timer.digits[j]);
+      screenElement.screen = "LEADERBOARD";
+
+      Entity camera = registry.cameras.entities[0];
+      screenElement.camera = camera;
+
+      vec2 offset;
+      if (j == 0)
+      {
+        offset = vec2(0, 0);
+      }
+      else
+      {
+        offset = vec2(j * (digitWidth + padding) + extraSpacing, 0);
+      }
+
+      vec2 verticalOffset = vec2(0, i * vertical_spacing);
+      screenElement.position = centerPosition + offset - vec2(half_width, 0) - verticalOffset;
+    }
+  }
 }

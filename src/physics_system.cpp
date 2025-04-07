@@ -353,16 +353,15 @@ void PhysicsSystem::step(float elapsed_ms)
       }
     }
 
-    if (!b2Body_IsValid(activeGrappleBodyId)) {
-        b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
-        camX = lerp(prev_x, grapplePos.x, grapple_shift.x);
-        camY = lerp(prev_y, grapplePos.y, grapple_shift.y);
+    b2Vec2 grapplePos = b2Body_GetPosition(activeGrappleBodyId);
+    camX = lerp(prev_x, grapplePos.x, grapple_shift.x);
+    camY = lerp(prev_y, grapplePos.y, grapple_shift.y);
 
-        if (camX != grapplePos.x || camY != grapplePos.y)
-        {
-            grapple_shift += 0.02;
-        }
+    if (camX != grapplePos.x || camY != grapplePos.y)
+    {
+        grapple_shift += 0.02;
     }
+    
   }
   // Reset camera back to player
   else

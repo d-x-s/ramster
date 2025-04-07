@@ -339,7 +339,7 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
   glfwSetWindowTitle(window, title_ss.str().c_str());
 
   auto now = std::chrono::steady_clock::now();
-  auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count();
+  long long elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count() - total_pause_duration;
   updateTimer(elapsed_ms);
 
   // Game logic only runs when playing
@@ -992,6 +992,8 @@ void WorldSystem::restart_game(int level)
   max_towers = MAX_TOWERS_START;
   next_enemy_spawn = 0;
   enemy_spawn_rate_ms = ENEMY_SPAWN_RATE_MS;
+  total_pause_duration = 0;
+  is_paused = false;
   if (grappleActive)
   {
     removeGrapple();
@@ -1457,12 +1459,16 @@ void WorldSystem::on_key(int key, int scancode, int action, int mod)
     {
       currentScreen.current_screen = "PAUSE";
       // freezeMovements();
+      pause_start_time = std::chrono::steady_clock::now();
+      is_paused = true;
       return;
     }
     // Pause screen - resume game
     if (currentScreen.current_screen == "PAUSE")
     {
       currentScreen.current_screen = "PLAYING";
+      total_pause_duration += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - pause_start_time).count();
+      is_paused = false;
       return;
     }
     // Menu and End of Game screen - exits game

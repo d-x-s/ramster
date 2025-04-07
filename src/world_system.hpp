@@ -244,6 +244,9 @@ private:
 
 	// clock for timer
 	std::chrono::steady_clock::time_point game_start_time;
+	std::chrono::steady_clock::time_point pause_start_time;
+	long long total_pause_duration = 0;
+	bool is_paused = false;
 
 	// use this to handle enemy spawning.
 	/*

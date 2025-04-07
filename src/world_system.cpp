@@ -1691,6 +1691,7 @@ void WorldSystem::on_mouse_button_pressed(int button, int action, int mods)
         }
         else if (grappleActive)
         {
+            playSoundEffect(FX::FX_GRAPPLE);
             removeGrapple();
             grappleActive = false;
             grapplePointActive = false;
@@ -1838,6 +1839,7 @@ void WorldSystem::shootGrapplePoint()
   // Attach the grapple if within range
   if (distance <= GRAPPLE_MAX_LENGTH)
   {
+    playSoundEffect(FX::FX_GRAPPLE);
     createGrapple(worldId, ballBodyId, activeGrappleBodyId, distance);
     grappleActive = true;
     grapplePointActive = true;
@@ -1875,6 +1877,7 @@ void WorldSystem::shootGrapple(vec2 worldMousePos)
       bodyDef.position = b2Vec2{result.point.x, result.point.y};
       b2BodyId bodyId = b2CreateBody(worldId, &bodyDef);
 
+      playSoundEffect(FX::FX_GRAPPLE);
       createGrapple(worldId, ballBodyId, bodyId, distance);
       grappleActive = true;
     }

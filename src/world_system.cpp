@@ -2612,6 +2612,10 @@ void WorldSystem::createBestTimes(bool new_time)
     Entity lbTimerEntity = createLeaderboardTimer(time, i + 1);
     LBTimer &timer = registry.lbtimers.get(lbTimerEntity);
 
+    std::cout << final_time << std::endl;
+
+    std::cout << time << std::endl;
+
     int minutes = time / 60000;
     int seconds = (time / 1000) % 60;
     int milliseconds = time % 1000;
@@ -2653,16 +2657,16 @@ void WorldSystem::createBestTimes(bool new_time)
       }
       else if (j == 3 || j == 6)
       {
-        rr.used_texture = (new_time && !usedRedHighlight) ? TEXTURE_ASSET_ID::R_COLON : TEXTURE_ASSET_ID::COLON;
+        rr.used_texture = (new_time && final_time == time && !usedRedHighlight) ? TEXTURE_ASSET_ID::R_COLON : TEXTURE_ASSET_ID::COLON;
       }
       else
       {
         rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
-            (new_time && !usedRedHighlight ? static_cast<int>(TEXTURE_ASSET_ID::R_NUMBER_0) : static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0)) + digits[digitIndex++]);
+            (new_time && final_time == time && !usedRedHighlight ? static_cast<int>(TEXTURE_ASSET_ID::R_NUMBER_0) : static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0)) + digits[digitIndex++]);
       }
     }
 
-    if (new_time && !usedRedHighlight)
+    if (new_time && new_time == final_time && !usedRedHighlight)
       usedRedHighlight = true;
   }
 

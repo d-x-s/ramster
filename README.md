@@ -7,8 +7,6 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 
 [![Video Demo](https://github.students.cs.ubc.ca/CPSC427-2024W-T2/team-20/assets/5330/c758fe05-cd88-492c-8344-b37af1e687c9)](https://www.youtube.com/watch?v=6IpZmlqbe44)
 
-https://www.youtube.com/watch?v=6IpZmlqbe44&feature=youtu.be
-
 ## Controls
 | Input | Action |
 |----------|----------|

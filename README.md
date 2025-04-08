@@ -2,17 +2,38 @@
 # Ramster's Revenge
 Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius hamster in a ball who the player will control. Ramster’s Revenge tells the story of the titular main character’s journey breaking out of the lab in which he was made. An evil corporation experimenting on highly intelligent hamsters is in for a rude awakening when Ramster, the smartest of the test subjects escapes from his cage! Shortly after breaking out of the cell, Ramster comes across the HamHook 3000, a high tech grappling hook that allows Ramster to swing across the map and aid in his escape. Living up to his name, Ramster also uses the HamHook to ram into enemies, such as evil lab workers trying to put Ramster back in his cell. Determined and armed, Ramster will stop at nothing to see the outside world and fulfill his dream of living as a normal housepet hamster. Finally, Ramster also has a special catchphrase for when he gets really serious: 
 **"I’M GOING HAM!"**
-<p align="center">
-  <img src="https://github.students.cs.ubc.ca/CPSC427-2024W-T2/team-20/assets/5330/eac1752b-a5cd-4048-8334-60de8acae6d4" width="600">
-</p>
 
 ## Controls
 | Input | Action |
 |----------|----------|
 | `A/D` | Move left/right |
 | `Space` | Jump |
-| `Left Click` | Attach/detach to a grapple point |
+| `Left Click` | Attach/detach to a grapple point or surface|
 | `W` | Retract grapple |
+| `S` | Extend grapple |
+| `Escape` | Open the pause menu |
+
+## M4 Requirements
+| Category | Task | Satisfying Feature(s) |
+|----------|----------|----------|
+| Playability | Sustain progressive, non-repetitive gameplay for at least 10 minutes | ✅ |
+| Stability | Include fully completed and playable prior-milestone implementations, fix all bugs, consistent across displays, no crashing | ✅ |
+| User Experience | Tutorial | ✅ |
+| Robustness | Memory management, user input handling, realtime performance | ✅ |
+| Reporting | Bug List, Test Plan, Video | See `docs` and submitted link |
+
+## M4 Creative Elements
+- [3, 11] Raycast grapple (grapple to any surface!)
+- [1] Dynamically animated sprites (frame time based on velocity)
+- [1] Animation overhaul (Ramster sprite is layered in glass ball, tilts based on velocity and does not rotate with the ball)
+- [24] Hand drawn and animated Ramster assets, banners, buttons, etc; all designed to be coherent with the theme
+- [27] Story elements with hand drawn story frames depicting Ramster's origin and fate
+- [26] Audio overhaul (sound effects for many of Ramster's actions); music changes per level and there are sound effects that play accordingly with Ramster's actions
+- [19] Leaderboard system (that is persisted and reloaded between runs of the game)
+***
+
+<details>
+<summary>Expand for M3</summary>
 
 ## M3 Requirements
 | Category | Task | Satisfying Feature(s) |
@@ -35,7 +56,7 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 - (Basic) Parallax
 - (Advanced) Chain shape parsing and level loader
 
-***
+</details>
 
 <details>
 <summary>Expand for M2</summary>
@@ -66,7 +87,9 @@ Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius
 
 <details>
 <summary>Expand for M1</summary>
-
+<p align="center">
+  <img src="https://github.students.cs.ubc.ca/CPSC427-2024W-T2/team-20/assets/5330/eac1752b-a5cd-4048-8334-60de8acae6d4" width="600">
+</p>
 ## M1 Basic Elements
 | Category | Task | Satisfying Feature(s) |
 |----------|----------|----------|

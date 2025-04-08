@@ -53,7 +53,7 @@ bool RenderSystem::init(GLFWwindow* window_arg)
 	gl_has_errors();
 
 	initScreenTexture();
-  initializeGlTextures();
+	initializeGlTextures();
 	initializeGlEffects();
 	initializeGlGeometryBuffers();
 
@@ -183,10 +183,10 @@ void RenderSystem::initializeGlGeometryBuffers()
 		egg_indices.push_back((uint16_t)((i + 1) % NUM_TRIANGLES));
 		egg_indices.push_back((uint16_t)NUM_TRIANGLES);
 	}
-	int geom_index = (int)GEOMETRY_BUFFER_ID::EGG;
+	int geom_index = (int)GEOMETRY_BUFFER_ID::LEGACY_EGG;
 	meshes[geom_index].vertices = egg_vertices;
 	meshes[geom_index].vertex_indices = egg_indices;
-	bindVBOandIBO(GEOMETRY_BUFFER_ID::EGG, meshes[geom_index].vertices, meshes[geom_index].vertex_indices);
+	bindVBOandIBO(GEOMETRY_BUFFER_ID::LEGACY_EGG, meshes[geom_index].vertices, meshes[geom_index].vertex_indices);
 
 	//////////////////////////////////
 	// Initialize debug line

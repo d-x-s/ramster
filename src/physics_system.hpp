@@ -15,6 +15,11 @@ public:
 	explicit PhysicsSystem(b2WorldId worldId);
 	~PhysicsSystem();
 	void updateGrappleLines();
+	void update_fireball();
+	void update_player_animation();
+	void updateHealthBar(vec2 camPos);
+	void updateScore(vec2 camPos);
+	void updateTimer(vec2 camPos);
 
 private:
 	b2WorldId worldId;

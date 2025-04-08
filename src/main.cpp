@@ -14,7 +14,6 @@
 #include "render_system.hpp"
 #include "world_system.hpp"
 #include "world_init.hpp"
-#include "terrain.hpp"
 
 using Clock = std::chrono::high_resolution_clock;
 
@@ -35,7 +34,6 @@ int main()
 	gravity_vector.x = 0.f;
 	gravity_vector.y = GRAVITY;
 	b2World_SetGravity(worldId, gravity_vector);
-
 
 	// Current Screen tracker
 	createCurrentScreen();
@@ -81,7 +79,7 @@ int main()
 		if (game_active) {
 			ai_system.step(elapsed_ms);
 			physics_system.step(elapsed_ms);
-			world_system.handle_collisions();
+			world_system.handle_collisions(elapsed_ms);
 		};
 
 		renderer_system.draw(elapsed_ms, game_active);

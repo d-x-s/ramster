@@ -1,15 +1,13 @@
 #include "common.hpp"
 
-// variables for tracking world height.
-
-// These constants are overwritten upon level load
+// variables for tracking world height (these constants are overwritten upon level load)
 int WORLD_WIDTH_TILES = 1;
 int WORLD_HEIGHT_TILES = 1;
 
 int WORLD_WIDTH_PX = 1;
 int WORLD_HEIGHT_PX = 1;
 	
-// Note, we could also use the functions from GLM but we write the transformations here to show the uderlying math
+// note, we could also use the functions from GLM but we write the transformations here to show the underlying math
 void Transform::scale(vec2 scale)
 {
 	mat3 S = { { scale.x, 0.f, 0.f },{ 0.f, scale.y, 0.f },{ 0.f, 0.f, 1.f } };

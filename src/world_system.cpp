@@ -485,7 +485,10 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
   auto now = std::chrono::steady_clock::now();
   long long elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count() - total_pause_duration;
-  updateTimer(elapsed_ms);
+  if (!first_goal) {
+      updateTimer(elapsed_ms);
+  }
+
 
   // Game logic only runs when playing
   if (currentScreen.current_screen == "PLAYING")
@@ -2657,16 +2660,16 @@ void WorldSystem::createBestTimes(bool new_time)
       }
       else if (j == 3 || j == 6)
       {
-        rr.used_texture = (new_time && !usedRedHighlight) ? TEXTURE_ASSET_ID::R_COLON : TEXTURE_ASSET_ID::COLON;
+        rr.used_texture = (new_time && final_time == time && !usedRedHighlight) ? TEXTURE_ASSET_ID::R_COLON : TEXTURE_ASSET_ID::COLON;
       }
       else
       {
         rr.used_texture = static_cast<TEXTURE_ASSET_ID>(
-            (new_time && !usedRedHighlight ? static_cast<int>(TEXTURE_ASSET_ID::R_NUMBER_0) : static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0)) + digits[digitIndex++]);
+            (new_time && final_time == time && !usedRedHighlight ? static_cast<int>(TEXTURE_ASSET_ID::R_NUMBER_0) : static_cast<int>(TEXTURE_ASSET_ID::NUMBER_0)) + digits[digitIndex++]);
       }
     }
 
-    if (new_time && !usedRedHighlight)
+    if (new_time && final_time == time && !usedRedHighlight)
       usedRedHighlight = true;
   }
 

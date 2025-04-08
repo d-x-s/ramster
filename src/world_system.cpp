@@ -482,7 +482,9 @@ bool WorldSystem::step(float elapsed_ms_since_last_update)
 
   auto now = std::chrono::steady_clock::now();
   long long elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - game_start_time).count() - total_pause_duration;
-  updateTimer(elapsed_ms);
+  if (!first_goal) {
+      updateTimer(elapsed_ms);
+  }
 
   // Game logic only runs when playing
   if (currentScreen.current_screen == "PLAYING")

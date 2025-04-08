@@ -136,9 +136,9 @@ Linear interpolation is implemented whenever the camera performs movement not ce
 ## Group Members
 | Member | Ownership |
 |----------|----------|
-| `Andrew Yang` | Grapple |
-| `Davis Song` | Physics Integration, Map System and Rendering |
-| `Luke Lu` | Enemy AI |
-| `Ning Leng` | Ball Physics |
-| `Zach Chernenko` | Advanced Camera |
+| `Andrew Yang` | Grapple, Leaderboard |
+| `Davis Song` | Physics Integration, Graphics, Assets |
+| `Luke Lu` | Enemy AI, UI Integration |
+| `Ning Leng` | Ball Physics, Level Generator |
+| `Zach Chernenko` | Advanced Camera, Level Design |
 

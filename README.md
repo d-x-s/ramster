@@ -3,9 +3,9 @@
 Our game, Ramster’s Revenge, is named after the game’s protagonist: a genius hamster in a ball who the player will control. Ramster’s Revenge tells the story of the titular main character’s journey breaking out of the lab in which he was made. An evil corporation experimenting on highly intelligent hamsters is in for a rude awakening when Ramster, the smartest of the test subjects escapes from his cage! Shortly after breaking out of the cell, Ramster comes across the HamHook 3000, a high tech grappling hook that allows Ramster to swing across the map and aid in his escape. Living up to his name, Ramster also uses the HamHook to ram into enemies, such as evil lab workers trying to put Ramster back in his cell. Determined and armed, Ramster will stop at nothing to see the outside world and fulfill his dream of living as a normal housepet hamster. Finally, Ramster also has a special catchphrase for when he gets really serious: 
 **"I’M GOING HAM!"**
 
-![sprite_4](![image](https://github.com/user-attachments/assets/6c6ae34e-7e9a-43ee-a58d-aa196bb7c602))
+![image](https://github.com/user-attachments/assets/39d3289c-8a69-4075-b74f-9791500ad22c)
 
-[![Video Demo](![image](https://github.com/user-attachments/assets/4bdfcb87-2831-4fac-908f-042b5314d701))](https://www.youtube.com/watch?v=6IpZmlqbe44)
+![image](https://github.com/user-attachments/assets/e99f1cbc-0756-402e-8350-1977c50209de)
 
 ## Controls
 | Input | Action |
